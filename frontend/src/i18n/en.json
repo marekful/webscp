@@ -250,6 +250,9 @@
     "users": "Users"
   },
   "sidebar": {
+    "dotfiles": "Dotfiles",
+    "dotfiles_show": "Dotfiles are hidden, click to show them",
+    "dotfiles_hide": "Dotfiles are shown, click to hide them",
     "help": "Help",
     "hugoNew": "Hugo New",
     "login": "Login",

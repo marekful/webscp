@@ -11,7 +11,7 @@
         <span>{{ $t("sidebar.myFiles") }}</span>
       </button>
 
-      <div v-if="user.perm.create">
+      <div v-if="user.perm.create && isListing">
         <button
           @click="$store.commit('showHover', 'newDir')"
           class="action"
@@ -30,6 +30,19 @@
         >
           <i class="material-icons">note_add</i>
           <span>{{ $t("sidebar.newFile") }}</span>
+        </button>
+      </div>
+
+      <div>
+        <button
+            v-if="isListing && !userHiddenDotfiles"
+            class="action"
+            @click="toggleDotfiles"
+            :aria-label="$t('sidebar.dotfiles')"
+            :title="this.$store.state.showDotfiles ? $t('sidebar.dotfiles_hide') : $t('sidebar.dotfiles_show')"
+        >
+          <i class="material-icons">{{ toggleDotfilesIcon }}</i>
+          <span>{{ $t("sidebar.dotfiles") }}</span>
         </button>
       </div>
 
@@ -134,7 +147,7 @@ export default {
   },
   computed: {
     ...mapState(["user"]),
-    ...mapGetters(["isLogged"]),
+    ...mapGetters(["isLogged", "isListing"]),
     active() {
       return this.$store.state.show === "sidebar";
     },
@@ -143,6 +156,12 @@ export default {
     disableExternal: () => disableExternal,
     disableUsedPercentage: () => disableUsedPercentage,
     canLogout: () => (!noAuth && loginPage) || authMethod === "oidc",
+    toggleDotfilesIcon() {
+      return this.$store.state.showDotfiles ? "visibility" : "visibility_off";
+    },
+    userHiddenDotfiles() {
+      return this.user.hideDotfiles;
+    },
   },
   asyncComputed: {
     usage: {
@@ -180,6 +199,9 @@ export default {
     toSettings() {
       this.$router.push({ path: "/settings" }, () => {});
       this.$store.commit("closeHovers");
+    },
+    toggleDotfiles() {
+      this.$store.commit("toggleDotfiles", true);
     },
     help() {
       this.$store.commit("showHover", "help");
