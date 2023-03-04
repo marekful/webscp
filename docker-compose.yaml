@@ -1,0 +1,14 @@
+version: "3.5"
+
+services:
+  filebrowser:
+    image: marekful/filebrowser-m6
+    ports:
+      - 8081:80
+    volumes:
+      - ./database.db:/database.db
+      - ./.filebrowser.json:/.filebrowser.json
+      - /:/srv
+    environment:
+      PUID: 1001
+      PGID: 1001

@@ -1,0 +1,50 @@
+### Frontend build
+FROM docker.io/node:18 as vue-builder
+
+COPY  ./frontend /work/
+
+WORKDIR /work
+
+ENV NODE_ENV=development
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
+#RUN npm install -g @vue/cli-service
+RUN npm install --include=dev
+RUN npm run build
+
+### Backend build
+FROM docker.io/golang:1.20.1-alpine AS go-builder
+
+RUN apk add bash make git ncurses yarn npm
+
+COPY . /work/
+COPY --from=vue-builder /work/dist/ /work/frontend/dist/
+
+WORKDIR /work
+
+#RUN make lint-backend
+#RUN make lint-frontend
+#RUN make lint-commits
+#RUN make test-backend
+#RUN make test-frontend
+
+RUN go mod download
+RUN make build-backend
+
+### Run
+FROM alpine:latest
+RUN apk --update add ca-certificates \
+                     mailcap \
+                     curl
+
+HEALTHCHECK --start-period=2s --interval=5s --timeout=3s \
+  CMD curl -f http://localhost/health || exit 1
+
+VOLUME /srv
+EXPOSE 80
+
+COPY --from=go-builder /work/filebrowser /filebrowser
+COPY docker_config.json /.filebrowser.json
+
+#ENTRYPOINT [ "/filebrowser" ]
+CMD sh
