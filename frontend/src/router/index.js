@@ -7,6 +7,8 @@ import Share from "@/views/Share";
 import Users from "@/views/settings/Users";
 import User from "@/views/settings/User";
 import Settings from "@/views/Settings";
+import Agent from "@/views/settings/Agent";
+import AgentSettings from "@/views/settings/Agents";
 import GlobalSettings from "@/views/settings/Global";
 import ProfileSettings from "@/views/settings/Profile";
 import Shares from "@/views/settings/Shares";
@@ -106,6 +108,22 @@ const router = new Router({
               path: "/settings/users/*",
               name: "User",
               component: User,
+              meta: {
+                requiresAdmin: true,
+              },
+            },
+            {
+              path: "/settings/agents",
+              name: "AgentSettings",
+              component: AgentSettings,
+              meta: {
+                requiresAdmin: true,
+              },
+            },
+            {
+              path: "/settings/agents/*",
+              name: "Agent",
+              component: Agent,
               meta: {
                 requiresAdmin: true,
               },

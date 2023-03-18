@@ -18,6 +18,10 @@ body.rtl .dashboard .row {
   width: 50%;
 }
 
+.dashboard .row .column-w {
+  width: 100%;
+}
+
 .dashboard .row .column .card {
   flex-grow: 1;
 }

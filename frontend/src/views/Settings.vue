@@ -30,6 +30,16 @@
               {{ $t("settings.userManagement") }}
             </li></router-link
           >
+          <router-link to="/settings/agents" v-if="user.perm.admin"
+            ><li
+              :class="{
+                active:
+                  $route.path === '/settings/agents' || $route.name === 'Agent',
+              }"
+            >
+              {{ $t("settings.agent.remoteAgent") }}
+            </li></router-link
+          >
         </ul>
       </div>
     </div>
