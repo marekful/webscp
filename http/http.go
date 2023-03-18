@@ -48,6 +48,8 @@ func NewHandler(
 
 	api := r.PathPrefix("/api").Subrouter()
 
+	api.Handle("/version", monkey(versionHandler, "")).Methods("GET")
+
 	api.Handle("/login", monkey(loginHandler, ""))
 	api.Handle("/signup", monkey(signupHandler, ""))
 	api.Handle("/renew", monkey(renewHandler, ""))
@@ -58,6 +60,13 @@ func NewHandler(
 	users.Handle("/{id:[0-9]+}", monkey(userPutHandler, "")).Methods("PUT")
 	users.Handle("/{id:[0-9]+}", monkey(userGetHandler, "")).Methods("GET")
 	users.Handle("/{id:[0-9]+}", monkey(userDeleteHandler, "")).Methods("DELETE")
+
+	agents := api.PathPrefix("/agents").Subrouter()
+	agents.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
+	agents.Handle("", monkey(agentPostHandler, "")).Methods("POST")
+	agents.Handle("/{id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
+	agents.Handle("/{id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
+	agents.Handle("/{id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
 
 	api.PathPrefix("/resources").Handler(monkey(resourceGetHandler, "/api/resources")).Methods("GET")
 	api.PathPrefix("/resources").Handler(monkey(resourceDeleteHandler(fileCache), "/api/resources")).Methods("DELETE")

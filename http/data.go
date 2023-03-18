@@ -71,6 +71,9 @@ func handle(fn handleFunc, prefix string, store *storage.Storage, server *settin
 
 		if status != 0 {
 			txt := http.StatusText(status)
+			if err != nil {
+				txt += ": " + err.Error()
+			}
 			http.Error(w, strconv.Itoa(status)+" "+txt, status)
 			return
 		}
