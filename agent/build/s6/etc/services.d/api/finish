@@ -1,0 +1,10 @@
+#!/bin/bash
+
+PID=$(pidof webserver)
+if [ ! -z "$PID" ]; then
+  echo -n "Stopping Rocket (pid=$PID) ... "
+  kill -SIGTERM $PID
+  echo "Stopped"
+else
+  echo "Rocket stopped"
+fi

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+PID=$(pidof sshd)
+if [ ! -z "$PID" ]; then
+  echo -n "Stopping OpenSSH server (pid=$PID) ... "
+  kill -SIGKILL $PID
+  echo "Stopped"
+else
+  echo "OpenSSH server stopped"
+fi
