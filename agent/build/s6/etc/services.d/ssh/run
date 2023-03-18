@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "Starting OpenSSH server "
+
+/usr/bin/execlineb -P -c "/usr/sbin/sshd -e -D"
