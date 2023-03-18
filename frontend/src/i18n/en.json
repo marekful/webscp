@@ -2,6 +2,7 @@
   "buttons": {
     "cancel": "Cancel",
     "close": "Close",
+    "connectAndSave": "Connect & Save",
     "copy": "Copy",
     "copyFile": "Copy file",
     "copyToClipboard": "Copy to clipboard",
@@ -171,6 +172,24 @@
   "settings": {
     "admin": "Admin",
     "administrator": "Administrator",
+    "agent": {
+      "address": "Address",
+      "agentStatus": "Agent status",
+      "agentVersion": "Version",
+      "agentVersionHint": "(Agent / File Browser)",
+      "connectionDelete": "Remote Agent Connection deleted",
+      "connectionCreated": "Remote Agent Connection created",
+      "host": "Host",
+      "hostLabel": "Hostname, FQDN or IP address",
+      "ping": "Ping",
+      "pingHint": "(connect / exec)",
+      "newConnection": "New Remote Agent Connection",
+      "port": "Port",
+      "remoteAgents": "Remote Agents",
+      "remoteAgent": "Remote Agent",
+      "secret": "Agent secret",
+      "status": "Status"
+    },
     "allowCommands": "Execute commands",
     "allowEdit": "Edit, rename and delete files or directories",
     "allowNew": "Create new files and directories",
