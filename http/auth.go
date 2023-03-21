@@ -101,6 +101,26 @@ func withAdmin(fn handleFunc) handleFunc {
 	})
 }
 
+func withAgent(fn handleFunc) handleFunc {
+	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+		// Deny access to requests whose 'Host' header doesn't match the internal docker address (e.g. http://filebrowser:80).
+		internalHost := os.Getenv("INTERNAL_ADDRESS")
+		requestHost := "http://" + r.Host
+		if requestHost != internalHost {
+			return http.StatusUnauthorized, nil
+		}
+
+		// TODO: use dedicated user based on remote identity (TBD)
+		user, err := d.store.Users.Get(d.server.Root, uint(1))
+		if err != nil {
+			return http.StatusInternalServerError, nil
+		}
+		d.user = user
+
+		return fn(w, r, d)
+	}
+}
+
 var loginHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	auther, err := d.store.Auth.Get(d.settings.AuthMethod)
 	if err != nil {

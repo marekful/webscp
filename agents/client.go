@@ -7,6 +7,7 @@ import (
 
 	"encoding/json"
 	nethttps "net/http"
+	neturl "net/url"
 )
 
 type AgentBackend interface {
@@ -26,6 +27,11 @@ type GetVersionResponse struct {
 	Latency string `json:"latency"`
 	Version string `json:"version"`
 	Error   string `json:"error"`
+}
+
+type GetResourceResponse struct {
+	Resource string `json:"resource"`
+	Error    string `json:"error"`
 }
 
 func (c *AgentClient) ExchangeKeys(host string, port string, secret string) error {
@@ -110,4 +116,32 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 		Error:   returnError,
 		Latency: resp.Latency,
 	}
+}
+
+func (c *AgentClient) GetResource(host string, port string, url string) (response *GetResourceResponse, err error) {
+
+	url = neturl.QueryEscape(url)
+	agentAddress := os.Getenv("AGENT_ADDRESS")
+	requestURL := fmt.Sprintf("%s/api/resources/%s/%s/%s", agentAddress, host, port, url)
+
+	r, err := nethttps.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error: %v", err)
+	}
+
+	client := &nethttps.Client{}
+	res, err := client.Do(r)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected error: %v", err)
+	}
+
+	defer res.Body.Close()
+
+	resp := &GetResourceResponse{}
+	dErr := json.NewDecoder(res.Body).Decode(resp)
+	if dErr != nil {
+		return nil, dErr
+	}
+
+	return resp, nil
 }
