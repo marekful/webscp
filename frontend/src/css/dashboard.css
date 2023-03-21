@@ -194,6 +194,7 @@ table tr>*:last-child {
 .card .card-title {
   padding: 1.5em 1em 1em;
   display: flex;
+  border-bottom: 1px solid #aaa;
 }
 
 .card .card-title>*:first-child {
@@ -359,13 +360,20 @@ body.rtl .card .card-title>*:first-child {
 }
 
 .file-list li:before {
-  content: "folder";
   color: #6f6f6f;
   vertical-align: middle;
   line-height: 1.4;
   font-family: 'Material Icons';
   font-size: 1.75em;
   margin-right: .25em;
+}
+
+.file-list:not(.server-list) li:before {
+  content: "folder";
+}
+
+.file-list.server-list li:before {
+  content: "laptop";
 }
 
 .file-list li[aria-selected=true]:before {

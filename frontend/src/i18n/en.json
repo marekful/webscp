@@ -150,6 +150,7 @@
     "renameMessage": "Insert a new name for",
     "replace": "Replace",
     "replaceMessage": "One of the files you're trying to upload is conflicting because of its name. Do you wish to replace the existing one?\n",
+    "selectServer": "Select destination server",
     "schedule": "Schedule",
     "scheduleMessage": "Pick a date and time to schedule the publication of this post.",
     "show": "Show",

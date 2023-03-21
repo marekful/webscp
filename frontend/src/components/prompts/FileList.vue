@@ -1,5 +1,10 @@
 <template>
   <div>
+    <p v-if="loading === 0">Loading directory listing</p>
+    <p v-else-if="loading === 2">Couldn't load directory listing</p>
+    <p>
+      <code>{{ nav }}</code>
+    </p>
     <ul class="file-list">
       <li
         @click="itemClick"
@@ -16,18 +21,13 @@
         {{ item.name }}
       </li>
     </ul>
-
-    <p>
-      {{ $t("prompts.currentlyNavigating") }} <code>{{ nav }}</code
-      >.
-    </p>
   </div>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import url from "@/utils/url";
-import { files } from "@/api";
+import { files, remote_files } from "@/api";
 
 export default {
   name: "file-list",
@@ -40,7 +40,23 @@ export default {
       },
       selected: null,
       current: window.location.pathname,
+      loading: 0,
     };
+  },
+  props: {
+    agentId: {
+      type: Number,
+      default: 0,
+    },
+  },
+  watch: {
+    agentId(agent_id) {
+      if (agent_id === 0) {
+        this.fillOptions(this.req);
+      } else {
+        this.remote(agent_id, "/files/home/");
+      }
+    },
   },
   computed: {
     ...mapState(["req", "user"]),
@@ -48,15 +64,14 @@ export default {
       return decodeURIComponent(this.current);
     },
   },
-  mounted() {
-    this.fillOptions(this.req);
-  },
+  mounted() {},
   methods: {
     fillOptions(req) {
       // Sets the current path and resets
       // the current items.
       this.current = req.url;
       this.items = [];
+      this.loading = 1;
 
       this.$emit("update:selected", this.current);
 
@@ -90,7 +105,33 @@ export default {
       // content.
       let uri = event.currentTarget.dataset.url;
 
-      files.fetch(uri).then(this.fillOptions).catch(this.$showError);
+      if (this.agentId === 0) {
+        files.fetch(uri).then(this.fillOptions).catch(this.$showError);
+      } else {
+        this.resetItems();
+        remote_files
+          .fetch(this.agentId, uri)
+          .then(this.fillOptions)
+          .catch((e) => {
+            this.resetItems(true);
+            this.$showError(e);
+          });
+      }
+    },
+    remote: function (agent_id, uri) {
+      this.resetItems();
+      remote_files
+        .fetch(agent_id, uri)
+        .then(this.fillOptions)
+        .catch((e) => {
+          this.resetItems(true);
+          this.$showError(e);
+        });
+    },
+    resetItems(withError) {
+      this.loading = withError ? 2 : 0;
+      this.items = [];
+      this.current = "";
     },
     touchstart(event) {
       let url = event.currentTarget.dataset.url;

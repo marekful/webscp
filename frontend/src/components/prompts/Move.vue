@@ -5,7 +5,14 @@
     </div>
 
     <div class="card-content">
-      <file-list @update:selected="(val) => (dest = val)"></file-list>
+      <server-select
+        @update:selected="(val) => changeServer(val)"
+      ></server-select>
+
+      <file-list
+        @update:selected="(val) => (dest = val)"
+        :agent-id="agentId"
+      ></file-list>
     </div>
 
     <div class="card-action">
@@ -33,21 +40,30 @@
 <script>
 import { mapState } from "vuex";
 import FileList from "./FileList";
+import ServerSelect from "../ServerSelect";
 import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import * as upload from "@/utils/upload";
 
 export default {
   name: "move",
-  components: { FileList },
+  components: { FileList, ServerSelect },
   data: function () {
     return {
       current: window.location.pathname,
       dest: null,
+      agentId: null,
     };
   },
   computed: mapState(["req", "selected"]),
   methods: {
+    changeServer: function (val) {
+      if (val === 0) {
+        this.agentId = 0;
+      } else {
+        this.agentId = val;
+      }
+    },
     move: async function (event) {
       event.preventDefault();
       let items = [];
