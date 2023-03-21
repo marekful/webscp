@@ -7,15 +7,28 @@ use std::net::TcpStream;
 use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
+use reqwest::StatusCode;
 
-pub struct Client {
-    host: String,
+#[derive(Debug)]
+pub struct Client<'r> {
+    host: &'r str,
     port: i16,
+    default_fb_api_address: &'r str,
 }
 
-impl Client {
-    pub fn new(host: String, port: i16) -> Client {
-        Client { host, port }
+impl Default for Client<'_> {
+    fn default() -> Self {
+        Self {
+            host: "",
+            port: 0,
+            default_fb_api_address: "http://filebrowser:80",
+        }
+    }
+}
+
+impl Client<'_> {
+    pub fn new(host: &str, port: i16) -> Client {
+        Client { host, port, ..Default::default() }
     }
 
     pub fn exchange_keys(&self, secret: &str) -> i32 {
@@ -34,9 +47,18 @@ impl Client {
         0
     }
 
-    pub fn get_version(&self) -> i32 {
+    pub fn get_remote_resource(&self, path: &str) -> i32 {
         let sess = self.create_session(None);
-        let version = self.get_agent_version(&sess);
+        let resources_result = Client::_get_remote_resource(&sess, &path);
+
+        print!("{}", resources_result);
+
+        0
+    }
+
+    pub fn get_remote_version(&self) -> i32 {
+        let sess = self.create_session(None);
+        let version = Client::get_agent_version(&sess);
 
         print!("{}", version);
 
@@ -66,7 +88,7 @@ impl Client {
     }
 
     fn create_session(&self, secret: Option<&str>) -> Session {
-        // Create SSH connection
+        // create ssh connection
         let tcp = match TcpStream::connect(self.host.to_owned() + ":" + &*self.port.to_string()) {
             Ok(tcp) => tcp,
             Err(_e) => {
@@ -79,7 +101,7 @@ impl Client {
         sess.handshake().unwrap();
 
         match secret {
-            // Authenticate with public key
+            // authenticate session via password (for exchange-keys)
             None => {
                 let pubkey: &Path = Path::new("/home/agent/.ssh/id_rsa.pub");
                 let privkey: &Path = Path::new("/home/agent/.ssh/id_rsa");
@@ -91,7 +113,7 @@ impl Client {
                     }
                 }
             }
-            // Authenticate with agent secret
+            // authenticate session via public key
             Some(_secret) => {
                 match sess.userauth_password("agent", _secret) {
                     Ok(r) => r,
@@ -106,9 +128,15 @@ impl Client {
         sess
     }
 
-    fn get_agent_version(&self, sess: &Session) -> String {
+    pub fn get_fb_api_address() -> String {
+        let default_fb_api_address = Client::default().default_fb_api_address;
+        let fb_api_address_result = env::var("FILEBROWSER_ADDRESS");
+        return fb_api_address_result.unwrap_or(default_fb_api_address.to_string());
+    }
+
+    fn get_agent_version(sess: &Session) -> String {
         let mut ch = sess.channel_session().unwrap();
-        ch.exec("with-contenv /app/target/debug/client version").unwrap();
+        ch.exec("with-contenv /app/target/debug/cli get-local-version").unwrap();
         let mut version = String::new();
         ch.read_to_string(&mut version).unwrap();
 
@@ -117,7 +145,22 @@ impl Client {
             return "".to_string();
         }
 
-        return version
+        version
+    }
+
+    fn _get_remote_resource(sess: &Session, path: &str) -> String {
+        let mut ch = sess.channel_session().unwrap();
+        ch.exec(&*format!("with-contenv /app/target/debug/cli get-local-resource {}", path)).unwrap();
+        let mut output = String::new();
+        ch.read_to_string(&mut output).unwrap();
+
+        let result = ch.exit_status().unwrap();
+        if result != 0 {
+            eprint!("{{\"code\": {}, \"error\": \"{}\"}}", result, output.trim());
+            return "".to_string();
+        }
+
+        return output;
     }
 
     fn send_public_key(sess: &Session) -> i32 {
@@ -170,11 +213,8 @@ impl Client {
     }
 }
 
-fn get_fb_version() -> String {
-    let default_fb_api_address = "http://filebrowser:7000".to_string();
-    let fb_api_address_result = env::var("FILEBROWSER_ADDRESS");
-    let fb_api_address = fb_api_address_result.unwrap_or(default_fb_api_address);
-
+pub fn get_fb_version() -> String {
+    let fb_api_address = Client::get_fb_api_address();
     let mut response = match reqwest::blocking::get(fb_api_address + "/api/version") {
         Ok(r) => r,
         Err(_e) => return "unknown".to_string()
@@ -187,85 +227,38 @@ fn get_fb_version() -> String {
     }
 }
 
-fn command_exchange_keys(client: Option<Client>, args: Option<Vec<String>>) {
-    let args = args.unwrap();
-    if args.len() < 5 {
-        eprintln!("Usage: client exchange-keys <host> <port> <agent_secret>");
-        exit(136);
-    }
-    let secret = &args[4];
-    client.unwrap().exchange_keys(secret);
-}
+pub fn get_local_resource(path: &str) {
+    let fb_api_address = Client::get_fb_api_address();
+    let request_url = fb_api_address + "/api/agent/resources/" + path;
 
-fn command_remote_version(client: Option<Client>, _: Option<Vec<String>>) {
-    client.unwrap().get_version();
-}
-
-fn command_ping(client: Option<Client>, _: Option<Vec<String>>) {
-    client.unwrap().ping();
-}
-
-fn command_version(_: Option<Client>, _: Option<Vec<String>>) {
-    const AGENT_VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
-    let agent_version = AGENT_VERSION.unwrap_or("unknown").to_string();
-    let fb_version = get_fb_version();
-
-    println!("{} / {}", agent_version, fb_version);
-}
-
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let mut exec: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
-
-    // The 'version' command is executed locally and requires no arguments
-    if args.len() < 2 {
-        eprintln!("Usage: client <command> [<host> <port> [arg, ..., argN]]");
-        exit(127);
-    }
-    let command = args[1].as_str();
-    match command {
-        "version" => exec = Some(command_version),
-        _ => {}
-    }
-    match exec {
-        None => {}
-        Some(_) => {
-            exec.unwrap()(None, None);
-            exit(0);
-        }
-    }
-
-    // All other commands require 'host' and 'port' as a minimum
-    if args.len() < 4 {
-        eprintln!("Usage: client <command> <host> <port> [arg, ..., argN]");
-        exit(127);
-    }
-    match command {
-        "exchange-keys" => {
-            exec = Some(command_exchange_keys);
-        }
-        "ping" => {
-            exec = Some(command_ping);
-        }
-        "remote-version" => {
-            exec = Some(command_remote_version);
-        }
-        _ => {
-            eprintln!("Invalid command {}", command);
-            exit(129);
-        }
-    }
-
-    let host = args[2].to_string();
-    let port_str = &args[3];
-    let port = match port_str.parse::<i16>() {
-        Ok(port) => port,
-        Err(_e) => {
-            eprintln!("Invalid port: {}", port_str);
-            exit(128);
+    let mut response = match reqwest::blocking::get(request_url) {
+        Ok(r) => r,
+        Err(e) => {
+            println!("{}", e.to_string());
+            exit(187);
         }
     };
-    let client = Client::new(host, port);
 
-    exec.unwrap()(Some(client), Some(args));
+    let mut output = String::new();
+    let result = response.read_to_string(& mut output);
+
+    if response.status() != StatusCode::OK {
+        println!("{}", output);
+        exit(188);
+    }
+
+    if result.is_err() {
+        println!("{}", result.unwrap_err().to_string());
+        exit(189);
+    }
+
+    match response.read_to_string(&mut output) {
+        Ok(_) => {
+            println!("{}",  output);
+        },
+        Err(e) => {
+            println!("{}", e.to_string());
+            exit(190);
+        }
+    }
 }
