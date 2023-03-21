@@ -7,7 +7,6 @@ use std::net::TcpStream;
 use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
-use reqwest::StatusCode;
 
 #[derive(Debug)]
 pub struct Client<'r> {
@@ -210,55 +209,5 @@ impl Client<'_> {
         }
 
         0
-    }
-}
-
-pub fn get_fb_version() -> String {
-    let fb_api_address = Client::get_fb_api_address();
-    let mut response = match reqwest::blocking::get(fb_api_address + "/api/version") {
-        Ok(r) => r,
-        Err(_e) => return "unknown".to_string()
-    };
-
-    let mut version = String::new();
-    return match response.read_to_string(&mut version) {
-        Ok(_) => version,
-        Err(_) => "unknown".to_string()
-    }
-}
-
-pub fn get_local_resource(path: &str) {
-    let fb_api_address = Client::get_fb_api_address();
-    let request_url = fb_api_address + "/api/agent/resources/" + path;
-
-    let mut response = match reqwest::blocking::get(request_url) {
-        Ok(r) => r,
-        Err(e) => {
-            println!("{}", e.to_string());
-            exit(187);
-        }
-    };
-
-    let mut output = String::new();
-    let result = response.read_to_string(& mut output);
-
-    if response.status() != StatusCode::OK {
-        println!("{}", output);
-        exit(188);
-    }
-
-    if result.is_err() {
-        println!("{}", result.unwrap_err().to_string());
-        exit(189);
-    }
-
-    match response.read_to_string(&mut output) {
-        Ok(_) => {
-            println!("{}",  output);
-        },
-        Err(e) => {
-            println!("{}", e.to_string());
-            exit(190);
-        }
     }
 }
