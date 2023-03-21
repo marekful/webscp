@@ -101,9 +101,7 @@ export default {
           };
         } else {
           const id = this.$route.params.pathMatch;
-          console.log(" >>>> ", id);
           this.agent = { ...(await api.get(id)) };
-          console.log(" >>>>  2 >", this.agent);
         }
       } catch (e) {
         this.error = e;
@@ -136,7 +134,6 @@ export default {
 
       try {
         if (this.isNew) {
-          console.log("agent create", api, agent);
           const loc = await api.create(agent);
           this.$router.push({ path: loc });
           this.$showSuccess(this.$t("settings.agent.connectionCreated"));
