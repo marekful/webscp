@@ -54,6 +54,42 @@ var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 	return renderJSON(w, r, file)
 })
 
+var agentResourceGetHandler = withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	file, err := files.NewFileInfo(files.FileOptions{
+		Fs:         d.user.Fs,
+		Path:       r.URL.Path,
+		Modify:     d.user.Perm.Modify,
+		Expand:     true,
+		ReadHeader: d.server.TypeDetectionByHeader,
+		Checker:    d,
+		Content:    true,
+	})
+	if err != nil {
+		return errToStatus(err), err
+	}
+
+	if file.IsDir {
+		file.Listing.Sorting = d.user.Sorting
+		file.Listing.ApplySort()
+		return renderJSON(w, r, file)
+	}
+
+	if checksum := r.URL.Query().Get("checksum"); checksum != "" {
+		err := file.Checksum(checksum)
+		if err == errors.ErrInvalidOption {
+			return http.StatusBadRequest, nil
+		} else if err != nil {
+			return http.StatusInternalServerError, err
+		}
+
+		// do not waste bandwidth if we just want the checksum
+		file.Content = ""
+	}
+
+	return renderJSON(w, r, file)
+
+})
+
 func resourceDeleteHandler(fileCache FileCache) handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		if r.URL.Path == "/" || !d.user.Perm.Delete {

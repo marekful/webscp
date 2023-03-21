@@ -74,6 +74,10 @@ func NewHandler(
 	api.PathPrefix("/resources").Handler(monkey(resourcePutHandler, "/api/resources")).Methods("PUT")
 	api.PathPrefix("/resources").Handler(monkey(resourcePatchHandler(fileCache), "/api/resources")).Methods("PATCH")
 
+	api.PathPrefix("/remote/resources/{agent_id:[0-9]+}/{url:.*}").
+		Handler(monkey(remoteResourceGetHandler, "/api/remote/resources")).Methods("GET")
+	api.PathPrefix("/agent/resources").Handler(monkey(agentResourceGetHandler, "/api/agent/resources")).Methods("GET")
+
 	api.PathPrefix("/usage").Handler(monkey(diskUsage, "/api/usage")).Methods("GET")
 
 	api.Path("/shares").Handler(monkey(shareListHandler, "/api/shares")).Methods("GET")
