@@ -13,7 +13,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut exec: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
 
-    // commands executed locally - these requires no arguments
+    // commands executed locally - these require no arguments
     if args.len() < 2 {
         eprintln!("Usage: client <command> [<host> <port> [arg, ..., argN]]");
         exit(127);
@@ -21,11 +21,11 @@ fn main() {
     let command = args[1].as_str();
     match command {
         "get-local-version"     => exec = Some(command_get_local_version),
-        "get-local-resource"   => exec = Some(command_get_local_resource),
+        "get-local-resource"    => exec = Some(command_get_local_resource),
         _ => {}
     }
     match exec {
-        None => {}
+        None => {} // proceed to remote commands
         Some(_) => {
             exec.unwrap()(None, Some(args));
             exit(0);
