@@ -2,8 +2,8 @@ package bolt
 
 import (
 	"github.com/asdine/storm/v3"
-	"github.com/filebrowser/filebrowser/v2/agents"
 
+	"github.com/filebrowser/filebrowser/v2/agents"
 	"github.com/filebrowser/filebrowser/v2/auth"
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/share"

@@ -69,7 +69,7 @@ func handle(fn handleFunc, prefix string, store *storage.Storage, server *settin
 			log.Printf("%s: %v %s %v", r.URL.Path, status, clientIP, err)
 		}
 
-		if status != 0 {
+		if status != 0 /* && status != 200*/ {
 			txt := http.StatusText(status)
 			if err != nil {
 				txt += ": " + err.Error()

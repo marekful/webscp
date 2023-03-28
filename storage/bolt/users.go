@@ -7,6 +7,7 @@ import (
 	"github.com/asdine/storm/v3"
 
 	"github.com/filebrowser/filebrowser/v2/errors"
+	"github.com/filebrowser/filebrowser/v2/storage"
 	"github.com/filebrowser/filebrowser/v2/users"
 )
 
@@ -20,7 +21,7 @@ func (st usersBackend) GetBy(i interface{}) (user *users.User, err error) {
 	var arg string
 	switch i.(type) {
 	case uint:
-		arg = "ID"
+		arg = storage.IDFieldName
 	case string:
 		arg = "Username"
 	default:
