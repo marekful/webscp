@@ -11,10 +11,16 @@ ssh2 = "0.9.4"
 serde = "1.0.156"
 reqwest = { version = "0.11", features = ["blocking"] }
 urlencoding = "2.1.2"
+json = "0.12.4"
+flate2 = "1.0.25"
+tar = "0.4.38"
 
 [dependencies.rocket]
 version = "0.5.0-rc.2"
 features = ["json"]
+
+[dev-dependencies]
+rustfmt = "0.10.0"
 
 [[bin]]
 name = "cli"
@@ -22,4 +28,4 @@ path = "src/cli/main.rs"
 
 [[bin]]
 name = "webserver"
-path = "src/webserver.rs"
+path = "src/web/server.rs"

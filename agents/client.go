@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"encoding/json"
 	nethttps "net/http"
@@ -34,6 +35,22 @@ type GetResourceResponse struct {
 	Error    string `json:"error"`
 }
 
+type BeforeCopyResponse struct {
+	Code    int32  `json:"code"`
+	Message string `json:"message"`
+}
+
+type ResourceItem struct {
+	Source      string `json:"source"`
+	Destination string `json:"destination"`
+	Overwrite   bool   `json:"overwrite"`
+	Rename      bool   `json:"rename"`
+}
+
+type RemoteResourceAgentRequest struct {
+	Items []ResourceItem `json:"items"`
+}
+
 func (c *AgentClient) ExchangeKeys(host string, port string, secret string) error {
 
 	agentAddress := os.Getenv("AGENT_ADDRESS")
@@ -46,7 +63,7 @@ func (c *AgentClient) ExchangeKeys(host string, port string, secret string) erro
 
 	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewBuffer(body))
 	if err != nil {
-		return fmt.Errorf("unexpected error: %v", err)
+		return fmt.Errorf("unexpected error1: %v", err)
 	}
 
 	r.Header.Add("Content-Type", "application/json")
@@ -54,7 +71,7 @@ func (c *AgentClient) ExchangeKeys(host string, port string, secret string) erro
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		return fmt.Errorf("unexpected error: %v", err)
+		return fmt.Errorf("unexpected error2: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -70,7 +87,7 @@ func (c *AgentClient) ExchangeKeys(host string, port string, secret string) erro
 	}
 
 	if resp.Success != true {
-		return fmt.Errorf("unexpected error")
+		return fmt.Errorf("unexpected error3")
 	}
 
 	return nil
@@ -85,13 +102,13 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 
 	r, err := nethttps.NewRequest("GET", requestURL, nil)
 	if err != nil {
-		returnError = fmt.Sprintf("unexpected error: %v", err)
+		returnError = fmt.Sprintf("unexpected error4: %v", err)
 	}
 
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		returnError = fmt.Sprintf("unexpected error: %v", err)
+		returnError = fmt.Sprintf("unexpected error5: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -126,13 +143,13 @@ func (c *AgentClient) GetResource(host string, port string, url string) (respons
 
 	r, err := nethttps.NewRequest("GET", requestURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected error: %v", err)
+		return nil, fmt.Errorf("unexpected error6: %v", err)
 	}
 
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected error: %v", err)
+		return nil, fmt.Errorf("unexpected erro7r: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -144,4 +161,42 @@ func (c *AgentClient) GetResource(host string, port string, url string) (respons
 	}
 
 	return resp, nil
+}
+
+func (c *AgentClient) RemoteCopy(host string, port string, archiveName string, items []ResourceItem) (response *BeforeCopyResponse, status int, err error) {
+	agentAddress := os.Getenv("AGENT_ADDRESS")
+	requestURL := fmt.Sprintf("%s/api/copy/%s/%s/%s", agentAddress, host, port, strings.Trim(archiveName, "\n"))
+	request := RemoteResourceAgentRequest{Items: items}
+	requestItems, err := json.Marshal(request)
+	if err != nil {
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("unexpected error8: %v", err)
+	}
+
+	///
+	//rdbg := string(requestItems[:])
+
+	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewReader(requestItems))
+	if err != nil {
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("unexpected erro9r: %v", err)
+	}
+	r.Header.Add("Content-Type", "application/json")
+	client := &nethttps.Client{}
+	agentResponse, err := client.Do(r)
+	if err != nil {
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("unexpected error10: %v", err)
+	}
+
+	defer agentResponse.Body.Close()
+
+	resp := &BeforeCopyResponse{}
+	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
+	if dErr != nil {
+		return nil, nethttps.StatusInternalServerError, dErr
+	}
+
+	if agentResponse.StatusCode >= 400 {
+		return nil, agentResponse.StatusCode, fmt.Errorf("unexpected error11: %s", resp.Message)
+	}
+
+	return resp, nethttps.StatusOK, nil
 }

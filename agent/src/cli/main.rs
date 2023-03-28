@@ -1,27 +1,28 @@
+mod archive;
 mod client;
 mod command;
+mod command_runner;
+mod constants;
 
-use crate::client::Client;
-use crate::command::*;
+use crate::{client::Client, command::*, constants::*};
 
-use std::env;
-use std::process::exit;
-
+use std::{env, process::exit};
 
 fn main() {
-
     let args: Vec<String> = env::args().collect();
     let mut exec: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
 
-    // commands executed locally - these require no arguments
+    // commands executed locally - these require no 'host' and 'port'
+    // arguments but may require others
     if args.len() < 2 {
-        eprintln!("Usage: client <command> [<host> <port> [arg, ..., argN]]");
-        exit(127);
+        eprintln!("Usage: cli <command> [arg, ..., argN]");
+        exit(197);
     }
     let command = args[1].as_str();
     match command {
-        "get-local-version"     => exec = Some(command_get_local_version),
-        "get-local-resource"    => exec = Some(command_get_local_resource),
+        COMMAND_GET_LOCAL_VERSION => exec = Some(command_get_local_version),
+        COMMAND_GET_LOCAL_RESOURCE => exec = Some(command_get_local_resource),
+        COMMAND_LOCAL_BEFORE_COPY => exec = Some(command_local_before_copy),
         _ => {}
     }
     match exec {
@@ -35,14 +36,16 @@ fn main() {
     // commands executed on the remote agent require
     // 'host' and 'port' arguments as a minimum
     if args.len() < 4 {
-        eprintln!("Usage: client <command> <host> <port> [arg, ..., argN]");
-        exit(127);
+        eprintln!("Usage: cli <command> <host> <port> [arg, ..., argN]");
+        exit(128);
     }
     match command {
-        "exchange-keys"         => exec = Some(command_exchange_keys),
-        "get-remote-version"    => exec = Some(command_get_remote_version),
-        "get-remote-resource"   => exec = Some(command_get_remote_resource),
-        "ping"                  => exec = Some(command_ping),
+        COMMAND_EXCHANGE_KEYS => exec = Some(command_exchange_keys),
+        COMMAND_GET_REMOTE_VERSION => exec = Some(command_get_remote_version),
+        COMMAND_GET_REMOTE_RESOURCE => exec = Some(command_get_remote_resource),
+        COMMAND_REMOTE_BEFORE_COPY => exec = Some(command_remote_before_copy),
+        COMMAND_REMOTE_DO_COPY => exec = Some(command_remote_do_copy),
+        COMMAND_PING => exec = Some(command_ping),
         _ => {
             eprintln!("Invalid command {}", command);
             exit(129);
@@ -55,7 +58,7 @@ fn main() {
         Ok(port) => port,
         Err(_e) => {
             eprintln!("Invalid port: {}", port_str);
-            exit(128);
+            exit(130);
         }
     };
     let client = Client::new(host, port);
