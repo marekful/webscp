@@ -6,6 +6,8 @@
   --icon: #ffffff;
   --textPrimary: rgba(255, 255, 255, 0.87);
   --textSecondary: rgba(255, 255, 255, 0.6);
+  --distinct-background: #141D24;
+  --distinct-hover: #20292F;
 }
 
 body {
@@ -209,3 +211,16 @@ table th {
 .share__box__element {
   border-top-color: var(--divider);
 }
+
+.custom-select .items {
+  background-color: var(--background);
+}
+
+.custom-select .items div {
+  background-color: var(--background);
+}
+
+.custom-select .selected {
+  background-color: var(--distinct-background);
+}
+
