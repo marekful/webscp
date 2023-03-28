@@ -41,6 +41,7 @@ import { mapState } from "vuex";
 import FileList from "./FileList";
 import ServerSelect from "../ServerSelect";
 import { files as api } from "@/api";
+import { remote_files as remote_api } from "@/api";
 import buttons from "@/utils/buttons";
 import * as upload from "@/utils/upload";
 
@@ -63,11 +64,11 @@ export default {
         this.agentId = val;
       }
     },
-    copy: async function (event) {
+    copy: function (event) {
       event.preventDefault();
-      let items = [];
 
       // Create a new promise for each file.
+      let items = [];
       for (let item of this.selected) {
         items.push({
           from: this.req.items[item].url,
@@ -76,6 +77,14 @@ export default {
         });
       }
 
+      if (this.agentId === 0) {
+        return this.localCopy(items);
+      } else {
+        console.log("remote copy >> ", items);
+        return this.remoteCopy(this.agentId, items);
+      }
+    },
+    localCopy: async function (items) {
       let action = async (overwrite, rename) => {
         buttons.loading("copy");
 
@@ -126,6 +135,27 @@ export default {
 
         return;
       }
+
+      action(overwrite, rename);
+    },
+    remoteCopy: async function (agentId, items) {
+      let action = async (overwrite, rename) => {
+        buttons.loading("copy");
+
+        await remote_api
+          .copyStart(agentId, items, overwrite, rename)
+          .then(() => {
+            buttons.success("copy");
+            this.$store.commit("closeHovers");
+          })
+          .catch((e) => {
+            buttons.done("copy");
+            this.$showError(e);
+          });
+      };
+
+      let overwrite = false;
+      let rename = false;
 
       action(overwrite, rename);
     },

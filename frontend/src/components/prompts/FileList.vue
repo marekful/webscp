@@ -54,7 +54,7 @@ export default {
       if (agent_id === 0) {
         this.fillOptions(this.req);
       } else {
-        this.remote(agent_id, "/files/home/");
+        this.remote(agent_id, "/files/");
       }
     },
   },
