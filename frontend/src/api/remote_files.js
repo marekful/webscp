@@ -1,20 +1,17 @@
 import { fetchURL, removePrefix } from "./utils";
 
-export async function fetch(agent_id, url) {
-  console.log("remote_files.fetch() > ", agent_id, url);
-
+export async function fetch(agentId, url) {
   url = removePrefix(url);
 
   const res = await fetchURL(
-    `/api/remote/resources/${agent_id}/${encodeURIComponent(url)}`,
+    `/api/remote/resources/${agentId}/${encodeURIComponent(url)}`,
     {}
   );
 
   let data = await res.json();
 
   if (data.error) {
-    let e = JSON.parse(data.error);
-    throw new Error(e.error);
+    throw new Error(data.error);
   }
 
   data = JSON.parse(data.resource);
@@ -36,4 +33,51 @@ export async function fetch(agent_id, url) {
   }
 
   return data;
+}
+
+function moveCopyStart(
+  agentId,
+  items,
+  copy = false,
+  overwrite = false,
+  rename = false
+) {
+  let requestItems = [];
+  for (let item of items) {
+    const source = item.from;
+    const destination = encodeURIComponent(removePrefix(item.to));
+    requestItems.push({ source, destination, overwrite, rename });
+  }
+  const action = copy ? "remote-copy" : "remote-rename";
+  const url = `${agentId}?action=${action}`;
+
+  return remoteResourceAction(url, "POST", JSON.stringify(requestItems));
+}
+
+export function moveStart(agentId, items, overwrite = false, rename = false) {
+  return moveCopyStart(agentId, items, false, overwrite, rename);
+}
+
+export function copyStart(agentId, items, overwrite = false, rename = false) {
+  return moveCopyStart(agentId, items, true, overwrite, rename);
+}
+
+async function remoteResourceAction(url, method, content) {
+  //url = removePrefix(url);
+
+  let opts = { method };
+
+  if (content) {
+    opts.body = content;
+  }
+  if (method === "POST") {
+    opts.headers = { "Content-Type": "application/json" };
+  }
+
+  return fetchURL(`/api/remote/copy/${url}`, opts)
+    .then((res) => res)
+    .catch((err) => {
+      throw new Error(err);
+    });
+  //return res;
 }

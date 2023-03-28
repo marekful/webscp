@@ -37,7 +37,8 @@
                 {{ $t("settings.agent.agentVersion") }}<br />
                 <small>{{ $t("settings.agent.agentVersionHint") }}</small>
               </th>
-              <th>{{ $t("settings.agent.ping") }}<br />
+              <th>
+                {{ $t("settings.agent.ping") }}<br />
                 <small>{{ $t("settings.agent.pingHint") }}</small>
               </th>
               <th></th>
