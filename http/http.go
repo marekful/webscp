@@ -62,21 +62,13 @@ func NewHandler(
 	users.Handle("/{id:[0-9]+}", monkey(userDeleteHandler, "")).Methods("DELETE")
 
 	agents := api.PathPrefix("/agents").Subrouter()
-	agents.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
-	agents.Handle("", monkey(agentPostHandler, "")).Methods("POST")
-	agents.Handle("/{id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
-	agents.Handle("/{id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
-	agents.Handle("/{id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
+	addAgentRoutes(api, agents, monkey)
 
 	api.PathPrefix("/resources").Handler(monkey(resourceGetHandler, "/api/resources")).Methods("GET")
 	api.PathPrefix("/resources").Handler(monkey(resourceDeleteHandler(fileCache), "/api/resources")).Methods("DELETE")
 	api.PathPrefix("/resources").Handler(monkey(resourcePostHandler(fileCache), "/api/resources")).Methods("POST")
 	api.PathPrefix("/resources").Handler(monkey(resourcePutHandler, "/api/resources")).Methods("PUT")
 	api.PathPrefix("/resources").Handler(monkey(resourcePatchHandler(fileCache), "/api/resources")).Methods("PATCH")
-
-	api.PathPrefix("/remote/resources/{agent_id:[0-9]+}/{url:.*}").
-		Handler(monkey(remoteResourceGetHandler, "/api/remote/resources")).Methods("GET")
-	api.PathPrefix("/agent/resources").Handler(monkey(agentResourceGetHandler, "/api/agent/resources")).Methods("GET")
 
 	api.PathPrefix("/usage").Handler(monkey(diskUsage, "/api/usage")).Methods("GET")
 
@@ -99,4 +91,26 @@ func NewHandler(
 	public.PathPrefix("/share").Handler(monkey(publicShareHandler, "/api/public/share/")).Methods("GET")
 
 	return stripPrefix(server.BaseURL, r), nil
+}
+
+func addAgentRoutes(
+	apiRouter,
+	agentsRouter *mux.Router,
+	monkey func(fn handleFunc, prefix string) http.Handler,
+) {
+	agentsRouter.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
+	agentsRouter.Handle("", monkey(agentPostHandler, "")).Methods("POST")
+	agentsRouter.Handle("/{id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
+	agentsRouter.Handle("/{id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
+	agentsRouter.Handle("/{id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
+
+	apiRouter.PathPrefix("/remote/resources/{agent_id:[0-9]+}/{url:.*}").
+		Handler(monkey(remoteResourceGetHandler, "/api/remote/resources")).Methods("GET")
+	apiRouter.PathPrefix("/agent/resources").
+		Handler(monkey(agentResourceGetHandler, "/api/agent/resources")).Methods("GET")
+
+	apiRouter.PathPrefix("/remote/copy/{agent_id:[0-9]+}").
+		Handler(monkey(remoteSourceResourcePostHandler(), "/api/remote/copy")).Methods("POST")
+	apiRouter.PathPrefix("/agent/copy").
+		Handler(monkey(remoteDestinationResourcePostHandler(), "/api/agent/copy")).Methods("POST")
 }

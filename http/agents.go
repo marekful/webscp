@@ -8,7 +8,6 @@ import (
 
 	"github.com/filebrowser/filebrowser/v2/agents"
 	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/gorilla/mux"
 )
 
 type modifyAgentRequest struct {
@@ -16,14 +15,14 @@ type modifyAgentRequest struct {
 	Data *agents.Agent `json:"data"`
 }
 
-func getAgentID(r *http.Request) (uint, error) {
+/*func getAgentID(r *http.Request) (uint, error) {
 	vars := mux.Vars(r)
 	i, err := strconv.ParseUint(vars["id"], 10, 0)
 	if err != nil {
 		return 0, err
 	}
 	return uint(i), err
-}
+}*/
 
 func getAgent(_ http.ResponseWriter, r *http.Request) (*modifyAgentRequest, error) {
 	if r.Body == nil {

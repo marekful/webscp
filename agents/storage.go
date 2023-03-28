@@ -1,8 +1,9 @@
 package agents
 
 import (
-	"github.com/filebrowser/filebrowser/v2/errors"
 	"sync"
+
+	"github.com/filebrowser/filebrowser/v2/errors"
 )
 
 // StorageBackend is the interface to implement for remote agents storage.

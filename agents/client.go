@@ -51,8 +51,7 @@ type RemoteResourceAgentRequest struct {
 	Items []ResourceItem `json:"items"`
 }
 
-func (c *AgentClient) ExchangeKeys(host string, port string, secret string) error {
-
+func (c *AgentClient) ExchangeKeys(host, port, secret string) error {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := agentAddress + "/api/register-public-key"
 	body := []byte(`{
@@ -63,7 +62,7 @@ func (c *AgentClient) ExchangeKeys(host string, port string, secret string) erro
 
 	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewBuffer(body))
 	if err != nil {
-		return fmt.Errorf("unexpected error1: %v", err)
+		return fmt.Errorf("error initializing agent API request: %v", err)
 	}
 
 	r.Header.Add("Content-Type", "application/json")
@@ -71,7 +70,7 @@ func (c *AgentClient) ExchangeKeys(host string, port string, secret string) erro
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		return fmt.Errorf("unexpected error2: %v", err)
+		return fmt.Errorf("error sending agent API request: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -86,8 +85,8 @@ func (c *AgentClient) ExchangeKeys(host string, port string, secret string) erro
 		return fmt.Errorf("error connecting to host: %s", resp.Error)
 	}
 
-	if resp.Success != true {
-		return fmt.Errorf("unexpected error3")
+	if !resp.Success {
+		return fmt.Errorf("unexpected error while sending agent API request")
 	}
 
 	return nil
@@ -100,7 +99,7 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 	returnVersion := ""
 	returnError := ""
 
-	r, err := nethttps.NewRequest("GET", requestURL, nil)
+	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
 		returnError = fmt.Sprintf("unexpected error4: %v", err)
 	}
@@ -135,13 +134,12 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 	}
 }
 
-func (c *AgentClient) GetResource(host string, port string, url string) (response *GetResourceResponse, err error) {
-
+func (c *AgentClient) GetResource(host, port, url string) (response *GetResourceResponse, err error) {
 	url = neturl.QueryEscape(url)
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/resources/%s/%s/%s", agentAddress, host, port, url)
 
-	r, err := nethttps.NewRequest("GET", requestURL, nil)
+	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected error6: %v", err)
 	}
@@ -163,7 +161,12 @@ func (c *AgentClient) GetResource(host string, port string, url string) (respons
 	return resp, nil
 }
 
-func (c *AgentClient) RemoteCopy(host string, port string, archiveName string, items []ResourceItem) (response *BeforeCopyResponse, status int, err error) {
+func (c *AgentClient) RemoteCopy(
+	host,
+	port,
+	archiveName string,
+	items []ResourceItem,
+) (response *BeforeCopyResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/copy/%s/%s/%s", agentAddress, host, port, strings.Trim(archiveName, "\n"))
 	request := RemoteResourceAgentRequest{Items: items}
@@ -171,9 +174,6 @@ func (c *AgentClient) RemoteCopy(host string, port string, archiveName string, i
 	if err != nil {
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("unexpected error8: %v", err)
 	}
-
-	///
-	//rdbg := string(requestItems[:])
 
 	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewReader(requestItems))
 	if err != nil {
@@ -194,7 +194,7 @@ func (c *AgentClient) RemoteCopy(host string, port string, archiveName string, i
 		return nil, nethttps.StatusInternalServerError, dErr
 	}
 
-	if agentResponse.StatusCode >= 400 {
+	if agentResponse.StatusCode != nethttps.StatusOK {
 		return nil, agentResponse.StatusCode, fmt.Errorf("unexpected error11: %s", resp.Message)
 	}
 

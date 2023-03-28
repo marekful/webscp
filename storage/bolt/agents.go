@@ -2,12 +2,13 @@ package bolt
 
 import (
 	"fmt"
-	"github.com/filebrowser/filebrowser/v2/agents"
 	"reflect"
 
 	"github.com/asdine/storm/v3"
 
+	"github.com/filebrowser/filebrowser/v2/agents"
 	"github.com/filebrowser/filebrowser/v2/errors"
+	"github.com/filebrowser/filebrowser/v2/storage"
 )
 
 type agentsBackend struct {
@@ -20,7 +21,7 @@ func (st agentsBackend) GetBy(i interface{}) (agent *agents.Agent, err error) {
 	var arg string
 	switch i.(type) {
 	case uint:
-		arg = "ID"
+		arg = storage.IDFieldName
 	case string:
 		arg = "Host"
 	default:

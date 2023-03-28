@@ -17,3 +17,5 @@ type Storage struct {
 	Agents   *agents.Storage
 	Settings *settings.Storage
 }
+
+const IDFieldName = "ID"

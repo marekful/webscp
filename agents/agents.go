@@ -23,8 +23,6 @@ var checkableFields = []string{
 
 // Clean cleans up a agent and verifies if all its fields
 // are alright to be saved.
-//
-//nolint:gocyclo
 func (a *Agent) Clean(fields ...string) error {
 	if len(fields) == 0 {
 		fields = checkableFields

@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -107,7 +108,7 @@ func withAgent(fn handleFunc) handleFunc {
 		internalHost := os.Getenv("INTERNAL_ADDRESS")
 		requestHost := "http://" + r.Host
 		if requestHost != internalHost {
-			return http.StatusUnauthorized, nil
+			return http.StatusUnauthorized, fmt.Errorf("error: %s does not match %s", internalHost, requestHost)
 		}
 
 		// TODO: use dedicated user based on remote identity (TBD)
