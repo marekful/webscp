@@ -48,14 +48,13 @@ export default {
     this.$emit("input", this.selected);
   },
   methods: {
-    click: function(event, option) {
+    click: function (event, option) {
       this.selected = option;
       this.open = false;
-      this.$emit('input', option);
+      this.$emit("input", option);
     },
-  }
+  },
 };
-
 </script>
 
 <style scoped>
@@ -70,8 +69,8 @@ export default {
 .custom-select .selected {
   border-radius: 6px;
   border: 1px solid var(--dark-blue);
-  background-color: var(--moon-grey);
-  color: #000;
+  background-color: var(--distinct-background);
+  color: var(--textPrimary);
   padding-left: 1em;
   cursor: pointer;
   user-select: none;
@@ -94,7 +93,7 @@ export default {
 }
 
 .custom-select .items {
-  color: #000;
+  color: var(--surfaceSecondary);
   border-radius: 0px 0px 6px 6px;
   overflow: hidden;
   border-right: 1px solid var(--dark-blue);
@@ -108,14 +107,14 @@ export default {
 }
 
 .custom-select .items div {
-  color: #000;
+  color: var(--textPrimary);
   padding-left: 1em;
   cursor: pointer;
   user-select: none;
 }
 
 .custom-select .items div:hover {
-  background-color: #fff;
+  background-color: var(--distinct-hover);
   color: var(--dark-blue);
 }
 

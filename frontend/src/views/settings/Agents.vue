@@ -46,10 +46,12 @@
 
             <tr v-for="agent in agents" :key="agent.id">
               <td>{{ agent.host }}:{{ agent.port }}</td>
-              <td>{{ agent.status }}</td>
-              <td v-if="!agent.error">{{ agent.version }}</td>
-              <td v-else>
-                <small>{{ agent.error }}</small>
+              <td>
+                <div :class="'status-' + agent.status">{{ agent.status }}</div>
+              </td>
+              <td v-if="!agent.error" class="version">{{ agent.version }}</td>
+              <td v-else class="version">
+                <div class="error">{{ agent.error }}</div>
               </td>
               <td>
                 <small>{{ agent.latency }}</small>
@@ -98,26 +100,28 @@ export default {
     }
     const promises = [];
     this.agents.forEach(async (a) => {
-      promises.push(fetch(`/api/agents/${a.id}/version`)
+      promises.push(
+        fetch(`/api/agents/${a.id}/version`)
           .then((response) => {
             return response.text();
           })
           .then((json) => {
             let v = JSON.parse(json);
-            a.latency = v.latency
-            a.version =  v.version;
-            a.status = "online"
+            a.latency = v.latency;
+            a.version = v.version;
+            a.status = "online";
             if (v.error) {
               a.error = v.error;
-              a.status = "error"
+              a.status = "error";
             }
             return a;
-          }));
+          })
+      );
     });
 
     Promise.all(promises).then((agents) => {
       this.agents = agents;
-    })
+    });
   },
   methods: {
     ...mapMutations(["setLoading"]),
@@ -150,7 +154,20 @@ export default {
 </script>
 
 <style>
-  th small {
-    font-size: 70%;
-  }
+.version {
+  max-width: 18em;
+}
+.error {
+  word-wrap: break-word;
+  word-break: break-word;
+  font-size: 80%;
+  background-color: var(--moon-grey);
+  padding: 0.5em;
+}
+.status-online {
+  color: var(--icon-green);
+}
+.status-error {
+  color: var(--icon-red);
+}
 </style>
