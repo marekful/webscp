@@ -5,6 +5,10 @@ mkdir -p /run/s6/container_environment /run/sshd
 echo "Adding user 'agent'"
 useradd -m agent -p $(echo "$AGENT_SECRET" | openssl passwd -1 -stdin)
 
+mkdir -p /home/agent/.tmp-data
+chown -R agent:agent /home/agent
+
+
 if [ -f /home/agent/.ssh/id_rsa ];then
   echo "SSH keys exist"
   exit 0
