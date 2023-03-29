@@ -1,5 +1,6 @@
 use flate2::{write::GzEncoder, Compression};
-use std::{fs, fs::File, io::Error, path::Path};
+use rocket::tokio::task;
+use std::{fs, fs::File, future::Future, io::Error, path::Path};
 use tar::Builder;
 use urlencoding::decode;
 
@@ -49,32 +50,38 @@ impl ArchiveWriter {
         };
     }
 
-    pub fn crate_archive(&mut self, items: Vec<ArchiveItem>) -> Result<(), ArchiveError> {
-        for item in items.iter() {
-            let src = String::from(&item.source.replacen("/files", "/srv", 1));
-            let dst_ = decode(&item.destination).unwrap().into_owned();
-            let dst = String::from(dst_.trim_start_matches("/"));
+    pub fn crate_archive(
+        &mut self,
+        items: Vec<ArchiveItem>,
+    ) -> impl Future<Output = Result<(), ArchiveError>> + '_ {
+        async move {
+            for item in items.iter() {
+                let src = String::from(&item.source.replacen("/files", "/srv", 1));
+                let dst_ = decode(&item.destination).unwrap().into_owned();
+                let dst = String::from(dst_.trim_start_matches("/"));
 
-            let res = match self.add_file_to_archive(src.clone(), dst) {
-                Ok(_) => Ok::<(), Error>(()),
-                Err(e) => {
-                    let _s = src.to_string();
+                let res = match self.add_file_to_archive(src.clone(), dst) {
+                    Ok(_) => Ok::<(), Error>(()),
+                    Err(e) => {
+                        return Err(ArchiveError {
+                            code: 301,
+                            message: format!("Couldn't add {src} to archive: {}", e.to_string()),
+                        });
+                    }
+                };
+
+                if res.is_err() {
                     return Err(ArchiveError {
-                        code: 301,
-                        message: format!("Couldn't add {src} to archive: {}", e.to_string()),
+                        code: 302,
+                        message: res.unwrap_err().to_string(),
                     });
                 }
-            };
 
-            if res.is_err() {
-                return Err(ArchiveError {
-                    code: 302,
-                    message: res.unwrap_err().to_string(),
-                });
+                task::yield_now().await;
             }
-        }
 
-        Ok(())
+            Ok(())
+        }
     }
 
     fn add_file_to_archive(&mut self, src: String, path: String) -> Result<(), Error> {
@@ -123,4 +130,32 @@ impl ArchiveWriter {
             Ok(())
         }
     }
+
+    /*pub fn crate_archive(&mut self, items: Vec<ArchiveItem>) -> Result<(), ArchiveError> {
+        for item in items.iter() {
+            let src = String::from(&item.source.replacen("/files", "/srv", 1));
+            let dst_ = decode(&item.destination).unwrap().into_owned();
+            let dst = String::from(dst_.trim_start_matches("/"));
+
+            let res = match self.add_file_to_archive(src.clone(), dst) {
+                Ok(_) => Ok::<(), Error>(()),
+                Err(e) => {
+                    let _s = src.to_string();
+                    return Err(ArchiveError {
+                        code: 301,
+                        message: format!("Couldn't add {src} to archive: {}", e.to_string()),
+                    });
+                }
+            };
+
+            if res.is_err() {
+                return Err(ArchiveError {
+                    code: 302,
+                    message: res.unwrap_err().to_string(),
+                });
+            }
+        }
+
+        Ok(())
+    }*/
 }
