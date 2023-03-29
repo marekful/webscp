@@ -1,7 +1,11 @@
 use rocket::{
+    futures::TryFutureExt,
     http::Status,
     serde::{json::Json, Deserialize, Serialize},
+    tokio,
+    tokio::{sync::futures, task},
 };
+use std::future::Future;
 
 use crate::{
     archive::{ArchiveItem, ArchiveWriter},
@@ -68,7 +72,7 @@ pub fn resources(host: &str, port: &str, path: &str) -> (Status, Json<ResourcesR
 }
 
 #[post("/copy/<host>/<port>/<archive_name>", data = "<request>")]
-pub fn copy(
+pub async fn copy(
     host: &str,
     port: &str,
     archive_name: &str,
@@ -94,63 +98,44 @@ pub fn copy(
         }
     };
 
-    /*<alt:async execution of tar and scp>*/
+    /*<alt:async execution of tar and scp> */
+    // run remaining tasks asynchronously in a future
+    let items_copy = request.items.to_vec();
+    let future = task::spawn(finish_upload_in_background(
+        String::from(host),
+        String::from(port),
+        items_copy,
+        String::from(archive_name),
+    ));
 
-    /*<alt:synchronous execution of tar and scp> */
-    // create list of files to archive
-    let mut items = Vec::new();
-    for item in request.items.iter() {
-        items.push(ArchiveItem {
-            source: (item.source).parse().unwrap(),
-            destination: (item.destination).parse().unwrap(),
-        })
-    }
-
-    // create archive of files
-    let archive_path = &*format!("{}{archive_name}.agent.tar.gz", DEFAULTS.temp_data_dir);
-    let mut archive_writer = match ArchiveWriter::new(archive_path, false) {
-        Ok(w) => w,
-        Err(e) => {
-            return (
-                Status::ExpectationFailed,
-                Json(BeforeCopyResponse {
-                    code: e.code,
-                    message: Some(e.message),
-                }),
-            )
+    /* The future has started execution at this point and
+     * .await-ing it will be non-blocking. The future will
+     * run to completion even without .await-ing it. */
+    /*match future.await {
+        Ok(fut) => {
+            match fut {
+                Ok(_) => {},
+                Err(err) => {
+                    return (
+                        Status::ExpectationFailed,
+                        Json(BeforeCopyResponse {
+                            code: err.code,
+                            message: Some(err.message),
+                        }),
+                    )
+                }
+            }
         }
-    };
-    match archive_writer.crate_archive(items) {
-        Ok(_) => {}
-        Err(e) => {
-            return (
-                Status::ExpectationFailed,
-                Json(BeforeCopyResponse {
-                    code: e.code,
-                    message: Some(e.message),
-                }),
-            )
-        }
-    }
-
-    // create arguments for 'remote-do-copy' command
-    let mut do_copy_args: Vec<&str> = Vec::new();
-    do_copy_args.push(host);
-    do_copy_args.push(port);
-    do_copy_args.push(archive_name);
-    // execute command
-    let result = match run_command(203, true, COMMAND_REMOTE_DO_COPY, do_copy_args) {
-        Ok(output) => output,
         Err(err) => {
             return (
-                err.status,
+                Status::InternalServerError,
                 Json(BeforeCopyResponse {
-                    code: err.code,
-                    message: Some(err.message),
+                    code: 245,
+                    message: Some(err.to_string()),
                 }),
             )
         }
-    };
+    }*/
     /*<end:alt>*/
 
     // return success response
@@ -158,9 +143,72 @@ pub fn copy(
         Status::Ok,
         Json(BeforeCopyResponse {
             code: 0,
-            message: Some(result),
+            message: Some(archive_name.to_string()),
         }),
     )
+}
+
+struct FutureError {
+    code: i32,
+    message: String,
+}
+
+fn finish_upload_in_background(
+    host: String,
+    port: String,
+    req_items: Vec<ResourceItem>,
+    archive_name: String,
+) -> impl Future<Output = Result<String, FutureError>> {
+    async move {
+        // create list of files to archive
+        let mut items = Vec::new();
+        for item in req_items.iter() {
+            items.push(ArchiveItem {
+                source: (item.source).parse().unwrap(),
+                destination: (item.destination).parse().unwrap(),
+            })
+        }
+        task::yield_now().await;
+
+        // create archive of files
+        let archive_path = &*format!("{}{archive_name}.agent.tar.gz", DEFAULTS.temp_data_dir);
+        let mut archive_writer = match ArchiveWriter::new(archive_path, false) {
+            Ok(w) => w,
+            Err(e) => {
+                return Err(FutureError {
+                    code: e.code,
+                    message: e.message,
+                });
+            }
+        };
+        task::yield_now().await;
+
+        match archive_writer.crate_archive(items).await {
+            Ok(_) => {}
+            Err(e) => {
+                return Err(FutureError {
+                    code: e.code,
+                    message: e.message,
+                });
+            }
+        };
+        task::yield_now().await;
+
+        // create arguments for 'remote-do-copy' command
+        let mut do_copy_args: Vec<&str> = Vec::new();
+        do_copy_args.push(&host);
+        do_copy_args.push(&port);
+        do_copy_args.push(&archive_name);
+        // execute command
+        return match run_command(203, true, COMMAND_REMOTE_DO_COPY, do_copy_args) {
+            Ok(output) => Ok(output),
+            Err(e) => Err(FutureError {
+                code: e.code,
+                message: e.message,
+            }),
+        };
+        //--//
+    }
 }
 
 fn get_items_json(items: &Vec<ResourceItem>) -> String {
