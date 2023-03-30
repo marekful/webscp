@@ -3,6 +3,8 @@ mod client;
 mod command;
 mod command_runner;
 mod constants;
+#[path = "../fb_api_client.rs"]
+mod fb_api;
 
 use crate::{client::Client, command::*, constants::*};
 

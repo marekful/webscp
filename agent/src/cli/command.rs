@@ -85,7 +85,6 @@ pub fn command_local_before_copy(_: Option<Client<'_>>, args: Option<Vec<String>
 
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(100))
-        .danger_accept_invalid_certs(true)
         .build()
         .unwrap();
 

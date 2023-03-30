@@ -9,6 +9,7 @@ use crate::{
     constants::{
         COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_VERSION, COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
     },
+    fb_api::send_upload_status_update,
 };
 
 #[derive(Debug)]
@@ -88,6 +89,7 @@ impl Client<'_> {
 
     pub fn remote_do_copy(&self, archive_name: &String) -> i32 {
         let sess = self.create_session(None).unwrap();
+
         match self._remote_do_copy(&sess, &archive_name) {
             Ok(_) => {}
             Err(e) => {
@@ -285,6 +287,8 @@ impl Client<'_> {
                 })
             }
         };
+
+        send_upload_status_update(&archive_name, "extracting");
 
         // extract uploaded archive
         match Client::_remote_extract_archive(sess, archive_name) {
