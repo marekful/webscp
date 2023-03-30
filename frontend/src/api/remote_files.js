@@ -75,7 +75,7 @@ async function remoteResourceAction(url, method, content) {
   }
 
   return fetchURL(`/api/remote/copy/${url}`, opts)
-    .then((res) => res)
+    .then((res) => res.json())
     .catch((err) => {
       throw new Error(err);
     });
