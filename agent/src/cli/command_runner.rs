@@ -12,6 +12,7 @@ pub struct CommandError {
 pub fn run_command(
     command_id: i32,
     is_cli: bool,
+    allow_stderr: bool,
     command: &str,
     args: Vec<&str>,
 ) -> Result<String, CommandError> {
@@ -48,7 +49,7 @@ pub fn run_command(
     let code = result.status.code().unwrap();
 
     // return error if the command's error output is not empty
-    if stderr.len() > 0 {
+    if !allow_stderr && stderr.trim().len() > 0 {
         let s: String = stderr.chars().take(3).collect();
         let http_code: u16 = s.parse().unwrap_or(400);
 

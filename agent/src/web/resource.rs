@@ -50,7 +50,7 @@ pub fn resources(host: &str, port: &str, path: &str) -> (Status, Json<ResourcesR
     args.push(port);
     args.push(path);
 
-    return match run_command(202, true, COMMAND_GET_REMOTE_RESOURCE, args) {
+    return match run_command(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args) {
         Ok(output) => (
             Status::Ok,
             Json(ResourcesResponse {
@@ -84,7 +84,7 @@ pub async fn copy(
     before_copy_args.push(port);
     before_copy_args.push(&items_json);
     // execute command
-    match run_command(204, true, COMMAND_REMOTE_BEFORE_COPY, before_copy_args) {
+    match run_command(204, true, false, COMMAND_REMOTE_BEFORE_COPY, before_copy_args) {
         Ok(_) => {}
         Err(err) => {
             return (
@@ -208,7 +208,7 @@ fn finish_upload_in_background(
         do_copy_args.push(&port);
         do_copy_args.push(&archive_name);
         // execute command
-        return match run_command(203, true, COMMAND_REMOTE_DO_COPY, do_copy_args) {
+        return match run_command(203, true, false, COMMAND_REMOTE_DO_COPY, do_copy_args) {
             Ok(output) => {
                 send_upload_status_update_async(&archive_name, "complete").await;
                 Ok(output)

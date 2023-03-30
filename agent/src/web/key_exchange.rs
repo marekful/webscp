@@ -24,7 +24,7 @@ pub fn register_public_key(host_info: Json<HostInfo<'_>>) -> Json<RegisterPublic
     args.push(host_info.port);
     args.push(host_info.secret.unwrap_or(""));
 
-    return match run_command(201, true, COMMAND_EXCHANGE_KEYS, args) {
+    return match run_command(201, true, false, COMMAND_EXCHANGE_KEYS, args) {
         Ok(_) => Json(RegisterPublicKeyResponse {
             success: Some(true),
             error: None,

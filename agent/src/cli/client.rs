@@ -38,12 +38,12 @@ impl Client<'_> {
 
     pub fn exchange_keys(&self, secret: &str) -> i32 {
         let sess = self.create_session(Some(secret)).unwrap();
-        let send_result = Client::send_public_key(&sess);
+        let send_result = self.send_public_key(&sess);
         if send_result != 0 {
             return send_result;
         }
 
-        let receive_result = Client::receive_public_key(&sess);
+        let receive_result = self.receive_public_key(&sess);
         if receive_result != 0 {
             return receive_result;
         }
@@ -277,7 +277,7 @@ impl Client<'_> {
         scp_args.push(local_path.as_str());
         scp_args.push(remote_scp_path.as_str());
 
-        match run_command(81, false, "scp", scp_args) {
+        match run_command(81, false, false, "scp", scp_args) {
             Ok(_) => {}
             Err(err) => {
                 return Err(ClientError {
@@ -297,7 +297,7 @@ impl Client<'_> {
         }
     }
 
-    fn send_public_key(sess: &Session) -> i32 {
+    fn send_public_key(&self, sess: &Session) -> i32 {
         // read our public key
         let key = &fs::read_to_string(DEFAULTS.public_key_file).unwrap();
 
@@ -319,7 +319,7 @@ impl Client<'_> {
         0
     }
 
-    fn receive_public_key(sess: &Session) -> i32 {
+    fn receive_public_key(&self, sess: &Session) -> i32 {
         // download their public key
         let mut download = sess.channel_session().unwrap();
         download

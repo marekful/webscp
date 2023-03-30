@@ -24,7 +24,7 @@ pub fn version(host: &str, port: &str) -> Json<VersionResponse> {
     version_ags.push(host);
     version_ags.push(port);
 
-    let version = match run_command(81, true, COMMAND_GET_REMOTE_VERSION, version_ags) {
+    let version = match run_command(81, true, false, COMMAND_GET_REMOTE_VERSION, version_ags) {
         Ok(version) => version,
         Err(err) => {
             return Json(VersionResponse {
@@ -39,7 +39,7 @@ pub fn version(host: &str, port: &str) -> Json<VersionResponse> {
     ping_args.push(host);
     ping_args.push(port);
 
-    let ping = match run_command(91, true, COMMAND_PING, ping_args) {
+    let ping = match run_command(91, true, false, COMMAND_PING, ping_args) {
         Ok(ping) => ping,
         Err(err) => {
             return Json(VersionResponse {
@@ -63,7 +63,7 @@ pub fn ping(host: &str, port: &str) -> Json<PingResponse> {
     args.push(host);
     args.push(port);
 
-    return match run_command(71, true, COMMAND_PING, args) {
+    return match run_command(71, true, false, COMMAND_PING, args) {
         Ok(output) => Json(PingResponse {
             latency: Some(output.trim().to_string()),
             error: None,
