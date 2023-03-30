@@ -101,13 +101,13 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
-		returnError = fmt.Sprintf("unexpected error4: %v", err)
+		returnError = fmt.Sprintf("error initializing agent API request: %v", err)
 	}
 
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		returnError = fmt.Sprintf("unexpected error5: %v", err)
+		returnError = fmt.Sprintf("error sending agent API request %v", err)
 	}
 
 	defer res.Body.Close()
@@ -141,13 +141,13 @@ func (c *AgentClient) GetResource(host, port, url string) (response *GetResource
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected error6: %v", err)
+		return nil, fmt.Errorf("error initializing agent API reqeuest: %v", err)
 	}
 
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected erro7r: %v", err)
+		return nil, fmt.Errorf("error sending agent API request: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -172,18 +172,18 @@ func (c *AgentClient) RemoteCopy(
 	request := RemoteResourceAgentRequest{Items: items}
 	requestItems, err := json.Marshal(request)
 	if err != nil {
-		return nil, nethttps.StatusInternalServerError, fmt.Errorf("unexpected error8: %v", err)
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error decoding items: %v", err)
 	}
 
 	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewReader(requestItems))
 	if err != nil {
-		return nil, nethttps.StatusInternalServerError, fmt.Errorf("unexpected erro9r: %v", err)
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
 	}
 	r.Header.Add("Content-Type", "application/json")
 	client := &nethttps.Client{}
 	agentResponse, err := client.Do(r)
 	if err != nil {
-		return nil, nethttps.StatusInternalServerError, fmt.Errorf("unexpected error10: %v", err)
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error sending agent API request: %v", err)
 	}
 
 	defer agentResponse.Body.Close()
@@ -195,7 +195,7 @@ func (c *AgentClient) RemoteCopy(
 	}
 
 	if agentResponse.StatusCode != nethttps.StatusOK {
-		return nil, agentResponse.StatusCode, fmt.Errorf("unexpected error11: %s", resp.Message)
+		return nil, agentResponse.StatusCode, fmt.Errorf("unexpected error: %s", resp.Message)
 	}
 
 	return resp, nethttps.StatusOK, nil
