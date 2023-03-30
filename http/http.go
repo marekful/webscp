@@ -61,9 +61,6 @@ func NewHandler(
 	users.Handle("/{id:[0-9]+}", monkey(userGetHandler, "")).Methods("GET")
 	users.Handle("/{id:[0-9]+}", monkey(userDeleteHandler, "")).Methods("DELETE")
 
-	agents := api.PathPrefix("/agents").Subrouter()
-	addAgentRoutes(api, agents, monkey)
-
 	api.PathPrefix("/resources").Handler(monkey(resourceGetHandler, "/api/resources")).Methods("GET")
 	api.PathPrefix("/resources").Handler(monkey(resourceDeleteHandler(fileCache), "/api/resources")).Methods("DELETE")
 	api.PathPrefix("/resources").Handler(monkey(resourcePostHandler(fileCache), "/api/resources")).Methods("POST")
@@ -90,14 +87,16 @@ func NewHandler(
 	public.PathPrefix("/dl").Handler(monkey(publicDlHandler, "/api/public/dl/")).Methods("GET")
 	public.PathPrefix("/share").Handler(monkey(publicShareHandler, "/api/public/share/")).Methods("GET")
 
+	addAgentRoutes(api, monkey)
+
 	return stripPrefix(server.BaseURL, r), nil
 }
 
 func addAgentRoutes(
-	apiRouter,
-	agentsRouter *mux.Router,
+	apiRouter *mux.Router,
 	monkey func(fn handleFunc, prefix string) http.Handler,
 ) {
+	agentsRouter := apiRouter.PathPrefix("/agents").Subrouter()
 	agentsRouter.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
 	agentsRouter.Handle("", monkey(agentPostHandler, "")).Methods("POST")
 	agentsRouter.Handle("/{id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
@@ -113,4 +112,9 @@ func addAgentRoutes(
 		Handler(monkey(remoteSourceResourcePostHandler(), "/api/remote/copy")).Methods("POST")
 	apiRouter.PathPrefix("/agent/copy").
 		Handler(monkey(remoteDestinationResourcePostHandler(), "/api/agent/copy")).Methods("POST")
+
+	apiRouter.PathPrefix("/sse/transfer/{id:[a-f0-9-]+}/poll").
+		Handler(monkey(sseTransferPollGetHandler, "/api/sse/transfer")).Methods("GET")
+	apiRouter.PathPrefix("/sse/transfer/{id:[a-f0-9-]+}/update/{message:.*}").
+		Handler(monkey(sseTransferUpdateGetHandler, "/api/sse/transfer")).Methods("GET")
 }
