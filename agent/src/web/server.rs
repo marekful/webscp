@@ -4,6 +4,8 @@ mod archive;
 mod command_runner;
 #[path = "../cli/constants.rs"]
 mod constants;
+#[path = "../fb_api_client.rs"]
+mod fb_api;
 
 mod key_exchange;
 mod miscellaneous;
