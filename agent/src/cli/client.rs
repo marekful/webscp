@@ -334,7 +334,7 @@ impl Client<'_> {
             return download_result;
         }
 
-        // add their key
+        // add their public key
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
@@ -343,6 +343,34 @@ impl Client<'_> {
             .unwrap();
 
         if let Err(e) = writeln!(file, "{}", &key.trim()) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+
+        // add their host key
+        let mut args: Vec<&str> = Vec::new();
+        let port_str = self.port.to_string();
+        args.push("-H");
+        args.push("-p");
+        args.push(&port_str);
+        args.push("-t");
+        args.push("ecdsa");
+        args.push(self.host);
+        let host_key = match run_command(318, false, true, "ssh-keyscan", args) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("Couldn't retrieve host key: ({}) {}",e.code, e.message);
+                return e.code;
+            }
+        };
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .append(true)
+            .open(DEFAULTS.known_hosts_file)
+            .unwrap();
+
+        if let Err(e) = writeln!(file, "{}", &host_key.trim()) {
             eprintln!("Couldn't write to file: {}", e);
         }
 
