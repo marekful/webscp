@@ -60,6 +60,15 @@ const mutations = {
   resetSelected: (state) => {
     state.selected = [];
   },
+  addTransfer: (state, value) => state.transfers.push(value),
+  removeTransfer: (state, value) => {
+    for (let idx in state.transfers) {
+      if (state.transfers[idx].id === value) {
+        state.transfers.splice(idx, 1);
+      }
+    }
+  },
+  resetTransfers: (state) => state.transfers = [],
   updateUser: (state, value) => {
     if (typeof value !== "object") return;
 

@@ -12,6 +12,13 @@
       <template #actions>
         <template v-if="!isMobile">
           <action
+            id="transfers-button"
+            icon="sync"
+            :label="$t('buttons.transfers')"
+            show="transfers"
+            :counter="transfersInProgress"
+          />
+          <action
             v-if="headerButtons.share"
             icon="share"
             :label="$t('buttons.share')"
@@ -305,8 +312,9 @@ export default {
       "multiple",
       "selected",
       "loading",
+      "transfers",
     ]),
-    ...mapGetters(["selectedCount"]),
+    ...mapGetters(["selectedCount", "transfersInProgress"]),
     nameSorted() {
       return this.req.sorting.by === "name";
     },
@@ -382,6 +390,7 @@ export default {
         share: this.selectedCount === 1 && this.user.perm.share,
         move: this.selectedCount > 0 && this.user.perm.rename,
         copy: this.selectedCount > 0 && this.user.perm.create,
+        transfers: this.transfersInProgress > 0,
       };
     },
     isMobile() {
@@ -884,3 +893,13 @@ export default {
   },
 };
 </script>
+
+<style>
+#transfers-button {
+  opacity: .5;
+  cursor: default;
+}
+#transfers-button.active {
+  opacity: 1;
+}
+</style>

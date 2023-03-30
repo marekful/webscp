@@ -66,9 +66,9 @@ header .menu-button {
 
 #search {
   position: relative;
+  display: table;
   height: 100%;
-  width: 100%;
-  max-width: 25em;
+  width: 30%;
 }
 
 #search.active {

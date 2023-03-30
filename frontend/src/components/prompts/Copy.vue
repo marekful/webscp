@@ -56,7 +56,7 @@ export default {
       sseClient: null,
     };
   },
-  computed: mapState(["req", "selected"]),
+  computed: mapState(["req", "selected", "transfers"]),
   methods: {
     changeServer: function (val) {
       if (val === 0) {
@@ -140,17 +140,23 @@ export default {
     },
     remoteCopy: async function (agentId, items) {
       let action = async (overwrite, rename) => {
-        buttons.loading("copy");
-
         await remote_api
           .copyStart(agentId, items, overwrite, rename)
           .then((res) => {
             let transferId = res.message;
+            this.$store.commit("addTransfer", {id: transferId});
             this.sseClient = new EventSource(
               `/api/sse/transfer/${transferId}/poll`
             );
             this.sseClient.onmessage = this.sseMessage;
+            this.sseClient.transferId = transferId;
             this.$store.commit("closeHovers");
+
+            setTimeout(() => {
+              buttons.active("transfers");
+              buttons.loading("transfers");
+            }, 100);
+
           })
           .catch((e) => {
             buttons.done("copy");
@@ -174,12 +180,19 @@ export default {
         case "extracting":
           break;
         case "complete":
-          buttons.success("copy");
+          buttons.successPromise("transfers")
+              .then(() => buttons.active("transfers", false))
+              .catch(() => buttons.active("transfers", false));vv
           this.sseClient.close();
+          this.$store.commit("removeTransfer", this.sseClient.transferId);
           this.sseClient = null;
           break;
         default:
           this.$showError(event.data);
+          buttons.done("transfers");
+          buttons.active("transfers", false);
+          this.sseClient.close();
+          this.sseClient = null;
       }
     },
   },
