@@ -53,6 +53,7 @@ export default {
       current: window.location.pathname,
       dest: null,
       agentId: null,
+      sseClient: null,
     };
   },
   computed: mapState(["req", "selected"]),
@@ -80,7 +81,6 @@ export default {
       if (this.agentId === 0) {
         return this.localCopy(items);
       } else {
-        console.log("remote copy >> ", items);
         return this.remoteCopy(this.agentId, items);
       }
     },
@@ -144,8 +144,12 @@ export default {
 
         await remote_api
           .copyStart(agentId, items, overwrite, rename)
-          .then(() => {
-            buttons.success("copy");
+          .then((res) => {
+            let transferId = res.message;
+            this.sseClient = new EventSource(
+              `/api/sse/transfer/${transferId}/poll`
+            );
+            this.sseClient.onmessage = this.sseMessage;
             this.$store.commit("closeHovers");
           })
           .catch((e) => {
@@ -158,6 +162,25 @@ export default {
       let rename = false;
 
       action(overwrite, rename);
+    },
+    sseMessage(event) {
+      if (!event.isTrusted) return;
+
+      switch (event.data) {
+        case "archiving":
+          break;
+        case "uploading":
+          break;
+        case "extracting":
+          break;
+        case "complete":
+          buttons.success("copy");
+          this.sseClient.close();
+          this.sseClient = null;
+          break;
+        default:
+          this.$showError(event.data);
+      }
     },
   },
 };
