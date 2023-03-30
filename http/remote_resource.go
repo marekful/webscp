@@ -73,7 +73,11 @@ func remoteSourceResourcePostHandler() handleFunc {
 		}
 
 		//TODO: consider running hooks
-		status, err := remoteResourcePostAction(agentID, action, req, d)
+		status, response, err := remoteResourcePostAction(agentID, action, req, d)
+		if status == http.StatusOK {
+			return renderJSON(w, r, response)
+		}
+
 		return status, err
 	})
 }
@@ -125,14 +129,14 @@ func remoteResourcePostAction(
 	action string,
 	items []agents.ResourceItem,
 	d *data,
-) (int, error) {
+) (int, *agents.BeforeCopyResponse, error) {
 	switch action {
 	// TODO: use enum
 	case "remote-copy":
 		// random uuid for archive file name
 		uuid, err := exec.Command("uuidgen", "-r").Output()
 		if err != nil {
-			return http.StatusInternalServerError, err
+			return http.StatusInternalServerError, nil, err
 		}
 
 		// TODO: upload archive or error
@@ -140,7 +144,7 @@ func remoteResourcePostAction(
 		// execute remote copy operation
 		agent, err := d.store.Agents.Get(agentID)
 		if err != nil {
-			return http.StatusInternalServerError, err
+			return http.StatusInternalServerError, nil, err
 		}
 
 		client := agents.AgentClient{
@@ -149,20 +153,20 @@ func remoteResourcePostAction(
 
 		resp, status, err := client.RemoteCopy(agent.Host, agent.Port, string(uuid), items)
 		if err != nil {
-			return status, err
+			return status, nil, err
 		}
 
 		if resp.Code != 0 {
-			return http.StatusInternalServerError, fmt.Errorf("unexpected error12 %s", resp.Message)
+			return http.StatusInternalServerError, nil, fmt.Errorf("unexpected error12 %s", resp.Message)
 		}
 
 		// TODO: execute after-remote-copy on target agent or error
 
 		// TODO:
-		return http.StatusOK, nil
+		return http.StatusOK, resp, nil
 	case "remote-rename":
-		return http.StatusNotImplemented, nil
+		return http.StatusNotImplemented, nil, nil
 	default:
-		return http.StatusNotImplemented, nil
+		return http.StatusNotImplemented, nil, nil
 	}
 }
