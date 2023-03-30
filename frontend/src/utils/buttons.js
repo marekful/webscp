@@ -63,8 +63,52 @@ function success(button) {
   }, 100);
 }
 
+function successPromise(button) {
+  return new Promise(function(resolve, reject) {
+    let el = document.querySelector(`#${button}-button > i`);
+
+    if (el === undefined || el === null) {
+      console.log('Error getting button ' + button) // eslint-disable-line
+      return reject('Error getting button ' + button);
+    }
+
+    el.style.opacity = 0;
+
+    setTimeout(() => {
+      el.classList.remove("spin");
+      el.innerHTML = "done";
+      el.style.opacity = 1;
+
+      setTimeout(() => {
+        el.style.opacity = 0;
+
+        setTimeout(() => {
+          el.innerHTML = el.dataset.icon;
+          el.style.opacity = 1;
+          resolve();
+        }, 100);
+      }, 500);
+    }, 100);
+  });
+}
+
+function active(button, active = true) {
+  let el = document.querySelector(`#${button}-button`);
+
+  if (el === undefined || el === null) {
+    console.log('Error getting button ' + button) // eslint-disable-line
+    return;
+  }
+
+  //el.style.opacity = active ? 1 : 0.5;
+  el.classList[active ? "add" : "remove"]("active");
+
+}
+
 export default {
   loading,
   done,
   success,
+  successPromise,
+  active,
 };
