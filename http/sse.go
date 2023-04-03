@@ -37,11 +37,10 @@ var sseTransferPollGetHandler = withUser(func(w http.ResponseWriter, r *http.Req
 
 	flusher, _ := w.(http.Flusher)
 	for {
-		write, err := writeData(w, chanID)
+		_, err := writeData(w, chanID)
 		if err != nil {
 			log.Println(err)
 		}
-		log.Println(write)
 		flusher.Flush()
 	}
 })

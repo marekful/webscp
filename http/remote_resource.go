@@ -139,8 +139,6 @@ func remoteResourcePostAction(
 			return http.StatusInternalServerError, nil, err
 		}
 
-		// TODO: upload archive or error
-
 		// execute remote copy operation
 		agent, err := d.store.Agents.Get(agentID)
 		if err != nil {

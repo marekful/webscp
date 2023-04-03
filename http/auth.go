@@ -6,11 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/golang-jwt/jwt/v4/request"
+	"github.com/gorilla/mux"
 
 	"github.com/filebrowser/filebrowser/v2/errors"
 	"github.com/filebrowser/filebrowser/v2/users"
@@ -109,6 +111,17 @@ func withAgent(fn handleFunc) handleFunc {
 		requestHost := "http://" + r.Host
 		if requestHost != internalHost {
 			return http.StatusUnauthorized, fmt.Errorf("error: %s does not match %s", internalHost, requestHost)
+		}
+
+		vars := mux.Vars(r)
+		agentID := vars["agent_id"]
+		id64, err := strconv.ParseUint(agentID, 10, 64)
+
+		if err != nil {
+			agent, aErr := d.store.Agents.Get(uint(id64))
+			if aErr == nil {
+				d.agent = agent
+			}
 		}
 
 		// TODO: use dedicated user based on remote identity (TBD)
