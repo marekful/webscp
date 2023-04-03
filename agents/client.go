@@ -51,6 +51,16 @@ type RemoteResourceAgentRequest struct {
 	Items []ResourceItem `json:"items"`
 }
 
+type CancelTransferRequest struct {
+	TransferID string `json:"transfer_id"`
+}
+
+type CancelTransferResponse struct {
+	Code    int32  `json:"code"`
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
 func (c *AgentClient) ExchangeKeys(host, port, secret string) error {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := agentAddress + "/api/register-public-key"
@@ -189,6 +199,37 @@ func (c *AgentClient) RemoteCopy(
 	defer agentResponse.Body.Close()
 
 	resp := &BeforeCopyResponse{}
+	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
+	if dErr != nil {
+		return nil, nethttps.StatusInternalServerError, dErr
+	}
+
+	if agentResponse.StatusCode != nethttps.StatusOK {
+		return nil, agentResponse.StatusCode, fmt.Errorf("unexpected error: %s", resp.Message)
+	}
+
+	return resp, nethttps.StatusOK, nil
+}
+
+func (c *AgentClient) CancelTransfer(
+	transferID string,
+) (response *CancelTransferResponse, status int, err error) {
+	agentAddress := os.Getenv("AGENT_ADDRESS")
+	requestURL := fmt.Sprintf("%s/api/transfers/%s", agentAddress, transferID)
+
+	r, err := nethttps.NewRequest("DELETE", requestURL, nethttps.NoBody)
+	if err != nil {
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
+	}
+	client := &nethttps.Client{}
+	agentResponse, err := client.Do(r)
+	if err != nil {
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error sending agent API request: %v", err)
+	}
+
+	defer agentResponse.Body.Close()
+
+	resp := &CancelTransferResponse{}
 	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
 	if dErr != nil {
 		return nil, nethttps.StatusInternalServerError, dErr

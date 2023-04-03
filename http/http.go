@@ -113,8 +113,11 @@ func addAgentRoutes(
 	apiRouter.PathPrefix("/agent/copy").
 		Handler(monkey(remoteDestinationResourcePostHandler(), "/api/agent/copy")).Methods("POST")
 
-	apiRouter.PathPrefix("/sse/transfer/{id:[a-f0-9-]+}/poll").
-		Handler(monkey(sseTransferPollGetHandler, "/api/sse/transfer")).Methods("GET")
-	apiRouter.PathPrefix("/sse/transfer/{id:[a-f0-9-]+}/update/{message:.*}").
-		Handler(monkey(sseTransferUpdateGetHandler, "/api/sse/transfer")).Methods("GET")
+	apiRouter.PathPrefix("/sse/transfers/{id:[a-f0-9-]+}/poll").
+		Handler(monkey(sseTransferPollGetHandler, "")).Methods("GET")
+	apiRouter.PathPrefix("/sse/transfers/{id:[a-f0-9-]+}/update/{message:.*}").
+		Handler(monkey(sseTransferUpdateGetHandler, "s")).Methods("GET")
+
+	apiRouter.PathPrefix("/remote/transfers/{agent_id:[0-9]+}/{transfer_id:[a-f0-9-]+}").
+		Handler(monkey(transferDeleteHandler, "")).Methods("DELETE")
 }

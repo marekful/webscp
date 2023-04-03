@@ -7,6 +7,7 @@ import (
 
 	"github.com/tomasen/realip"
 
+	"github.com/filebrowser/filebrowser/v2/agents"
 	"github.com/filebrowser/filebrowser/v2/rules"
 	"github.com/filebrowser/filebrowser/v2/runner"
 	"github.com/filebrowser/filebrowser/v2/settings"
@@ -22,6 +23,7 @@ type data struct {
 	server   *settings.Server
 	store    *storage.Storage
 	user     *users.User
+	agent    *agents.Agent
 	raw      interface{}
 }
 
