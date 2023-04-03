@@ -64,7 +64,6 @@ export default {
       return decodeURIComponent(this.current);
     },
   },
-  mounted() {},
   methods: {
     fillOptions(req) {
       // Sets the current path and resets

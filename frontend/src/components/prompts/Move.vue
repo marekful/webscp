@@ -53,15 +53,18 @@ export default {
       current: window.location.pathname,
       dest: null,
       agentId: null,
+      agentAddress: null,
     };
   },
   computed: mapState(["req", "selected"]),
   methods: {
     changeServer: function (val) {
-      if (val === 0) {
+      let id = val.id;
+      if (id === 0) {
         this.agentId = 0;
       } else {
-        this.agentId = val;
+        this.agentId = id;
+        this.agentAddress = `${val.host}:${val.port}`;
       }
     },
     move: async function (event) {

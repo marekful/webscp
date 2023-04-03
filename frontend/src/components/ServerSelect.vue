@@ -32,11 +32,11 @@ export default {
   },
   methods: {
     changed(val) {
-      let agent_id = 0;
+      let agent = {id: 0};
       if (val in this.servers) {
-        agent_id = this.servers[val].id;
+        agent = this.servers[val];
       }
-      this.$emit("update:selected", agent_id);
+      this.$emit("update:selected", agent);
     },
     async fillOptions() {
       let servers = await agents.getAll();

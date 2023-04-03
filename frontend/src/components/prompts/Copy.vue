@@ -43,6 +43,7 @@ import ServerSelect from "../ServerSelect";
 import { files as api } from "@/api";
 import { remote_files as remote_api } from "@/api";
 import buttons from "@/utils/buttons";
+import transfers from "@/utils/transfers";
 import * as upload from "@/utils/upload";
 
 export default {
@@ -53,16 +54,18 @@ export default {
       current: window.location.pathname,
       dest: null,
       agentId: null,
-      sseClient: null,
+      agent: null,
     };
   },
   computed: mapState(["req", "selected", "transfers"]),
   methods: {
     changeServer: function (val) {
-      if (val === 0) {
+      let id = val.id;
+      if (id === 0) {
         this.agentId = 0;
       } else {
-        this.agentId = val;
+        this.agentId = id;
+        this.agent = val;
       }
     },
     copy: function (event) {
@@ -141,26 +144,31 @@ export default {
     remoteCopy: async function (agentId, items) {
       let action = async (overwrite, rename) => {
         await remote_api
+          // execute items source and destination checks,
+          // the transfer continues in the background
           .copyStart(agentId, items, overwrite, rename)
           .then((res) => {
-            let transferId = res.message;
-            this.$store.commit("addTransfer", {id: transferId});
-            this.sseClient = new EventSource(
-              `/api/sse/transfer/${transferId}/poll`
-            );
-            this.sseClient.onmessage = this.sseMessage;
-            this.sseClient.transferId = transferId;
             this.$store.commit("closeHovers");
-
+            // subscribe to the transfer's status update stream
+            let transferID = res.message;
+            transfers.create(
+                this.$store,
+                transferID,
+                this.transfers,
+                "copy",
+                this.agent,
+                items,
+            );
             setTimeout(() => {
               buttons.active("transfers");
               buttons.loading("transfers");
             }, 100);
-
           })
           .catch((e) => {
-            buttons.done("copy");
-            this.$showError(e);
+            buttons.donePromise("copy")
+              .then(() => {
+                this.$showError(e);
+              });
           });
       };
 
@@ -168,32 +176,6 @@ export default {
       let rename = false;
 
       action(overwrite, rename);
-    },
-    sseMessage(event) {
-      if (!event.isTrusted) return;
-
-      switch (event.data) {
-        case "archiving":
-          break;
-        case "uploading":
-          break;
-        case "extracting":
-          break;
-        case "complete":
-          buttons.successPromise("transfers")
-              .then(() => buttons.active("transfers", false))
-              .catch(() => buttons.active("transfers", false));vv
-          this.sseClient.close();
-          this.$store.commit("removeTransfer", this.sseClient.transferId);
-          this.sseClient = null;
-          break;
-        default:
-          this.$showError(event.data);
-          buttons.done("transfers");
-          buttons.active("transfers", false);
-          this.sseClient.close();
-          this.sseClient = null;
-      }
     },
   },
 };
