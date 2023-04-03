@@ -1,7 +1,20 @@
 use ssh2::Session;
 use std::{
-    fs, fs::OpenOptions, io::prelude::*, net::TcpStream, path::Path, process::exit, time::Instant,
+    fs,
+    fs::OpenOptions,
+    io::{prelude::*, Error},
+    net::TcpStream,
+    path::Path,
+    process::exit,
+    time::Instant,
 };
+
+use tokio::{
+    io::{AsyncBufReadExt, AsyncReadExt, BufReader},
+    process::Command,
+};
+
+use std::process::Stdio;
 
 use crate::{
     command::*,
@@ -9,7 +22,7 @@ use crate::{
     constants::{
         COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_VERSION, COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
     },
-    fb_api::send_upload_status_update,
+    fb_api::{send_upload_status_update, send_upload_status_update_async},
 };
 
 #[derive(Debug)]
@@ -22,6 +35,16 @@ pub struct ClientError {
     pub code: i32,
     pub message: String,
     pub http_code: Option<i32>,
+}
+
+impl From<std::io::Error> for ClientError {
+    fn from(err: Error) -> Self {
+        return ClientError {
+            code: 987,
+            message: err.to_string(),
+            http_code: Some(500),
+        };
+    }
 }
 
 impl Client<'_> {
@@ -88,14 +111,11 @@ impl Client<'_> {
     }
 
     pub fn remote_do_copy(&self, archive_name: &String) -> i32 {
-        let sess = self.create_session(None).unwrap();
+        /*let sess = self.create_session(None).unwrap();*/
 
-        match self._remote_do_copy(&sess, &archive_name) {
-            Ok(_) => {}
-            Err(e) => {
-                eprint!("{}{}", get_http_code_from_error(&e), e.message);
-                return e.code;
-            }
+        if let Err(e) = self._remote_do_copy(/*sess, */ &archive_name) {
+            eprint!("{}{}", get_http_code_from_error(&e), e.message);
+            return e.code;
         }
 
         0
@@ -120,6 +140,128 @@ impl Client<'_> {
         print!("{:?} {:?}\n", dur_sess, dur_exec);
 
         0
+    }
+
+    pub async fn remote_do_copy_async(
+        host: &str,
+        port: &str,
+        archive_name: &str,
+    ) -> Result<(), ClientError> {
+        let local_path = format!(
+            "{}{}{}",
+            DEFAULTS.temp_data_dir, archive_name, ".agent.tar.gz"
+        );
+        let remote_path = format!("{}{}{}", DEFAULTS.temp_data_dir, archive_name, ".dst.tar");
+
+        // create argument list for uploader script
+        let mut script_args: Vec<&str> = Vec::new();
+        script_args.push(DEFAULTS.uploader_script_path);
+        script_args.push(&local_path);
+        script_args.push(host);
+        script_args.push(port);
+        script_args.push(&remote_path);
+
+        // setup command for asynchronous execution
+        let mut cmd = Command::new("bash");
+        cmd.args(script_args);
+        cmd.stdout(Stdio::piped());
+        let mut child = cmd.spawn().expect("spawn failed");
+        let stdout = child.stdout.take().expect("stdout failed");
+
+        // attach reader to command's stdout
+        let mut reader = BufReader::new(stdout).lines();
+
+        // kick off execution
+        let archive_name_copy = String::from(archive_name);
+        let upload_result = tokio::spawn(async move {
+            let status = child.wait().await.expect("child error");
+
+            let code = match status.code() {
+                // catch SIGUSR1 here
+                None => {
+                    return Err(ClientError {
+                        code: 346,
+                        message: "Canceled".to_string(),
+                        http_code: Some(200),
+                    })
+                }
+                Some(c) => c,
+            };
+            if code != 0 {
+                let mut error = String::new();
+                child
+                    .stderr
+                    .unwrap()
+                    .read_to_string(&mut error)
+                    .await
+                    .unwrap();
+
+                let err_msg = format!("error::{error}");
+                send_upload_status_update_async(&archive_name_copy, &err_msg).await;
+
+                return Err(ClientError {
+                    code: 347,
+                    message: error,
+                    http_code: Some(500),
+                });
+            }
+
+            Ok(())
+        });
+
+        send_upload_status_update_async(&archive_name, "starting upload").await;
+
+        // read lines from script output as they are written to its stdout
+        while let Some(line) = reader.next_line().await? {
+            let message = format!("progress::{}", line);
+            send_upload_status_update_async(&archive_name, &message).await;
+        }
+
+        // remove local copy of archive
+        let mut rm_args: Vec<&str> = Vec::new();
+        rm_args.push("-f");
+        rm_args.push(local_path.as_str());
+        let _rm_result = run_command(81, false, true, "rm", rm_args);
+
+        // abort process on any errors from command execution (including usr1 signal)
+        match upload_result.await.unwrap() {
+            Ok(_) => {}
+            Err(e) => return Err(e),
+        };
+
+        send_upload_status_update_async(&archive_name, "extracting").await;
+
+        // extract uploaded archive on remote
+        let prt: i16 = port.to_string().parse().unwrap();
+        let client = Client::new(host, prt);
+        match client.remote_extract_archive(&archive_name) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn remote_extract_archive(&self, archive_name: &str) -> Result<(), ClientError> {
+        let sess = self.create_session(None).unwrap();
+        let mut ch = sess.channel_session().unwrap();
+        let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
+        let command = &*format!(
+            "{} {} {}; {} {}",
+            "tar --ignore-failed-read -xf", archive_path, "-C /srv", "rm -f", archive_path,
+        );
+        ch.exec(command).unwrap();
+        let mut output = String::new();
+        ch.read_to_string(&mut output).unwrap();
+
+        let exit_code = ch.exit_status().unwrap();
+        if exit_code != 0 {
+            return Err(ClientError {
+                code: exit_code,
+                message: output,
+                http_code: Some(503),
+            });
+        }
+
+        Ok(())
     }
 
     pub fn print_error_and_exit(code: i32, message: String) {
@@ -236,38 +378,13 @@ impl Client<'_> {
         Ok(output)
     }
 
-    fn _remote_extract_archive(sess: &Session, archive_name: &str) -> Result<(), ClientError> {
-        let mut ch = sess.channel_session().unwrap();
-        let command = &*format!(
-            "{} {}{}{}",
-            "tar --ignore-failed-read -xf",
-            DEFAULTS.temp_data_dir,
-            archive_name,
-            ".dst.tar -C /srv"
-        );
-        ch.exec(command).unwrap();
-        let mut output = String::new();
-        ch.read_to_string(&mut output).unwrap();
-
-        let exit_code = ch.exit_status().unwrap();
-        if exit_code != 0 {
-            return Err(ClientError {
-                code: exit_code,
-                message: command.to_string(),
-                http_code: Some(503),
-            });
-        }
-
-        Ok(())
-    }
-
-    fn _remote_do_copy(&self, sess: &Session, archive_name: &str) -> Result<(), ClientError> {
+    fn _remote_do_copy(&self, archive_name: &str) -> Result<(), ClientError> {
+        // create arguments list for scp command
         let local_path = format!(
             "{}{}{}",
             DEFAULTS.temp_data_dir, archive_name, ".agent.tar.gz"
         );
         let remote_path = format!("{}{}{}", DEFAULTS.temp_data_dir, archive_name, ".dst.tar");
-
         let remote_scp_path = format!("{}:{}", self.host, remote_path);
         let port = self.port.to_string();
         let mut scp_args: Vec<&str> = Vec::new();
@@ -277,21 +394,26 @@ impl Client<'_> {
         scp_args.push(local_path.as_str());
         scp_args.push(remote_scp_path.as_str());
 
-        match run_command(81, false, false, "scp", scp_args) {
-            Ok(_) => {}
-            Err(err) => {
-                return Err(ClientError {
-                    code: err.code,
-                    message: err.message,
-                    http_code: Some(err.status.code as i32),
-                })
-            }
+        // execute scp
+        if let Err(e) = run_command(81, false, false, "scp", scp_args) {
+            return Err(ClientError {
+                code: e.code,
+                message: e.message,
+                http_code: Some(e.status.code as i32),
+            });
         };
 
         send_upload_status_update(&archive_name, "extracting");
 
+        // remove archive
+        let mut rm_args: Vec<&str> = Vec::new();
+        rm_args.push("-f");
+        rm_args.push(local_path.as_str());
+
+        let _rm_result = run_command(81, false, true, "rm", rm_args);
+
         // extract uploaded archive
-        match Client::_remote_extract_archive(sess, archive_name) {
+        match self.remote_extract_archive(archive_name) {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         }
@@ -358,7 +480,7 @@ impl Client<'_> {
         let host_key = match run_command(318, false, true, "ssh-keyscan", args) {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("Couldn't retrieve host key: ({}) {}",e.code, e.message);
+                eprintln!("Couldn't retrieve host key: ({}) {}", e.code, e.message);
                 return e.code;
             }
         };
