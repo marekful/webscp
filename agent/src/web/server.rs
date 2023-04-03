@@ -1,5 +1,9 @@
 #[path = "../cli/archive.rs"]
 mod archive;
+#[path = "../cli/client.rs"]
+mod client;
+#[path = "../cli/command.rs"]
+mod command;
 #[path = "../cli/command_runner.rs"]
 mod command_runner;
 #[path = "../cli/constants.rs"]
@@ -10,10 +14,11 @@ mod fb_api;
 mod key_exchange;
 mod miscellaneous;
 mod resource;
+mod transfer;
 
 #[macro_use]
 extern crate rocket;
-use crate::{key_exchange::*, miscellaneous::*, resource::*};
+use crate::{key_exchange::*, miscellaneous::*, resource::*, transfer::*};
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
@@ -24,6 +29,7 @@ async fn main() -> Result<(), rocket::Error> {
         .mount(api, routes![resources])
         .mount(api, routes![copy])
         .mount(api, routes![version])
+        .mount(api, routes![cancel_transfer])
         .launch()
         .await?;
 

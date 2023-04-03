@@ -16,7 +16,7 @@ fn get_base_url() -> String {
 }
 
 pub async fn send_upload_status_update_async(transfer_id: &str, message: &str) {
-    let uri = format!("/api/sse/transfer/{transfer_id}/update/{message}");
+    let uri = format!("/api/sse/transfers/{transfer_id}/update/{message}");
 
     let _ = make_async_get_request(uri).await;
 
@@ -24,7 +24,7 @@ pub async fn send_upload_status_update_async(transfer_id: &str, message: &str) {
 }
 
 pub fn send_upload_status_update(transfer_id: &str, message: &str) {
-    let uri = format!("/api/sse/transfer/{transfer_id}/update/{message}");
+    let uri = format!("/api/sse/transfers/{transfer_id}/update/{message}");
 
     let _ = make_get_request(uri);
 

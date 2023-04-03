@@ -5,12 +5,12 @@ use rocket::{
 };
 use std::{future::Future, time::Duration};
 
+use crate::client::Client;
+
 use crate::{
     archive::{ArchiveItem, ArchiveWriter},
     command_runner::run_command,
-    constants::{
-        COMMAND_GET_REMOTE_RESOURCE, COMMAND_REMOTE_BEFORE_COPY, COMMAND_REMOTE_DO_COPY, DEFAULTS,
-    },
+    constants::{COMMAND_GET_REMOTE_RESOURCE, COMMAND_REMOTE_BEFORE_COPY, DEFAULTS},
     fb_api::send_upload_status_update_async,
 };
 
@@ -84,7 +84,13 @@ pub async fn copy(
     before_copy_args.push(port);
     before_copy_args.push(&items_json);
     // execute command
-    match run_command(204, true, false, COMMAND_REMOTE_BEFORE_COPY, before_copy_args) {
+    match run_command(
+        204,
+        true,
+        false,
+        COMMAND_REMOTE_BEFORE_COPY,
+        before_copy_args,
+    ) {
         Ok(_) => {}
         Err(err) => {
             return (
@@ -157,7 +163,7 @@ fn finish_upload_in_background(
     port: String,
     req_items: Vec<ResourceItem>,
     archive_name: String,
-) -> impl Future<Output = Result<String, FutureError>> {
+) -> impl Future<Output = Result<(), FutureError>> {
     async move {
         // allow some time for the upload state poll to initialize
         let _ = time::sleep(Duration::from_millis(50)).await;
@@ -188,30 +194,28 @@ fn finish_upload_in_background(
         };
         task::yield_now().await;
 
-        match archive_writer.crate_archive(items).await {
-            Ok(_) => {}
-            Err(e) => {
-                send_upload_status_update_async(&archive_name, &e.message).await;
-                return Err(FutureError {
-                    code: e.code,
-                    message: e.message,
-                });
-            }
+        if let Err(e) = archive_writer.crate_archive(items).await {
+            send_upload_status_update_async(&archive_name, &e.message).await;
+            return Err(FutureError {
+                code: e.code,
+                message: e.message,
+            });
         };
         task::yield_now().await;
 
         send_upload_status_update_async(&archive_name, "uploading").await;
 
+        // --->ORIG execute command
         // create arguments for 'remote-do-copy' command
-        let mut do_copy_args: Vec<&str> = Vec::new();
+        /*let mut do_copy_args: Vec<&str> = Vec::new();
         do_copy_args.push(&host);
         do_copy_args.push(&port);
         do_copy_args.push(&archive_name);
-        // execute command
+
         return match run_command(203, true, false, COMMAND_REMOTE_DO_COPY, do_copy_args) {
-            Ok(output) => {
+            Ok(_) => {
                 send_upload_status_update_async(&archive_name, "complete").await;
-                Ok(output)
+                Ok(())
             }
             Err(e) => {
                 send_upload_status_update_async(&archive_name, &e.message).await;
@@ -220,7 +224,28 @@ fn finish_upload_in_background(
                     message: e.message,
                 })
             }
-        };
+        };*/
+        // <---ORIG
+
+        match Client::remote_do_copy_async(&host, &port, &archive_name).await {
+            Ok(_) => {
+                send_upload_status_update_async(&archive_name, "complete").await;
+                Ok(())
+            }
+            Err(e) => {
+                let err_msg;
+                if e.code == 346 {
+                    err_msg = format!("signal::interrupt::{}", e.message);
+                } else {
+                    err_msg = format!("error::{}", e.message);
+                }
+                send_upload_status_update_async(&archive_name, &err_msg).await;
+                return Err(FutureError {
+                    code: e.code,
+                    message: e.message,
+                });
+            }
+        }
     }
 }
 

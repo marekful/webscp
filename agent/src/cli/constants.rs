@@ -19,7 +19,9 @@ pub struct Defaults {
     pub temp_data_dir: &'static str,
     pub with_contenv: &'static str,
     pub env_name_fb_api_address: &'static str,
-    //fb_root_dir: &'static str,
+    pub uploader_script_path: &'static str,
+    pub cancel_transfer_script_path: &'static str,
+    /*fb_root_dir: &'static str,*/
 }
 
 pub const DEFAULTS: Defaults = Defaults {
@@ -31,6 +33,9 @@ pub const DEFAULTS: Defaults = Defaults {
     private_key_file: "/home/agent/.ssh/id_rsa",
     public_key_file: "/home/agent/.ssh/id_rsa.pub",
     temp_data_dir: "/home/agent/.tmp-data/",
-    with_contenv: "with-contenv", //fb_root_dir: "/srv",
+    with_contenv: "with-contenv",
     env_name_fb_api_address: "FILEBROWSER_ADDRESS",
+    uploader_script_path: "/etc/scripts/uploader.sh",
+    cancel_transfer_script_path: "/etc/scripts/cancel-transfer.sh",
+    /*fb_root_dir: "/srv",*/
 };

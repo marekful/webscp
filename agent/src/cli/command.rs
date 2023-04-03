@@ -109,7 +109,7 @@ pub fn command_local_before_copy(_: Option<Client<'_>>, args: Option<Vec<String>
     print!("{}", response.text().unwrap().trim().to_string());
 }
 
-pub fn command_remote_do_copy(client: Option<Client<'_>>, args: Option<Vec<String>>) {
+/*pub fn command_remote_do_copy(client: Option<Client<'_>>, args: Option<Vec<String>>) {
     let args = args.unwrap();
     if args.len() < 5 {
         eprintln!("Usage: cli remote-do-copy <host> <port> <archive_name>");
@@ -122,7 +122,7 @@ pub fn command_remote_do_copy(client: Option<Client<'_>>, args: Option<Vec<Strin
     if exit_code != 0 {
         exit(exit_code);
     }
-}
+}*/
 
 fn get_fb_api_address() -> String {
     let default_fb_api_address = DEFAULTS.default_fb_api_address;
