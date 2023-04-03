@@ -8,22 +8,26 @@
         </div>
         <div class="content">
           <div
-              :class="transfer.cancelable ? 'remove' : 'remove disabled'"
-              @click="handleCancel"
-              :data-id="transfer.transferID"
-              :title="transfer.pending ? $t('transfer.cancel') : $t('transfer.remove')"
+            :class="transfer.cancelable ? 'remove' : 'remove disabled'"
+            @click="handleCancel"
+            :data-id="transfer.transferID"
+            :title="
+              transfer.pending ? $t('transfer.cancel') : $t('transfer.remove')
+            "
           >
-            <i class="material-icons">{{ transfer.cancelable ? 'cancel' : 'highlight_off' }}</i>
+            <i class="material-icons">
+              {{ transfer.cancelable ? "cancel" : "highlight_off" }}
+            </i>
           </div>
           <div
-              :class="
-            'icon ' +
-            (transfer.error === true || transfer.canceled === true
-              ? 'icon-error'
-              : transfer.pending === false
-              ? 'icon-success'
-              : '')
-          "
+            :class="
+              'icon ' +
+              (transfer.error === true || transfer.canceled === true
+                ? 'icon-error'
+                : transfer.pending === false
+                ? 'icon-success'
+                : '')
+            "
           >
             <i class="material-icons">{{ transfer.icon }}</i>
           </div>
@@ -31,13 +35,18 @@
             <span>
               {{ transfer.status }}
               <span
-                  v-if="transfer.stats && transfer.stats.progress.length > 0"
-                  class="stats"
+                v-if="transfer.stats && transfer.stats.progress.length > 0"
+                class="stats"
               >
                 <span>{{ transfer.stats.progress[0] }}.</span>
-                <small>{{ transfer.stats.progress[1] }}{{ transfer.stats.progress[2] }}</small>
+                <small>
+                  {{ transfer.stats.progress[1] }}
+                  {{ transfer.stats.progress[2] }}
+                </small>
                 <span>of {{ transfer.stats.total[0] }}.</span>
-                <small>{{ transfer.stats.total[1] }}{{ transfer.stats.total[2] }}</small>
+                <small>
+                  {{ transfer.stats.total[1] }}{{ transfer.stats.total[2] }}
+                </small>
               </span>
             </span>
           </div>
@@ -49,10 +58,7 @@
               <i class="material-icons">arrow_drop_down_circle</i>
               <span class="label">{{ $t("transfer.showDetails") }}</span>
             </div>
-            <div
-                v-if="transfer.showDetails === true"
-                class="content"
-            >
+            <div v-if="transfer.showDetails === true" class="content">
               <div v-for="(item, index) in transfer.items" :key="index">
                 <span>{{ item.from }}</span>
                 <span>{{ item.to }}</span>
@@ -105,7 +111,7 @@ export default {
       }
 
       if (!transfer.pending) {
-        this.$store.commit("removeTransfer", transferID);
+        transfers.remove(this.$store, transferID);
         setTimeout(() => {
           transfers.setButtonActive(this.transfers);
         }, 100);
@@ -118,19 +124,16 @@ export default {
       remote_files
         .cancelTransfer(transfer.agent.id, transferID)
         .then(() => {
-          this.$store.commit("updateTransfer", {
+          transfers.update(this.$store, {
             transferID,
             canceled: true,
             pending: false,
             icon: "highlight_off",
             status: "Canceled",
           });
-          /*setTimeout(() => {
-            this.$store.commit("removeTransfer", transferID);
-          }, 30000);*/
         })
         .catch(() => {
-          this.$store.commit("removeTransfer", transferID);
+          transfers.remove(this.$store, transferID);
         })
         .finally(() => {
           setTimeout(() => {
@@ -139,9 +142,9 @@ export default {
         });
     },
     showDetails: function (transfer) {
-      this.$store.commit("updateTransfer", {
+      transfers.update(this.$store, {
         transferID: transfer.transferID,
-        showDetails: !(transfer.showDetails),
+        showDetails: !transfer.showDetails,
       });
     },
   },
