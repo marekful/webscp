@@ -152,12 +152,12 @@ export default {
             // subscribe to the transfer's status update stream
             let transferID = res.message;
             transfers.create(
-                this.$store,
-                transferID,
-                this.transfers,
-                "copy",
-                this.agent,
-                items,
+              this.$store,
+              transferID,
+              this.transfers,
+              "copy",
+              this.agent,
+              items
             );
             setTimeout(() => {
               buttons.active("transfers");
@@ -165,10 +165,9 @@ export default {
             }, 100);
           })
           .catch((e) => {
-            buttons.donePromise("copy")
-              .then(() => {
-                this.$showError(e);
-              });
+            buttons.donePromise("copy").then(() => {
+              this.$showError(e);
+            });
           });
       };
 

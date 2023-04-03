@@ -9,9 +9,9 @@ function create(
   action,
   agent,
   items,
-  status,
-  icon,
-  stats,
+  status = "Starting",
+  icon = "folder_zip",
+  stats = { progress: [], total: [] },
   pending = true,
   canceled = false,
   error = false
@@ -19,7 +19,9 @@ function create(
   status = status || "starting";
   stats = stats || { progress: [], total: [] };
   let cancelable = true;
+  let showDetails = false;
   let sseClient;
+  let title = "";
   switch (action) {
     case "copy":
       title = "Copying ";
@@ -28,7 +30,6 @@ function create(
       title = "Moving ";
       break;
   }
-  let title = "";
   let plural = items.length > 1 ? "s" : "";
   title += `${items.length} item${plural} to ${agent.host}:${agent.port}`;
 
@@ -39,7 +40,7 @@ function create(
     sseClient.transferID = transferID;
   }
 
-  $store.commit("addTransfer", {
+  let data = {
     agent,
     action,
     transferID,
@@ -53,7 +54,11 @@ function create(
     items,
     stats,
     cancelable,
-  });
+    showDetails,
+  };
+  $store.commit("addTransfer", data);
+
+  storeAdd(data);
 }
 
 function get(transfers, transferID) {
@@ -62,6 +67,96 @@ function get(transfers, transferID) {
       return transfer;
     }
   }
+}
+
+function remove($store, transferID) {
+  $store.commit("removeTransfer", transferID);
+  storeRemove(transferID);
+}
+
+function update($store, data) {
+  let newTransfers = [];
+  let store;
+
+  for (let transfer of $store.state.transfers) {
+    let newTransfer = Object.fromEntries(Object.entries(transfer));
+    if (transfer.transferID === data.transferID) {
+      [
+        "agent",
+        "pending",
+        "items",
+        "error",
+        "status",
+        "icon",
+        "progress",
+        "stats",
+        "canceled",
+        "cancelable",
+        "showDetails",
+      ].forEach((attr) => {
+        if (data[attr] !== undefined) {
+          newTransfer[attr] = data[attr];
+        }
+      });
+
+      let {
+        transferID,
+        title,
+        status,
+        icon,
+        action,
+        agent,
+        items,
+        pending,
+        canceled,
+        error,
+        stats,
+      } = newTransfer;
+      store = {
+        transferID,
+        title,
+        status,
+        icon,
+        action,
+        agent,
+        items,
+        pending,
+        canceled,
+        error,
+        stats,
+      };
+      storeUpdate(store);
+    }
+    newTransfers.push(newTransfer);
+  }
+
+  $store.commit("replaceTransfers", newTransfers);
+}
+
+function storeAdd(data) {
+  let stored = localStorage.getItem("rc-transfers");
+  stored = stored ? JSON.parse(stored) : [];
+  if (stored.indexOf(data.transferID) === -1) {
+    stored.push(data.transferID);
+    localStorage.setItem("rc-transfers", JSON.stringify(stored));
+  }
+  storeUpdate(data);
+}
+
+function storeRemove(transferID) {
+  let stored = localStorage.getItem("rc-transfers");
+  stored = stored ? JSON.parse(stored) : [];
+  let idxToRemove = stored.indexOf(transferID);
+  if (idxToRemove > -1) {
+    stored.splice(idxToRemove, 1);
+  }
+  localStorage.setItem("rc-transfers", JSON.stringify(stored));
+  localStorage.removeItem(`transfer-${transferID}`);
+}
+
+function storeUpdate(data) {
+  if (!data.transferID) return;
+  localStorage.setItem(`transfer-${data.transferID}`, JSON.stringify(data));
 }
 
 function setButtonActive(transfers) {
@@ -147,9 +242,10 @@ function handleMessage($store, transfers) {
         icon = "highlight_off";
         break;
       default:
-        // error
+        // error case
         icon = "error_outline";
-        $store.commit("updateTransfer", {
+
+        update($store, {
           transferID: event.target.transferID,
           pending: false,
           error: true,
@@ -163,7 +259,8 @@ function handleMessage($store, transfers) {
 
         return;
     }
-    $store.commit("updateTransfer", {
+
+    update($store, {
       transferID: event.target.transferID,
       status: message,
       pending,
@@ -176,11 +273,6 @@ function handleMessage($store, transfers) {
     if (pending) {
       return;
     }
-    setTimeout(() => {
-      if (event.target.transferID) {
-        $store.commit("removeTransfer", event.target.transferID);
-      }
-    }, 30000);
     setTimeout(() => {
       buttons
         .successPromise("transfers")
@@ -222,5 +314,7 @@ function getStats(data) {
 export default {
   create,
   get,
+  update,
+  remove,
   setButtonActive,
 };

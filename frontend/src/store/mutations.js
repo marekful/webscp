@@ -62,12 +62,9 @@ const mutations = {
   },
   addTransfer: (state, value) => {
     state.transfers.push(value);
-    let stored = localStorage.getItem("rc-transfers");
-    stored = stored ? JSON.parse(stored) : [];
-    if (stored.indexOf(value.transferID) === -1) {
-      stored.push(value.transferID);
-      localStorage.setItem("rc-transfers", JSON.stringify(stored));
-    }
+  },
+  replaceTransfers: (state, value) => {
+    state.transfers = value;
   },
   removeTransfer: (state, value) => {
     for (let idx = 0; idx < state.transfers.length; idx++) {
@@ -80,51 +77,6 @@ const mutations = {
         break;
       }
     }
-    let stored = localStorage.getItem("rc-transfers");
-    stored = stored ? JSON.parse(stored) : [];
-    let idxToRemove = stored.indexOf(value);
-    if (idxToRemove > -1) {
-      stored.splice(idxToRemove, 1);
-    }
-    localStorage.setItem("rc-transfers", JSON.stringify(stored));
-    localStorage.removeItem(`transfer-${value}`);
-  },
-  updateTransfer: (state, value) => {
-    let transfers = [];
-    let store, transferID;
-    for (let idx = 0; idx < state.transfers.length; idx++) {
-      if (state.transfers[idx].transferID === value.transferID) {
-        [
-          "agent",
-          "pending",
-          "items",
-          "error",
-          "status",
-          "icon",
-          "progress",
-          "stats",
-          "canceled",
-          "cancelable",
-          "showDetails",
-        ].forEach(
-          (attr) => {
-            if (value[attr] !== undefined) {
-              state.transfers[idx][attr] = value[attr];
-            }
-          }
-        );
-      }
-      transfers.push(state.transfers[idx]);
-
-      // update transfers in localStorage
-      let {
-        title, status, icon, action, agent, items, pending, canceled, error, stats,
-      } = state.transfers[idx];
-      store = { title, status, icon, action, agent, items, pending, canceled, error, stats };
-      transferID = state.transfers[idx].transferID;
-    }
-    state.transfers = transfers;
-    localStorage.setItem(`transfer-${transferID}`, JSON.stringify(store));
   },
   updateUser: (state, value) => {
     if (typeof value !== "object") return;

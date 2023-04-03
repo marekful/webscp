@@ -444,6 +444,7 @@ export default {
         let transfer = localStorage.getItem(`transfer-${transferID}`);
         if (!transfer) continue;
         transfer = JSON.parse(transfer);
+
         transfers.create(
           this.$store,
           transferID,
@@ -563,7 +564,7 @@ export default {
         });
       }
 
-      if (items.length == 0) {
+      if (items.length === 0) {
         return;
       }
 
