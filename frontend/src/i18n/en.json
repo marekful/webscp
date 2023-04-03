@@ -291,5 +291,10 @@
     "minutes": "Minutes",
     "seconds": "Seconds",
     "unit": "Time Unit"
+  },
+  "transfer": {
+    "showDetails": "show details",
+    "cancel": "Cancel upload",
+    "remove": "Remove transfer"
   }
 }

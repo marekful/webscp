@@ -280,6 +280,7 @@ import { enableExec } from "@/utils/constants";
 import * as upload from "@/utils/upload";
 import css from "@/utils/css";
 import throttle from "lodash.throttle";
+import transfers from "@/utils/transfers"
 
 import HeaderBar from "@/components/header/HeaderBar";
 import Action from "@/components/header/Action";
@@ -432,6 +433,34 @@ export default {
     document.addEventListener("dragenter", this.dragEnter);
     document.addEventListener("dragleave", this.dragLeave);
     document.addEventListener("drop", this.drop);
+
+    // add transfers from localStorage
+    let stored = localStorage.getItem("rc-transfers");
+    if (stored) {
+      stored = JSON.parse(stored);
+      if (!stored.length) return;
+
+      for (let transferID of stored) {
+        let transfer = localStorage.getItem(`transfer-${transferID}`);
+        if (!transfer) continue;
+        transfer = JSON.parse(transfer);
+        transfers.create(
+          this.$store,
+          transferID,
+          this.transfers,
+          transfer.action,
+          transfer.agent,
+          transfer.items,
+          transfer.status,
+          transfer.icon,
+          transfer.stats,
+          transfer.pending,
+          transfer.canceled,
+          transfer.error,
+        );
+      }
+      transfers.setButtonActive(this.transfers);
+    }
   },
   beforeDestroy() {
     // Remove event listeners before destroying this page.
@@ -896,8 +925,7 @@ export default {
 
 <style>
 #transfers-button {
-  opacity: .5;
-  cursor: default;
+  opacity: 0.5;
 }
 #transfers-button.active {
   opacity: 1;

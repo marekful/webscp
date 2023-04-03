@@ -63,8 +63,6 @@ export function copyStart(agentId, items, overwrite = false, rename = false) {
 }
 
 async function remoteResourceAction(url, method, content) {
-  //url = removePrefix(url);
-
   let opts = { method };
 
   if (content) {
@@ -79,5 +77,13 @@ async function remoteResourceAction(url, method, content) {
     .catch((err) => {
       throw new Error(err);
     });
-  //return res;
+}
+
+export async function cancelTransfer(agentID, transferID) {
+  let opts = { method: "DELETE" };
+  return fetchURL(`/api/remote/transfers/${agentID}/${transferID}`, opts).catch(
+    (err) => {
+      throw new Error(err);
+    }
+  );
 }

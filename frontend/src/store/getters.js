@@ -3,7 +3,15 @@ const getters = {
   isFiles: (state) => !state.loading && state.route.name === "Files",
   isListing: (state, getters) => getters.isFiles && state.req.isDir,
   selectedCount: (state) => state.selected.length,
-  transfersInProgress: (state) => state.transfers.length,
+  transfersInProgress: (state) => {
+    let inProgress = 0;
+    for (let tr of state.transfers) {
+      if (tr.pending) {
+        inProgress += 1;
+      }
+    }
+    return inProgress;
+  },
   progress: (state) => {
     if (state.upload.progress.length == 0) {
       return 0;
