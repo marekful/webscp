@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -29,13 +28,9 @@ var transferDeleteHandler = withUser(func(w http.ResponseWriter, r *http.Request
 		Agent: agent,
 	}
 
-	resp, status, err := client.CancelTransfer(transferID)
+	status, err := client.CancelTransfer(transferID)
 	if err != nil {
 		return status, err
-	}
-
-	if resp.Code != 0 {
-		return http.StatusInternalServerError, fmt.Errorf("unexpected error %s", resp.Message)
 	}
 
 	return http.StatusOK, nil
