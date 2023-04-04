@@ -295,6 +295,15 @@
   "transfer": {
     "showDetails": "show details",
     "cancel": "Cancel upload",
-    "remove": "Remove transfer"
+    "remove": "Remove transfer",
+    "copying": "Copying",
+    "moving": "Moving",
+    "startingUpload": "Starting upload",
+    "archiving": "Archiving",
+    "extracting": "Extracting",
+    "uploading": "Uploading",
+    "complete": "Complete",
+    "aborted": "Aborted",
+    "canceled": "Canceled"
   }
 }

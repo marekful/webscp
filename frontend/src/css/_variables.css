@@ -16,4 +16,10 @@
 
   --distinct-background: #f2f2f2;
   --distinct-hover: #cecece;
+
+  --card-title-background: #fdfdfd;
+  --card-text-color: #6f6f6f;
+  --card-title-color: #6f6f6f;
+  --card-border: #ddd;
+  --card-border-light: #eee;
 }

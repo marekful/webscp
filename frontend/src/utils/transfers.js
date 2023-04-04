@@ -1,6 +1,5 @@
 import buttons from "./buttons";
-
-// TODO: i18n
+import i18n from "@/i18n";
 
 function create(
   $store,
@@ -24,19 +23,19 @@ function create(
   let title = "";
   switch (action) {
     case "copy":
-      title = "Copying ";
+      title = i18n.t("transfer.copying");
       break;
     case "move":
-      title = "Moving ";
+      title = i18n.t("transfer.moving");
       break;
   }
   let plural = items.length > 1 ? "s" : "";
-  title += `${items.length} item${plural} to ${agent.host}:${agent.port}`;
+  title += ` ${items.length} item${plural} to ${agent.host}:${agent.port}`;
 
   if (!canceled && pending) {
     sseClient = new EventSource(`/api/sse/transfers/${transferID}/poll`);
-    sseClient.onmessage = handleMessage($store, transfers);
-    sseClient.onerror = handleError($store, transfers);
+    sseClient.onmessage = handleMessage($store);
+    sseClient.onerror = handleError($store);
     sseClient.transferID = transferID;
   }
 
@@ -57,7 +56,6 @@ function create(
     showDetails,
   };
   $store.commit("addTransfer", data);
-
   storeAdd(data);
 }
 
@@ -175,25 +173,29 @@ function setButtonActive(transfers) {
 
   buttons[pending > 0 ? "loadingPromise" : "donePromise"]("transfers").then(
     () => {
-      buttons.icon("transfers", error === 0 ? "sync" : "sync_problem");
+      buttons.icon(
+        "transfers",
+        error > 0 && pending === 0 ? "sync_problem" : "sync"
+      );
     }
   );
 }
 
-function handleError($store, transfers) {
+function handleError($store) {
   return function (event) {
-    console.log("SSE Error > ", event, $store, transfers);
+    console.log("SSE Error > ", event, $store.state.transfers);
   };
 }
 
-function handleMessage($store, transfers) {
+function handleMessage($store) {
   return function (event) {
     if (!event.isTrusted) return;
 
     let icon,
       data,
       message,
-      stats = { progress: [], total: [] },
+      stats,
+      messageTr,
       extra = "",
       pending = true,
       canceled = false,
@@ -209,6 +211,7 @@ function handleMessage($store, transfers) {
     } else {
       message = event.data;
     }
+    messageTr = message;
     switch (message) {
       case "archiving":
         icon = "folder_zip";
@@ -216,6 +219,7 @@ function handleMessage($store, transfers) {
         break;
       case "starting upload":
         icon = "drive_folder_upload";
+        messageTr = "startingUpload";
         break;
       case "uploading":
         icon = "drive_folder_upload";
@@ -230,6 +234,7 @@ function handleMessage($store, transfers) {
         break;
       case "progress":
         icon = "drive_folder_upload";
+        messageTr = "uploading";
         if (data === "stats") {
           message = "uploading";
           stats = getStats(extra);
@@ -237,6 +242,7 @@ function handleMessage($store, transfers) {
         break;
       case "signal":
         message = extra;
+        messageTr = "aborted";
         pending = false;
         canceled = true;
         icon = "highlight_off";
@@ -249,20 +255,19 @@ function handleMessage($store, transfers) {
           transferID: event.target.transferID,
           pending: false,
           error: true,
-          status: message,
+          status: i18n.t(`transfer.${messageTr}`),
           icon,
           cancelable,
         });
-        setTimeout(() => {
-          setButtonActive(transfers);
-        }, 100);
+
+        setButtonActive($store.state.transfers);
 
         return;
     }
 
     update($store, {
       transferID: event.target.transferID,
-      status: message,
+      status: i18n.t(`transfer.${messageTr}`),
       pending,
       icon,
       stats,
@@ -273,11 +278,9 @@ function handleMessage($store, transfers) {
     if (pending) {
       return;
     }
-    setTimeout(() => {
-      buttons
-        .successPromise("transfers")
-        .finally(() => setButtonActive(transfers));
-    }, 100);
+    buttons
+      .successPromise("transfers")
+      .finally(() => setButtonActive($store.state.transfers));
   };
 }
 
