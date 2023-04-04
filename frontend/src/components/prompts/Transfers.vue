@@ -38,15 +38,21 @@
                 v-if="transfer.stats && transfer.stats.progress.length > 0"
                 class="stats"
               >
-                <span>{{ transfer.stats.progress[0] }}.</span>
-                <small>
-                  {{ transfer.stats.progress[1] }}
-                  {{ transfer.stats.progress[2] }}
-                </small>
-                <span>of {{ transfer.stats.total[0] }}.</span>
-                <small>
-                  {{ transfer.stats.total[1] }}{{ transfer.stats.total[2] }}
-                </small>
+                <span
+                  v-if="
+                    transfer.pending === true ||
+                    transfer.error === true ||
+                    transfer.canceled === true
+                  "
+                >
+                  <span>{{ transfer.stats.progress[0] }}</span>
+                  <small class="frac">.{{ transfer.stats.progress[1] }}</small>
+                  <small class="unit">{{ transfer.stats.progress[2] }}</small>
+                  <small>of</small>
+                </span>
+                <span>{{ transfer.stats.total[0] }}</span>
+                <small class="frac">.{{ transfer.stats.total[1] }}</small>
+                <small class="unit">{{ transfer.stats.total[2] }}</small>
               </span>
             </span>
           </div>
@@ -89,6 +95,7 @@
 import { mapState } from "vuex";
 import transfers from "@/utils/transfers";
 import { remote_files } from "@/api";
+import i18n from "@/i18n";
 
 export default {
   name: "transfers",
@@ -112,9 +119,7 @@ export default {
 
       if (!transfer.pending) {
         transfers.remove(this.$store, transferID);
-        setTimeout(() => {
-          transfers.setButtonActive(this.transfers);
-        }, 100);
+        transfers.setButtonActive(this.transfers);
 
         return;
       }
@@ -129,17 +134,11 @@ export default {
             canceled: true,
             pending: false,
             icon: "highlight_off",
-            status: "Canceled",
+            status: i18n.t("transfer.canceled"),
           });
         })
-        .catch(() => {
-          transfers.remove(this.$store, transferID);
-        })
-        .finally(() => {
-          setTimeout(() => {
-            transfers.setButtonActive(this.transfers);
-          }, 100);
-        });
+        .catch(() => transfers.remove(this.$store, transferID))
+        .finally(() => transfers.setButtonActive(this.transfers));
     },
     showDetails: function (transfer) {
       transfers.update(this.$store, {
@@ -157,7 +156,7 @@ export default {
   top: 4.2em;
   right: 5%;
   z-index: 99999;
-  color: #6f6f6f;
+  color: var(--card-text-color);
   max-width: 30em;
   width: 90%;
   max-height: 95%;
@@ -166,7 +165,7 @@ export default {
 .transfer {
   border-width: 0 0 1px 0;
   border-style: solid;
-  border-color: #ddd;
+  border-color: var(--card-border);
   min-height: 5em;
 }
 
@@ -183,8 +182,9 @@ export default {
 .transfer > .title {
   font-size: 110%;
   padding: 0.75em 1em;
-  border-bottom: 1px solid #eee;
-  background-color: #fdfdfd;
+  color: var(--card-title-color);
+  border-bottom: 1px solid var(--card-border-light);
+  background-color: var(--card-title-background);
   cursor: default;
 }
 
@@ -210,19 +210,32 @@ export default {
   line-height: 2.5em;
   font-size: 105%;
   text-transform: capitalize;
+  font-weight: bold;
 }
 
 .transfer .error {
   color: var(--dark-red);
+  background: transparent;
 }
 
 .transfer .stats {
   margin: 0 0 0 0.5em;
-  font-weight: bold;
+  font-style: italic;
+  font-weight: normal;
 }
 
-.transfer .stats small {
-  margin: 0 0.5em 0 0;
+.transfer .stats span {
+  margin: 0 0 0 0.25em;
+}
+
+.transfer .stats small.frac {
+  font-size: 75%;
+  margin: 0;
+}
+
+.transfer .stats small.unit {
+  font-size: 85%;
+  margin: 0 0.25em 0 0;
 }
 
 .transfer > .content > .icon,
