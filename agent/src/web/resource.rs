@@ -9,11 +9,10 @@ use crate::client::Client;
 
 use crate::{
     archive::{ArchiveItem, ArchiveWriter},
-    command_runner::run_command,
+    command_runner::run_command_async,
     constants::{COMMAND_GET_REMOTE_RESOURCE, COMMAND_REMOTE_BEFORE_COPY, DEFAULTS},
-    fb_api::send_upload_status_update_async,
+    files_api::FilesApi,
 };
-use crate::command_runner::run_command_async;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(crate = "rocket::serde")]
@@ -45,13 +44,13 @@ pub struct BeforeCopyResponse {
 }
 
 #[get("/resources/<host>/<port>/<path>")]
-pub fn resources(host: &str, port: &str, path: &str) -> (Status, Json<ResourcesResponse>) {
+pub async fn resources(host: &str, port: &str, path: &str) -> (Status, Json<ResourcesResponse>) {
     let mut args: Vec<&str> = Vec::new();
     args.push(host);
     args.push(port);
     args.push(path);
 
-    return match run_command(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args) {
+    return match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
         Ok(output) => (
             Status::Ok,
             Json(ResourcesResponse {
@@ -91,7 +90,9 @@ pub async fn copy(
         false,
         COMMAND_REMOTE_BEFORE_COPY,
         before_copy_args,
-    ).await {
+    )
+    .await
+    {
         Ok(_) => {}
         Err(err) => {
             return (
@@ -164,12 +165,16 @@ fn finish_upload_in_background(
     port: String,
     req_items: Vec<ResourceItem>,
     archive_name: String,
-) -> impl Future<Output = Result<(), FutureError>> {
+) -> impl Future<Output = Result<(), FutureError>> + 'static {
     async move {
         // allow some time for the upload state poll to initialize
         let _ = time::sleep(Duration::from_millis(50)).await;
 
-        send_upload_status_update_async(&archive_name, "archiving").await;
+        let files_api = FilesApi::new();
+
+        files_api
+            .send_upload_status_update_async(&archive_name, "archiving")
+            .await;
 
         // create list of files to archive
         let mut items = Vec::new();
@@ -186,7 +191,9 @@ fn finish_upload_in_background(
         let mut archive_writer = match ArchiveWriter::new(archive_path, false) {
             Ok(w) => w,
             Err(e) => {
-                send_upload_status_update_async(&archive_name, &e.message).await;
+                files_api
+                    .send_upload_status_update_async(&archive_name, &e.message)
+                    .await;
                 return Err(FutureError {
                     code: e.code,
                     message: e.message,
@@ -196,7 +203,9 @@ fn finish_upload_in_background(
         task::yield_now().await;
 
         if let Err(e) = archive_writer.crate_archive(items).await {
-            send_upload_status_update_async(&archive_name, &e.message).await;
+            files_api
+                .send_upload_status_update_async(&archive_name, &e.message)
+                .await;
             return Err(FutureError {
                 code: e.code,
                 message: e.message,
@@ -204,7 +213,9 @@ fn finish_upload_in_background(
         };
         task::yield_now().await;
 
-        send_upload_status_update_async(&archive_name, "uploading").await;
+        files_api
+            .send_upload_status_update_async(&archive_name, "uploading")
+            .await;
 
         // --->ORIG execute command
         // create arguments for 'remote-do-copy' command
@@ -215,11 +226,11 @@ fn finish_upload_in_background(
 
         return match run_command(203, true, false, COMMAND_REMOTE_DO_COPY, do_copy_args) {
             Ok(_) => {
-                send_upload_status_update_async(&archive_name, "complete").await;
+                files_api.send_upload_status_update_async(&archive_name, "complete").await;
                 Ok(())
             }
             Err(e) => {
-                send_upload_status_update_async(&archive_name, &e.message).await;
+                files_api.send_upload_status_update_async(&archive_name, &e.message).await;
                 Err(FutureError {
                     code: e.code,
                     message: e.message,
@@ -228,22 +239,27 @@ fn finish_upload_in_background(
         };*/
         // <---ORIG
 
-        match Client::remote_do_copy_async(&host, &port, &archive_name).await {
+        match Client::remote_do_copy_async(&files_api, &host, &port, &archive_name).await {
             Ok(_) => {
-                send_upload_status_update_async(&archive_name, "complete").await;
+                files_api
+                    .send_upload_status_update_async(&archive_name, "complete")
+                    .await;
                 Ok(())
             }
             Err(e) => {
                 let err_msg;
+                let error = e.message;
                 if e.code == 346 {
-                    err_msg = format!("signal::interrupt::{}", e.message);
+                    err_msg = format!("signal::interrupt::{}", error);
                 } else {
-                    err_msg = format!("error::{}", e.message);
+                    err_msg = error.clone();
                 }
-                send_upload_status_update_async(&archive_name, &err_msg).await;
+                files_api
+                    .send_upload_status_update_async(&archive_name, &err_msg)
+                    .await;
                 return Err(FutureError {
                     code: e.code,
-                    message: e.message,
+                    message: error,
                 });
             }
         }

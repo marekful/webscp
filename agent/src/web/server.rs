@@ -8,8 +8,8 @@ mod command;
 mod command_runner;
 #[path = "../cli/constants.rs"]
 mod constants;
-#[path = "../fb_api_client.rs"]
-mod fb_api;
+#[path = "../files_api.rs"]
+mod files_api;
 
 mod key_exchange;
 mod miscellaneous;
@@ -18,12 +18,19 @@ mod transfer;
 
 #[macro_use]
 extern crate rocket;
-use crate::{key_exchange::*, miscellaneous::*, resource::*, transfer::*};
+use crate::{files_api::FilesApi, key_exchange::*, miscellaneous::*, resource::*, transfer::*};
+
+pub struct Files {
+    pub api: FilesApi,
+}
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
+    let files = FilesApi::new();
+
     let api = "/api";
     let _rocket = rocket::build()
+        .manage(Files { api: files })
         .mount(api, routes![register_public_key])
         .mount(api, routes![ping])
         .mount(api, routes![resources])

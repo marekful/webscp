@@ -3,14 +3,12 @@ mod client;
 mod command;
 mod command_runner;
 mod constants;
-#[path = "../fb_api_client.rs"]
-mod fb_api;
+#[path = "../files_api.rs"]
+mod files_api;
 
 use crate::{client::Client, command::*, constants::*};
 
 use std::{env, process::exit};
-use std::future::Future;
-use rocket::futures::TryFutureExt;
 
 pub struct FutureCommandError {
     pub code: i32,
@@ -19,7 +17,7 @@ pub struct FutureCommandError {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut exec: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
+    let mut exec: Option<fn(Client, Option<Vec<String>>)> = None;
     //let mut exec_async: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
     //let mut exec_async: dyn Future<Output=Result<fn(Option<Client>, Option<Vec<String>>), FutureCommandError>> = None;
 
@@ -39,7 +37,8 @@ fn main() {
     match exec {
         None => {} // proceed to remote commands
         Some(_) => {
-            exec.unwrap()(None, Some(args));
+            let client = Client::new("", 0);
+            exec.unwrap()(client, Some(args));
             exit(0);
         }
     }
@@ -74,5 +73,5 @@ fn main() {
     };
     let client = Client::new(host, port);
 
-    exec.unwrap()(Some(client), Some(args.clone()));
+    exec.unwrap()(client, Some(args.clone()));
 }
