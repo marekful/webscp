@@ -17,18 +17,18 @@ use tokio::{
 use std::process::Stdio;
 
 use crate::{
-    command::*,
     command_runner::{run_command, run_command_async},
     constants::{
         COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_VERSION, COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
     },
-    fb_api::{send_upload_status_update, send_upload_status_update_async},
+    files_api::FilesApi,
 };
 
 #[derive(Debug)]
 pub struct Client<'r> {
     host: &'r str,
     port: i16,
+    pub files_api: FilesApi,
 }
 
 pub struct ClientError {
@@ -49,7 +49,12 @@ impl From<std::io::Error> for ClientError {
 
 impl Client<'_> {
     pub fn new(host: &str, port: i16) -> Client {
-        Client { host, port }
+        let files_api = FilesApi::new();
+        Client {
+            host,
+            port,
+            files_api,
+        }
     }
 
     pub fn command(command: &str) -> String {
@@ -143,6 +148,7 @@ impl Client<'_> {
     }
 
     pub async fn remote_do_copy_async(
+        files_api: &FilesApi,
         host: &str,
         port: &str,
         archive_name: &str,
@@ -196,8 +202,10 @@ impl Client<'_> {
                     .await
                     .unwrap();
 
-                let err_msg = format!("error::{error}");
-                send_upload_status_update_async(&archive_name_copy, &err_msg).await;
+                let err_msg = error.as_str();
+                FilesApi::new()
+                    .send_upload_status_update_async(&archive_name_copy, err_msg)
+                    .await;
 
                 return Err(ClientError {
                     code: 347,
@@ -209,12 +217,16 @@ impl Client<'_> {
             Ok(())
         });
 
-        send_upload_status_update_async(&archive_name, "starting upload").await;
+        files_api
+            .send_upload_status_update_async(&archive_name, "starting upload")
+            .await;
 
         // read lines from script output as they are written to its stdout
         while let Some(line) = reader.next_line().await? {
             let message = format!("progress::{}", line);
-            send_upload_status_update_async(&archive_name, &message).await;
+            files_api
+                .send_upload_status_update_async(&archive_name, &message)
+                .await;
         }
 
         // remove local copy of archive
@@ -229,14 +241,22 @@ impl Client<'_> {
             Err(e) => return Err(e),
         };
 
-        send_upload_status_update_async(&archive_name, "extracting").await;
+        files_api
+            .send_upload_status_update_async(&archive_name, "extracting")
+            .await;
 
         // extract uploaded archive on remote
         let prt: i16 = port.to_string().parse().unwrap();
         let client = Client::new(host, prt);
         match client.remote_extract_archive(&archive_name) {
             Ok(_) => Ok(()),
-            Err(e) => Err(e),
+            Err(e) => {
+                let err_msg = e.message.as_str();
+                files_api
+                    .send_upload_status_update_async(&archive_name, err_msg)
+                    .await;
+                Err(e)
+            }
         }
     }
 
@@ -245,8 +265,8 @@ impl Client<'_> {
         let mut ch = sess.channel_session().unwrap();
         let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
         let command = &*format!(
-            "{} {} {}; {} {}",
-            "tar --ignore-failed-read -xf", archive_path, "-C /srv", "rm -f", archive_path,
+            "{} {} {} && {} {}",
+            "tar -xf", archive_path, "-C /srv", "rm -f", archive_path,
         );
         ch.exec(command).unwrap();
         let mut output = String::new();
@@ -254,9 +274,11 @@ impl Client<'_> {
 
         let exit_code = ch.exit_status().unwrap();
         if exit_code != 0 {
+            let mut stderr = String::new();
+            ch.stderr().read_to_string(&mut stderr).unwrap();
             return Err(ClientError {
                 code: exit_code,
-                message: output,
+                message: stderr,
                 http_code: Some(503),
             });
         }

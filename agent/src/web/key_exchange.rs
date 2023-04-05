@@ -1,6 +1,6 @@
 use rocket::serde::{json::Json, Deserialize, Serialize};
 
-use crate::{command_runner::run_command, constants::COMMAND_EXCHANGE_KEYS};
+use crate::{command_runner::run_command_async, constants::COMMAND_EXCHANGE_KEYS};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -18,13 +18,13 @@ pub struct RegisterPublicKeyResponse {
 }
 
 #[post("/register-public-key", data = "<host_info>")]
-pub fn register_public_key(host_info: Json<HostInfo<'_>>) -> Json<RegisterPublicKeyResponse> {
+pub async fn register_public_key(host_info: Json<HostInfo<'_>>) -> Json<RegisterPublicKeyResponse> {
     let mut args: Vec<&str> = Vec::new();
     args.push(host_info.host);
     args.push(host_info.port);
     args.push(host_info.secret.unwrap_or(""));
 
-    return match run_command(201, true, false, COMMAND_EXCHANGE_KEYS, args) {
+    return match run_command_async(201, true, false, COMMAND_EXCHANGE_KEYS, args).await {
         Ok(_) => Json(RegisterPublicKeyResponse {
             success: Some(true),
             error: None,
