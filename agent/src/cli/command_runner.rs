@@ -1,6 +1,8 @@
 use rocket::http::Status;
 use std::process::{Command, Stdio};
 
+use tokio::process::Command as AsyncCommand;
+
 use crate::constants::DEFAULTS;
 
 pub struct CommandError {
@@ -16,6 +18,87 @@ pub fn run_command(
     command: &str,
     args: Vec<&str>,
 ) -> Result<String, CommandError> {
+    let (program, command_args) = get_command_args(command, is_cli, args);
+
+    // attempt to execute command
+    let result = Command::new(program)
+        .args(command_args)
+        .stdout(Stdio::piped())
+        .output();
+
+    // return error if failed to execute command
+    if result.is_err() {
+        return Err(get_error(
+            command_id,
+            result.unwrap_err().to_string(),
+            "500".to_string(),
+        ));
+    }
+    let result = result.unwrap();
+    let stderr = String::from_utf8(result.stderr).unwrap_or("".to_string());
+    let stdout = String::from_utf8(result.stdout).unwrap_or("".to_string());
+    let code = result.status.code().unwrap();
+
+    // return error if the command's error output is not empty
+    if !allow_stderr && stderr.trim().len() > 0 {
+        return Err(get_error(code, stderr.trim().to_string(), stderr));
+    }
+
+    // return error if the command's return code is not zero
+    if code != 0 {
+        return Err(get_error(code, stderr.trim().to_string(), stderr));
+    }
+
+    // return the commands standard output on success
+    Ok(stdout)
+}
+
+pub async fn run_command_async(
+    command_id: i32,
+    is_cli: bool,
+    allow_stderr: bool,
+    command: &str,
+    args: Vec<&str>,
+) -> Result<String, CommandError> {
+    let (program, command_args) = get_command_args(command, is_cli, args);
+
+    // setup and execute command
+    let mut cmd = AsyncCommand::new(program);
+    let result = cmd.args(command_args).output().await;
+
+    // return error if failed to execute command
+    if result.is_err() {
+        return Err(get_error(
+            command_id,
+            result.unwrap_err().to_string(),
+            "500".to_string(),
+        ));
+    }
+
+    let result = result.unwrap();
+    let stderr = String::from_utf8(result.stderr).unwrap_or("".to_string());
+    let stdout = String::from_utf8(result.stdout).unwrap_or("".to_string());
+    let code = result.status.code().unwrap();
+
+    // return error if the command's error output is not empty
+    if !allow_stderr && stderr.trim().len() > 0 {
+        return Err(get_error(code, stderr.trim().to_string(), stderr));
+    }
+
+    // return error if the command's return code is not zero
+    if code != 0 {
+        return Err(get_error(code, stderr.trim().to_string(), stderr));
+    }
+
+    // return the commands standard output on success
+    Ok(stdout)
+}
+
+fn get_command_args<'a>(
+    command: &'a str,
+    is_cli: bool,
+    args: Vec<&'a str>,
+) -> (&'a str, Vec<&'a str>) {
     let mut command_args: Vec<&str> = Vec::new();
     let program;
     if is_cli == true {
@@ -29,49 +112,16 @@ pub fn run_command(
         command_args = args;
     }
 
-    // attempt to execute command
-    let result = Command::new(program)
-        .args(command_args)
-        .stdout(Stdio::piped())
-        .output();
+    (program, command_args)
+}
 
-    // return error if failed to execute command
-    if result.is_err() {
-        return Err(CommandError {
-            code: command_id,
-            message: result.unwrap_err().to_string(),
-            status: Status::InternalServerError,
-        });
+fn get_error(code: i32, message: String, stderr: String) -> CommandError {
+    let s: String = stderr.chars().take(3).collect();
+    let http_code: u16 = s.parse().unwrap_or(400);
+
+    CommandError {
+        code,
+        message: message + " code:(" + code.to_string().as_str() + ")",
+        status: Status::new(http_code),
     }
-    let result = result.unwrap();
-    let stderr = String::from_utf8(result.stderr).unwrap_or("".to_string());
-    let stdout = String::from_utf8(result.stdout).unwrap_or("".to_string());
-    let code = result.status.code().unwrap();
-
-    // return error if the command's error output is not empty
-    if !allow_stderr && stderr.trim().len() > 0 {
-        let s: String = stderr.chars().take(3).collect();
-        let http_code: u16 = s.parse().unwrap_or(400);
-
-        return Err(CommandError {
-            code,
-            message: stderr.trim().to_string() + " code:(" + code.to_string().as_str() + ")",
-            status: Status::new(http_code),
-        });
-    }
-
-    // return error if the command's return code is not zero
-    if code != 0 {
-        let s: String = stderr.chars().take(3).collect();
-        let http_code: u16 = s.parse().unwrap_or(400);
-
-        return Err(CommandError {
-            code,
-            message: stderr.trim().to_string() + " code:(" + code.to_string().as_str() + ")",
-            status: Status::new(http_code),
-        });
-    }
-
-    // return the commands standard output on success
-    Ok(stdout)
 }

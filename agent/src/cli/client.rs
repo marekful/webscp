@@ -18,7 +18,7 @@ use std::process::Stdio;
 
 use crate::{
     command::*,
-    command_runner::run_command,
+    command_runner::{run_command, run_command_async},
     constants::{
         COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_VERSION, COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
     },
@@ -110,7 +110,7 @@ impl Client<'_> {
         0
     }
 
-    pub fn remote_do_copy(&self, archive_name: &String) -> i32 {
+    /*pub fn remote_do_copy(&self, archive_name: &String) -> i32 {
         /*let sess = self.create_session(None).unwrap();*/
 
         if let Err(e) = self._remote_do_copy(/*sess, */ &archive_name) {
@@ -119,7 +119,7 @@ impl Client<'_> {
         }
 
         0
-    }
+    }*/
 
     pub fn ping(&self) -> i32 {
         // start duration measure
@@ -181,7 +181,7 @@ impl Client<'_> {
                 None => {
                     return Err(ClientError {
                         code: 346,
-                        message: "Canceled".to_string(),
+                        message: "aborted".to_string(),
                         http_code: Some(200),
                     })
                 }
@@ -221,7 +221,7 @@ impl Client<'_> {
         let mut rm_args: Vec<&str> = Vec::new();
         rm_args.push("-f");
         rm_args.push(local_path.as_str());
-        let _rm_result = run_command(81, false, true, "rm", rm_args);
+        let _rm_result = run_command_async(81, false, true, "rm", rm_args).await;
 
         // abort process on any errors from command execution (including usr1 signal)
         match upload_result.await.unwrap() {
@@ -378,7 +378,7 @@ impl Client<'_> {
         Ok(output)
     }
 
-    fn _remote_do_copy(&self, archive_name: &str) -> Result<(), ClientError> {
+    /*fn _remote_do_copy(&self, archive_name: &str) -> Result<(), ClientError> {
         // create arguments list for scp command
         let local_path = format!(
             "{}{}{}",
@@ -417,7 +417,7 @@ impl Client<'_> {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
         }
-    }
+    }*/
 
     fn send_public_key(&self, sess: &Session) -> i32 {
         // read our public key
