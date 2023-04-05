@@ -280,7 +280,7 @@ import { enableExec } from "@/utils/constants";
 import * as upload from "@/utils/upload";
 import css from "@/utils/css";
 import throttle from "lodash.throttle";
-import transfers from "@/utils/transfers"
+import transfers from "@/utils/transfers";
 
 import HeaderBar from "@/components/header/HeaderBar";
 import Action from "@/components/header/Action";
@@ -441,8 +441,11 @@ export default {
       if (!stored.length) return;
 
       for (let transferID of stored) {
+        if (transfers.get(this.transfers, transferID)) continue;
+
         let transfer = localStorage.getItem(`transfer-${transferID}`);
         if (!transfer) continue;
+
         transfer = JSON.parse(transfer);
 
         transfers.create(
