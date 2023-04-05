@@ -9,11 +9,19 @@ mod fb_api;
 use crate::{client::Client, command::*, constants::*};
 
 use std::{env, process::exit};
+use std::future::Future;
+use rocket::futures::TryFutureExt;
+
+pub struct FutureCommandError {
+    pub code: i32,
+    pub message: String,
+}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut exec: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
-    //let mut exec2: dyn Future<Output=Result<fn(Option<Client>, Option<Vec<String>>), FutureError>> = None;
+    //let mut exec_async: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
+    //let mut exec_async: dyn Future<Output=Result<fn(Option<Client>, Option<Vec<String>>), FutureCommandError>> = None;
 
     // commands executed locally - these require no 'host' and 'port'
     // arguments but may require others

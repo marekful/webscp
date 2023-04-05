@@ -13,6 +13,7 @@ use crate::{
     constants::{COMMAND_GET_REMOTE_RESOURCE, COMMAND_REMOTE_BEFORE_COPY, DEFAULTS},
     fb_api::send_upload_status_update_async,
 };
+use crate::command_runner::run_command_async;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(crate = "rocket::serde")]
@@ -84,13 +85,13 @@ pub async fn copy(
     before_copy_args.push(port);
     before_copy_args.push(&items_json);
     // execute command
-    match run_command(
+    match run_command_async(
         204,
         true,
         false,
         COMMAND_REMOTE_BEFORE_COPY,
         before_copy_args,
-    ) {
+    ).await {
         Ok(_) => {}
         Err(err) => {
             return (
@@ -104,7 +105,7 @@ pub async fn copy(
     };
 
     /*<alt:async execution of tar and scp> */
-    // run remaining tasks asynchronously in a future
+    // run remaining tasks asynchronously in a future:
     let items_copy = request.items.to_vec();
     let _future = task::spawn(finish_upload_in_background(
         String::from(host),
@@ -153,9 +154,9 @@ pub async fn copy(
     )
 }
 
-struct FutureError {
-    code: i32,
-    message: String,
+pub struct FutureError {
+    pub code: i32,
+    pub message: String,
 }
 
 fn finish_upload_in_background(
