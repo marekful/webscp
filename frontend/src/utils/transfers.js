@@ -13,7 +13,8 @@ function create(
   stats = { progress: [], total: [] },
   pending = true,
   canceled = false,
-  error = false
+  error = false,
+  uploading = false
 ) {
   status = status || "starting";
   stats = stats || { progress: [], total: [] };
@@ -52,6 +53,7 @@ function create(
     icon,
     items,
     stats,
+    uploading,
     cancelable,
     showDetails,
   };
@@ -65,6 +67,7 @@ function get(transfers, transferID) {
       return transfer;
     }
   }
+  return null;
 }
 
 function remove($store, transferID) {
@@ -90,6 +93,7 @@ function update($store, data) {
         "stats",
         "canceled",
         "cancelable",
+        "uploading",
         "showDetails",
       ].forEach((attr) => {
         if (data[attr] !== undefined) {
@@ -107,6 +111,7 @@ function update($store, data) {
         items,
         pending,
         canceled,
+        uploading,
         error,
         stats,
       } = newTransfer;
@@ -120,6 +125,7 @@ function update($store, data) {
         items,
         pending,
         canceled,
+        uploading,
         error,
         stats,
       };
@@ -197,9 +203,11 @@ function handleMessage($store) {
       stats,
       messageTr,
       extra = "",
+      errorMessage,
       pending = true,
       canceled = false,
-      cancelable = true;
+      cancelable = true,
+      uploading = false;
 
     if (event.data.indexOf("::") !== -1) {
       let s = event.data.split("::");
@@ -220,9 +228,11 @@ function handleMessage($store) {
       case "starting upload":
         icon = "drive_folder_upload";
         messageTr = "startingUpload";
+        uploading = true;
         break;
       case "uploading":
         icon = "drive_folder_upload";
+        uploading = true;
         break;
       case "extracting":
         icon = "drive_file_move";
@@ -234,6 +244,7 @@ function handleMessage($store) {
         break;
       case "progress":
         icon = "drive_folder_upload";
+        uploading = true;
         messageTr = "uploading";
         if (data === "stats") {
           message = "uploading";
@@ -241,23 +252,28 @@ function handleMessage($store) {
         }
         break;
       case "signal":
-        message = extra;
-        messageTr = "aborted";
+        messageTr = extra;
         pending = false;
         canceled = true;
+        uploading = false;
         icon = "highlight_off";
         break;
       default:
         // error case
         icon = "error_outline";
+        uploading = false;
+        errorMessage = i18n.te(`transfer.${messageTr}`)
+          ? i18n.t(`transfer.${messageTr}`)
+          : message;
 
         update($store, {
           transferID: event.target.transferID,
           pending: false,
           error: true,
-          status: i18n.t(`transfer.${messageTr}`),
+          status: errorMessage,
           icon,
           cancelable,
+          uploading,
         });
 
         setButtonActive($store.state.transfers);
@@ -273,6 +289,7 @@ function handleMessage($store) {
       stats,
       canceled,
       cancelable,
+      uploading,
     });
 
     if (pending) {

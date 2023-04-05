@@ -40,9 +40,9 @@
               >
                 <span
                   v-if="
-                    transfer.pending === true ||
-                    transfer.error === true ||
-                    transfer.canceled === true
+                    transfer.uploading === true ||
+                    transfer.canceled === true ||
+                    transfer.error === true
                   "
                 >
                   <span>{{ transfer.stats.progress[0] }}</span>

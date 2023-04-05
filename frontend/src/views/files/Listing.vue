@@ -461,6 +461,7 @@ export default {
           transfer.pending,
           transfer.canceled,
           transfer.error,
+          transfer.uploading
         );
       }
       transfers.setButtonActive(this.transfers);
