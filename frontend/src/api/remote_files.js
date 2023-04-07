@@ -4,7 +4,7 @@ export async function fetch(agentId, url) {
   url = removePrefix(url);
 
   const res = await fetchURL(
-    `/api/remote/resources/${agentId}/${encodeURIComponent(url)}`,
+    `/api/remote/${agentId}/resources/${encodeURIComponent(url)}`,
     {}
   );
 
@@ -36,7 +36,7 @@ export async function fetch(agentId, url) {
 }
 
 function moveCopyStart(
-  agentId,
+  agentID,
   items,
   copy = false,
   overwrite = false,
@@ -49,20 +49,25 @@ function moveCopyStart(
     requestItems.push({ source, destination, overwrite, rename });
   }
   const action = copy ? "remote-copy" : "remote-rename";
-  const url = `${agentId}?action=${action}`;
+  const query = `?action=${action}`;
 
-  return remoteResourceAction(url, "POST", JSON.stringify(requestItems));
+  return remoteResourceAction(
+    agentID,
+    query,
+    "POST",
+    JSON.stringify(requestItems)
+  );
 }
 
-export function moveStart(agentId, items, overwrite = false, rename = false) {
-  return moveCopyStart(agentId, items, false, overwrite, rename);
+export function moveStart(agentID, items, overwrite = false, rename = false) {
+  return moveCopyStart(agentID, items, false, overwrite, rename);
 }
 
-export function copyStart(agentId, items, overwrite = false, rename = false) {
-  return moveCopyStart(agentId, items, true, overwrite, rename);
+export function copyStart(agentID, items, overwrite = false, rename = false) {
+  return moveCopyStart(agentID, items, true, overwrite, rename);
 }
 
-async function remoteResourceAction(url, method, content) {
+async function remoteResourceAction(agentID, query, method, content) {
   let opts = { method };
 
   if (content) {
@@ -72,7 +77,7 @@ async function remoteResourceAction(url, method, content) {
     opts.headers = { "Content-Type": "application/json" };
   }
 
-  return fetchURL(`/api/remote/copy/${url}`, opts)
+  return fetchURL(`/api/remote/${agentID}/copy${query}`, opts)
     .then((res) => res.json())
     .catch((err) => {
       throw new Error(err);
@@ -81,7 +86,7 @@ async function remoteResourceAction(url, method, content) {
 
 export async function cancelTransfer(agentID, transferID) {
   let opts = { method: "DELETE" };
-  return fetchURL(`/api/remote/transfers/${agentID}/${transferID}`, opts).catch(
+  return fetchURL(`/api/remote/${agentID}/transfers/${transferID}`, opts).catch(
     (err) => {
       throw new Error(err);
     }

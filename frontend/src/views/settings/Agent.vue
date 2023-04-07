@@ -97,6 +97,10 @@ export default {
             host: "",
             port: "",
             secret: "",
+            remote_user: {
+              name: "",
+              password: "",
+            },
             id: 0,
           };
         } else {

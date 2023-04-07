@@ -157,7 +157,7 @@ export default {
               this.transfers,
               "copy",
               this.agent,
-              items
+              transfers.prepareItems(items)
             );
             setTimeout(() => {
               buttons.active("transfers");

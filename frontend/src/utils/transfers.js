@@ -1,5 +1,6 @@
 import buttons from "./buttons";
 import i18n from "@/i18n";
+import { removePrefix } from "@/api/utils";
 
 function create(
   $store,
@@ -59,6 +60,19 @@ function create(
   };
   $store.commit("addTransfer", data);
   storeAdd(data);
+}
+
+function prepareItems(items) {
+  return items.map((item) => {
+    let trailingSlash = item.from[item.from.length - 1] === "/" ? "/" : "";
+    item.from = removePrefix(item.from);
+    item.from = item.from.replace(item.name + "/", "");
+    item.from = item.from.replace(item.name, "");
+    item.to = removePrefix(item.to);
+    item.to = item.to.replace(item.name, "");
+    item.name += trailingSlash;
+    return item;
+  });
 }
 
 function get(transfers, transferID) {
@@ -337,4 +351,5 @@ export default {
   update,
   remove,
   setButtonActive,
+  prepareItems,
 };

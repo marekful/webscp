@@ -31,24 +31,39 @@
         <div class="card-content full">
           <table>
             <tr>
-              <th>{{ $t("settings.agent.address") }}</th>
-              <th>{{ $t("settings.agent.status") }}</th>
-              <th>
-                {{ $t("settings.agent.agentVersion") }}<br />
-                <small>{{ $t("settings.agent.agentVersionHint") }}</small>
+              <th></th>
+              <th v-if="user.perm.admin">{{ $t("settings.agent.owner") }}</th>
+              <th>{{ $t("settings.agent.host") }}</th>
+              <th>{{ $t("settings.agent.port") }}</th>
+              <th>{{ $t("settings.agent.user") }}</th>
+              <th :title="$t('settings.agent.agentVersionHint')">
+                {{ $t("settings.agent.agentVersion") }}
               </th>
-              <th>
-                {{ $t("settings.agent.ping") }}<br />
-                <small>{{ $t("settings.agent.pingHint") }}</small>
+              <th :title="$t('settings.agent.latencyHint')">
+                {{ $t("settings.agent.latency") }}
               </th>
               <th></th>
             </tr>
 
             <tr v-for="agent in agents" :key="agent.id">
-              <td>{{ agent.host }}:{{ agent.port }}</td>
-              <td>
-                <div :class="'status-' + agent.status">{{ agent.status }}</div>
+              <td class="status">
+                <div :class="'status-' + (agent.status || 'loading')">
+                  <i v-if="agent.status === 'online'" class="material-icons">
+                    task_alt
+                  </i>
+                  <i
+                    v-else-if="agent.status === 'error'"
+                    class="material-icons"
+                  >
+                    cloud_off_outlined
+                  </i>
+                  <i v-else class="material-icons">help_outline</i>
+                </div>
               </td>
+              <td v-if="user.perm.admin">{{ agent.userID }}</td>
+              <td>{{ agent.host }}</td>
+              <td>{{ agent.port }}</td>
+              <td>{{ agent.remote_user.name }}</td>
               <td v-if="!agent.error" class="version">{{ agent.version }}</td>
               <td v-else class="version">
                 <div class="error">{{ agent.error }}</div>
@@ -86,42 +101,42 @@ export default {
     };
   },
   computed: {
-    ...mapState(["loading"]),
+    ...mapState(["loading", "user"]),
   },
   async created() {
     this.setLoading(true);
-
+  },
+  async mounted() {
     try {
       this.agents = await api.getAll();
     } catch (e) {
       this.error = e;
+      this.agents = [];
     } finally {
       this.setLoading(false);
+      if (!this.agents) {
+        this.agents = [];
+      }
     }
-    const promises = [];
-    this.agents.forEach(async (a) => {
-      promises.push(
-        fetch(`/api/agents/${a.id}/version`)
-          .then((response) => {
-            return response.text();
-          })
-          .then((json) => {
-            let v = JSON.parse(json);
-            a.latency = v.latency;
-            a.version = v.version;
-            a.status = "online";
-            if (v.error) {
-              a.error = v.error;
-              a.status = "error";
-            }
-            return a;
-          })
-      );
-    });
 
-    Promise.all(promises).then((agents) => {
-      this.agents = agents;
-    });
+    for (let idx = 0; idx < this.agents.length; idx++) {
+      fetch(`/api/agents/${this.agents[idx].id}/version`)
+        .then((response) => {
+          return response.text();
+        })
+        .then((json) => {
+          let v = JSON.parse(json);
+          let a = this.agents[idx];
+          a.latency = v.latency;
+          a.version = v.version;
+          a.status = "online";
+          if (v.error) {
+            a.error = v.error;
+            a.status = "error";
+          }
+          this.agents.splice(idx, 1, a);
+        });
+    }
   },
   methods: {
     ...mapMutations(["setLoading"]),
@@ -157,6 +172,10 @@ export default {
 .version {
   max-width: 18em;
 }
+td.status {
+  max-width: 3rem;
+  width: 3rem;
+}
 .error {
   word-wrap: break-word;
   word-break: break-word;
@@ -165,9 +184,20 @@ export default {
   padding: 0.5em;
 }
 .status-online {
-  color: var(--icon-green);
+  color: var(--icon-blue);
 }
-.status-error {
-  color: var(--icon-red);
+.status-error,
+.status-loading {
+  color: var(--mid-grey);
+}
+.status-online,
+.status-error,
+.status-loading,
+.status-online i,
+.status-error i,
+.status-loading i {
+  font-size: 1.25rem;
+  max-width: 1.5em;
+  margin-top: 0.1em;
 }
 </style>
