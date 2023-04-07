@@ -64,12 +64,14 @@
               <i class="material-icons">arrow_drop_down_circle</i>
               <span class="label">{{ $t("transfer.showDetails") }}</span>
             </div>
-            <div v-if="transfer.showDetails === true" class="content">
-              <div v-for="(item, index) in transfer.items" :key="index">
-                <span>{{ item.from }}</span>
-                <span>{{ item.to }}</span>
-              </div>
-            </div>
+            <ul v-if="transfer.showDetails === true" class="content">
+              <li v-for="(item, index) in transfer.items" :key="index">
+                  <span class="path">{{ item.from }}</span>
+                  <span class="name">{{ item.name }}</span>
+                  <i class="material-icons">east</i>
+                  <span class="to">{{ item.to }}</span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -300,6 +302,26 @@ export default {
 
 .transfer > .content > .details {
   margin-top: 0.25em;
+  font-size: 90%;
+}
+
+.transfer > .content > .details .path {
+  color: var(--mid-grey);
+}
+
+.transfer > .content > .details .name {
+  font-weight: bold;
+  margin-right: 0.25em;
+}
+
+.transfer > .content > .details .to {
+  margin-left: 1.25em;
+}
+
+.transfer > .content > .details > .content i {
+  position: absolute;
+  font-size: 1rem;
+  width: 18px;
 }
 
 .transfer > .content > .details > .icon {
@@ -323,8 +345,13 @@ export default {
   margin: 0 0 0 0.25em;
 }
 
-.transfer > .content > .details > .content {
-  margin-top: 1em;
+.transfer > .content > .details > ul.content {
+  margin: 1.5em 0 0 0;
+  padding: 0 0 0 1em;
+}
+
+.transfer > .content > .details > ul > li {
+  margin: 0 0 0.25em 0;
 }
 
 section.card-action {

@@ -29,6 +29,8 @@ const titles = {
   GlobalSettings: "settings.globalSettings",
   Users: "settings.users",
   User: "settings.user",
+  Agents: "settings.agent.remoteAgents",
+  Agent: "settings.agent.remoteAgent",
   Forbidden: "errors.forbidden",
   NotFound: "errors.notFound",
   InternalServerError: "errors.internal",
@@ -116,17 +118,11 @@ const router = new Router({
               path: "/settings/agents",
               name: "AgentSettings",
               component: AgentSettings,
-              meta: {
-                requiresAdmin: true,
-              },
             },
             {
               path: "/settings/agents/*",
               name: "Agent",
               component: Agent,
-              meta: {
-                requiresAdmin: true,
-              },
             },
           ],
         },

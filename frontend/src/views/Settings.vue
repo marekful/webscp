@@ -30,7 +30,7 @@
               {{ $t("settings.userManagement") }}
             </li></router-link
           >
-          <router-link to="/settings/agents" v-if="user.perm.admin"
+          <router-link to="/settings/agents"
             ><li
               :class="{
                 active:
