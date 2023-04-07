@@ -56,8 +56,9 @@ impl ArchiveWriter {
     ) -> impl Future<Output = Result<(), ArchiveError>> + '_ {
         async move {
             for item in items.iter() {
-                let src = String::from(&item.source.replacen("/files", "/srv", 1));
+                let src_ = decode(&item.source).unwrap().into_owned();
                 let dst_ = decode(&item.destination).unwrap().into_owned();
+                let src = String::from(src_.replacen("/files", "/srv", 1));
                 let dst = String::from(dst_.trim_start_matches("/"));
 
                 let res = match self.add_file_to_archive(src.clone(), dst) {
@@ -86,7 +87,10 @@ impl ArchiveWriter {
 
     fn add_file_to_archive(&mut self, src: String, path: String) -> Result<(), Error> {
         let src_path = Path::new(src.as_str());
-        let src_meta = src_path.metadata().unwrap();
+        let src_meta = match src_path.metadata() {
+            Ok(m) => m,
+            Err(e) => return Err(e)
+        };
 
         if src_meta.is_dir() {
             // walk path and recurse on items
@@ -130,32 +134,4 @@ impl ArchiveWriter {
             Ok(())
         }
     }
-
-    /*pub fn crate_archive(&mut self, items: Vec<ArchiveItem>) -> Result<(), ArchiveError> {
-        for item in items.iter() {
-            let src = String::from(&item.source.replacen("/files", "/srv", 1));
-            let dst_ = decode(&item.destination).unwrap().into_owned();
-            let dst = String::from(dst_.trim_start_matches("/"));
-
-            let res = match self.add_file_to_archive(src.clone(), dst) {
-                Ok(_) => Ok::<(), Error>(()),
-                Err(e) => {
-                    let _s = src.to_string();
-                    return Err(ArchiveError {
-                        code: 301,
-                        message: format!("Couldn't add {src} to archive: {}", e.to_string()),
-                    });
-                }
-            };
-
-            if res.is_err() {
-                return Err(ArchiveError {
-                    code: 302,
-                    message: res.unwrap_err().to_string(),
-                });
-            }
-        }
-
-        Ok(())
-    }*/
 }
