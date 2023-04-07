@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -116,15 +117,26 @@ func withAgent(fn handleFunc) handleFunc {
 		vars := mux.Vars(r)
 		agentID := vars["agent_id"]
 		id64, err := strconv.ParseUint(agentID, 10, 64)
-
-		if err != nil {
-			agent, aErr := d.store.Agents.Get(uint(id64))
-			if aErr == nil {
+		if err == nil {
+			agent, dErr := d.store.Agents.Get(uint(id64))
+			if dErr == nil {
 				d.agent = agent
 			}
 		}
 
-		// TODO: use dedicated user based on remote identity (TBD)
+		if len(vars["url"]) > 0 {
+			decodedURL, err := url.QueryUnescape(vars["url"])
+			if err == nil {
+				r.URL.Path = decodedURL
+			}
+		}
+
+		return fn(w, r, d)
+	}
+}
+
+func withAgentAdmin(fn handleFunc) handleFunc {
+	return withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		user, err := d.store.Users.Get(d.server.Root, uint(1))
 		if err != nil {
 			return http.StatusInternalServerError, nil
@@ -132,7 +144,27 @@ func withAgent(fn handleFunc) handleFunc {
 		d.user = user
 
 		return fn(w, r, d)
-	}
+	})
+}
+
+func withAgentUser(fn handleFunc) handleFunc {
+	return withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+		vars := mux.Vars(r)
+		userID := vars["user_id"]
+		id64, err := strconv.ParseUint(userID, 10, 64)
+		if err != nil {
+			return http.StatusUnauthorized, nil
+		}
+
+		user, dErr := d.store.Users.Get(d.server.Root, uint(id64))
+		if dErr != nil {
+			return http.StatusUnauthorized, nil
+		}
+
+		d.user = user
+
+		return fn(w, r, d)
+	})
 }
 
 var loginHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
