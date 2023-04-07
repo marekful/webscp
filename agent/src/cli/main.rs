@@ -31,6 +31,7 @@ fn main() {
     match command {
         COMMAND_GET_LOCAL_VERSION => exec = Some(command_get_local_version),
         COMMAND_GET_LOCAL_RESOURCE => exec = Some(command_get_local_resource),
+        COMMAND_GET_LOCAL_USER => exec = Some(command_get_local_user),
         COMMAND_LOCAL_BEFORE_COPY => exec = Some(command_local_before_copy),
         _ => {}
     }
@@ -55,6 +56,7 @@ fn main() {
         COMMAND_GET_REMOTE_RESOURCE => exec = Some(command_get_remote_resource),
         COMMAND_REMOTE_BEFORE_COPY => exec = Some(command_remote_before_copy),
         /*COMMAND_REMOTE_DO_COPY => exec = Some(command_remote_do_copy),*/
+        COMMAND_GET_REMOTE_USER => exec = Some(command_get_remote_user),
         COMMAND_PING => exec = Some(command_ping),
         _ => {
             eprintln!("Invalid command {}", command);

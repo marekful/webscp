@@ -6,6 +6,8 @@ pub const COMMAND_REMOTE_BEFORE_COPY: &'static str = "remote-before-copy";
 pub const COMMAND_REMOTE_DO_COPY: &'static str = "remote-do-copy";
 pub const COMMAND_LOCAL_BEFORE_COPY: &'static str = "local-before-copy";
 pub const COMMAND_EXCHANGE_KEYS: &'static str = "exchange-keys";
+pub const COMMAND_GET_REMOTE_USER: &'static str = "get-remote-user";
+pub const COMMAND_GET_LOCAL_USER: &'static str = "get-local-user";
 pub const COMMAND_PING: &'static str = "ping";
 
 pub struct Defaults {
