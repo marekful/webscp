@@ -93,31 +93,29 @@ func NewHandler(
 }
 
 func addAgentRoutes(
-	apiRouter *mux.Router,
+	api *mux.Router,
 	monkey func(fn handleFunc, prefix string) http.Handler,
 ) {
-	agentsRouter := apiRouter.PathPrefix("/agents").Subrouter()
-	agentsRouter.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
-	agentsRouter.Handle("", monkey(agentPostHandler, "")).Methods("POST")
-	agentsRouter.Handle("/{id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
-	agentsRouter.Handle("/{id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
-	agentsRouter.Handle("/{id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
+	agents := api.PathPrefix("/agents").Subrouter()
+	agents.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
+	agents.Handle("", monkey(agentPostHandler, "")).Methods("POST")
+	agents.Handle("/{id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
+	agents.Handle("/{id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
+	agents.Handle("/{id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
 
-	apiRouter.PathPrefix("/remote/resources/{agent_id:[0-9]+}/{url:.*}").
-		Handler(monkey(remoteResourceGetHandler, "/api/remote/resources")).Methods("GET")
-	apiRouter.PathPrefix("/agent/resources").
-		Handler(monkey(agentResourceGetHandler, "/api/agent/resources")).Methods("GET")
+	agent := api.PathPrefix("/agent").Subrouter()
+	remote := api.PathPrefix("/remote").Subrouter()
 
-	apiRouter.PathPrefix("/remote/copy/{agent_id:[0-9]+}").
-		Handler(monkey(remoteSourceResourcePostHandler(), "/api/remote/copy")).Methods("POST")
-	apiRouter.PathPrefix("/agent/copy").
-		Handler(monkey(remoteDestinationResourcePostHandler(), "/api/agent/copy")).Methods("POST")
+	agent.Handle("/verify-user-credentials", monkey(agentVerifyUserCredentialsPostHandler, "")).Methods("POST")
 
-	apiRouter.PathPrefix("/sse/transfers/{id:[a-f0-9-]+}/poll").
-		Handler(monkey(sseTransferPollGetHandler, "")).Methods("GET")
-	apiRouter.PathPrefix("/sse/transfers/{id:[a-f0-9-]+}/update/{message:.*}").
-		Handler(monkey(sseTransferUpdateGetHandler, "s")).Methods("GET")
+	remote.Handle("/{agent_id:[0-9]+}/resources/{url:.*}", monkey(remoteResourceGetHandler, "")).Methods("GET")
+	agent.Handle("/{user_id:[0-9]+}/resources/{url:.*}", monkey(agentResourceGetHandler, "")).Methods("GET")
 
-	apiRouter.PathPrefix("/remote/transfers/{agent_id:[0-9]+}/{transfer_id:[a-f0-9-]+}").
-		Handler(monkey(transferDeleteHandler, "")).Methods("DELETE")
+	remote.Handle("/{agent_id:[0-9]+}/copy", monkey(remoteSourceResourcePostHandler(), "")).Methods("POST")
+	agent.Handle("/{user_id:[0-9]+}/copy", monkey(remoteDestinationResourcePostHandler(), "")).Methods("POST")
+
+	api.PathPrefix("/sse/transfers/{id:[a-f0-9-]+}/poll").Handler(monkey(sseTransferPollGetHandler, "")).Methods("GET")
+	api.PathPrefix("/sse/transfers/{id:[a-f0-9-]+}/update/{message:.*}").Handler(monkey(sseTransferUpdateGetHandler, "s")).Methods("GET")
+
+	remote.Handle("/{agent_id:[0-9]+}/transfers/{transfer_id:[a-f0-9-]+}", monkey(transferDeleteHandler, "")).Methods("DELETE")
 }

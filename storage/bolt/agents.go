@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/asdine/storm/v3"
+	"github.com/asdine/storm/v3/q"
 
 	"github.com/filebrowser/filebrowser/v2/agents"
 	"github.com/filebrowser/filebrowser/v2/errors"
@@ -13,6 +14,20 @@ import (
 
 type agentsBackend struct {
 	db *storm.DB
+}
+
+func (st agentsBackend) Gets() ([]*agents.Agent, error) {
+	var allAgents []*agents.Agent
+	err := st.db.All(&allAgents)
+	if err == storm.ErrNotFound {
+		return nil, errors.ErrNotExist
+	}
+
+	if err != nil {
+		return allAgents, err
+	}
+
+	return allAgents, err
 }
 
 func (st agentsBackend) GetBy(i interface{}) (agent *agents.Agent, err error) {
@@ -40,18 +55,15 @@ func (st agentsBackend) GetBy(i interface{}) (agent *agents.Agent, err error) {
 	return
 }
 
-func (st agentsBackend) Gets() ([]*agents.Agent, error) {
-	var allAgents []*agents.Agent
-	err := st.db.All(&allAgents)
+func (st agentsBackend) FindByUserID(id uint) ([]*agents.Agent, error) {
+	var v []*agents.Agent
+	err := st.db.Select(q.Eq("UserID", id)).Find(&v)
+
 	if err == storm.ErrNotFound {
-		return nil, errors.ErrNotExist
+		return v, nil
 	}
 
-	if err != nil {
-		return allAgents, err
-	}
-
-	return allAgents, err
+	return v, err
 }
 
 func (st agentsBackend) Update(agent *agents.Agent, fields ...string) error {

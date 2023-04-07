@@ -29,7 +29,7 @@ var remoteResourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Requ
 		Agent: agent,
 	}
 
-	resp, err := client.GetResource(agent.Host, agent.Port, vars["url"])
+	resp, err := client.GetResource(agent.RemoteUser.ID, agent.Host, agent.Port, vars["url"])
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -83,7 +83,7 @@ func remoteSourceResourcePostHandler() handleFunc {
 }
 
 func remoteDestinationResourcePostHandler() handleFunc {
-	return withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	return withAgentUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		var req []agents.ResourceItem
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -149,7 +149,7 @@ func remoteResourcePostAction(
 			Agent: agent,
 		}
 
-		resp, status, err := client.RemoteCopy(agent.Host, agent.Port, string(uuid), items)
+		resp, status, err := client.RemoteCopy(agent.RemoteUser.ID, agent.Host, agent.Port, string(uuid), items)
 		if err != nil {
 			return status, nil, err
 		}

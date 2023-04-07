@@ -9,10 +9,19 @@ type ViewMode string
 
 // Agent describes an agent.
 type Agent struct {
-	ID     uint   `storm:"id,increment" json:"id"`
-	Host   string `json:"host"`
-	Port   string `json:"port"`
-	Secret string `json:"secret,omitempty"`
+	ID         uint       `storm:"id,increment" json:"id"`
+	UserID     uint       `json:"userID"`
+	Host       string     `json:"host"`
+	Port       string     `json:"port"`
+	Secret     string     `json:"secret,omitempty"`
+	RemoteUser RemoteUser `json:"remote_user"`
+}
+
+type RemoteUser struct {
+	ID       uint   `storm:"index" json:"id"`
+	Name     string `json:"name"`
+	Password string `json:"password,omitempty"`
+	Root     string `json:"root"`
 }
 
 var checkableFields = []string{
@@ -21,7 +30,7 @@ var checkableFields = []string{
 	"Secret",
 }
 
-// Clean cleans up a agent and verifies if all its fields
+// Clean cleans up an agent and verifies if all its fields
 // are alright to be saved.
 func (a *Agent) Clean(fields ...string) error {
 	if len(fields) == 0 {

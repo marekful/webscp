@@ -24,6 +24,13 @@ type ExchangeKeysResponse struct {
 	Error   string `json:"error"`
 }
 
+type GetRemoteUserResponse struct {
+	Code  int32  `json:"code"`
+	ID    uint   `json:"id"`
+	Root  string `json:"root"`
+	Error string `json:"error,omitempty"`
+}
+
 type GetVersionResponse struct {
 	Latency string `json:"latency"`
 	Version string `json:"version"`
@@ -96,6 +103,50 @@ func (c *AgentClient) ExchangeKeys(host, port, secret string) error {
 	return nil
 }
 
+func (c *AgentClient) GetRemoteUserID(user *RemoteUser) (status int, err error) {
+	agentAddress := os.Getenv("AGENT_ADDRESS")
+	requestURL := agentAddress + "/api/get-remote-user/" + c.Agent.Host + "/" + c.Agent.Port
+	body := []byte(`{
+		"name": "` + user.Name + `",
+		"password": "` + user.Password + `"
+	}`)
+
+	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewBuffer(body))
+	if err != nil {
+		message := fmt.Errorf("error initializing agent API request: %v", err)
+		return nethttps.StatusInternalServerError, message
+	}
+
+	r.Header.Add("Content-Type", "application/json")
+
+	client := &nethttps.Client{}
+	agentResponse, err := client.Do(r)
+	if err != nil {
+		return nethttps.StatusServiceUnavailable, fmt.Errorf("error sending agent API request: %v", err)
+	}
+
+	defer agentResponse.Body.Close()
+
+	resp := &GetRemoteUserResponse{}
+	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
+	if dErr != nil {
+		return nethttps.StatusInternalServerError, dErr
+	}
+
+	if agentResponse.StatusCode != nethttps.StatusOK {
+		return agentResponse.StatusCode, fmt.Errorf("%s", resp.Error)
+	}
+
+	if len(resp.Error) > 0 {
+		return nethttps.StatusServiceUnavailable, fmt.Errorf("%s", resp.Error)
+	}
+
+	user.ID = resp.ID
+	user.Root = resp.Root
+
+	return 0, nil
+}
+
 func (c *AgentClient) GetVersion() GetVersionResponse {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/version/%s/%s", agentAddress, c.Agent.Host, c.Agent.Port)
@@ -138,10 +189,10 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 	}
 }
 
-func (c *AgentClient) GetResource(host, port, url string) (response *GetResourceResponse, err error) {
+func (c *AgentClient) GetResource(userID uint, host, port, url string) (response *GetResourceResponse, err error) {
 	url = neturl.QueryEscape(url)
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/resources/%s/%s/%s", agentAddress, host, port, url)
+	requestURL := fmt.Sprintf("%s/api/resources/%s/%s/%d/%s", agentAddress, host, port, userID, url)
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
@@ -166,13 +217,14 @@ func (c *AgentClient) GetResource(host, port, url string) (response *GetResource
 }
 
 func (c *AgentClient) RemoteCopy(
+	userID uint,
 	host,
 	port,
 	archiveName string,
 	items []ResourceItem,
 ) (response *BeforeCopyResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/copy/%s/%s/%s", agentAddress, host, port, strings.Trim(archiveName, "\n"))
+	requestURL := fmt.Sprintf("%s/api/copy/%s/%s/%d/%s", agentAddress, host, port, userID, strings.Trim(archiveName, "\n"))
 	request := RemoteResourceAgentRequest{Items: items}
 	requestItems, err := json.Marshal(request)
 	if err != nil {

@@ -21,7 +21,7 @@ import (
 
 var resourceGetHandler = withUser(resourceGetHandlerBase)
 
-var agentResourceGetHandler = withAgent(resourceGetHandlerBase)
+var agentResourceGetHandler = withAgentUser(resourceGetHandlerBase)
 
 func resourceGetHandlerBase(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	file, err := files.NewFileInfo(files.FileOptions{
