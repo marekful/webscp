@@ -43,11 +43,17 @@ pub struct BeforeCopyResponse {
     message: Option<String>,
 }
 
-#[get("/resources/<host>/<port>/<path>")]
-pub async fn resources(host: &str, port: &str, path: &str) -> (Status, Json<ResourcesResponse>) {
+#[get("/resources/<host>/<port>/<user_id>/<path>")]
+pub async fn resources(
+    host: &str,
+    port: &str,
+    user_id: &str,
+    path: &str,
+) -> (Status, Json<ResourcesResponse>) {
     let mut args: Vec<&str> = Vec::new();
     args.push(host);
     args.push(port);
+    args.push(user_id);
     args.push(path);
 
     return match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
@@ -70,10 +76,11 @@ pub async fn resources(host: &str, port: &str, path: &str) -> (Status, Json<Reso
     };
 }
 
-#[post("/copy/<host>/<port>/<archive_name>", data = "<request>")]
+#[post("/copy/<host>/<port>/<user_id>/<archive_name>", data = "<request>")]
 pub async fn copy(
     host: &str,
     port: &str,
+    user_id: &str,
     archive_name: &str,
     request: Json<BeforeCopyRequest>,
 ) -> (Status, Json<BeforeCopyResponse>) {
@@ -82,6 +89,7 @@ pub async fn copy(
     let mut before_copy_args: Vec<&str> = Vec::new();
     before_copy_args.push(host);
     before_copy_args.push(port);
+    before_copy_args.push(user_id);
     before_copy_args.push(&items_json);
     // execute command
     match run_command_async(

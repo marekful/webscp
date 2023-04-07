@@ -19,7 +19,8 @@ use std::process::Stdio;
 use crate::{
     command_runner::{run_command, run_command_async},
     constants::{
-        COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_VERSION, COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
+        COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_USER, COMMAND_GET_LOCAL_VERSION,
+        COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
     },
     files_api::FilesApi,
 };
@@ -79,9 +80,23 @@ impl Client<'_> {
         0
     }
 
-    pub fn get_remote_resource(&self, path: &str) -> i32 {
+    pub fn get_remote_user(&self, user_name: &str, password: &str) -> i32 {
         let sess = self.create_session(None).unwrap();
-        match Client::_get_remote_resource(&sess, &path) {
+        match Client::remote_get_user(&sess, user_name, password) {
+            Ok(resources_result) => {
+                print!("{resources_result}");
+            }
+            Err(e) => {
+                Client::print_error_and_exit(e.code, e.message);
+            }
+        }
+
+        0
+    }
+
+    pub fn get_remote_resource(&self, user_id: u32, path: &str) -> i32 {
+        let sess = self.create_session(None).unwrap();
+        match Client::remote_get_resource(&sess, user_id, &path) {
             Ok(resources_result) => {
                 print!("{resources_result}");
             }
@@ -102,9 +117,9 @@ impl Client<'_> {
         0
     }
 
-    pub fn remote_before_copy(&self, items: &String) -> i32 {
+    pub fn remote_before_copy(&self, user_id: u32, items: &String) -> i32 {
         let sess = self.create_session(None).unwrap();
-        match Client::_remote_before_copy(&sess, &items) {
+        match Client::_remote_before_copy(&sess, user_id, &items) {
             Ok(result) => print!("{}", result),
             Err(e) => {
                 eprint!("{}", e.message);
@@ -355,9 +370,16 @@ impl Client<'_> {
         version
     }
 
-    fn _get_remote_resource(sess: &Session, path: &str) -> Result<String, ClientError> {
+    fn remote_get_resource(
+        sess: &Session,
+        user_id: u32,
+        path: &str,
+    ) -> Result<String, ClientError> {
         let mut ch = sess.channel_session().unwrap();
-        let command = &*format!("{} {path}", Client::command(COMMAND_GET_LOCAL_RESOURCE));
+        let command = &*format!(
+            "{} {user_id} {path}",
+            Client::command(COMMAND_GET_LOCAL_RESOURCE)
+        );
         ch.exec(command).unwrap();
         let mut output = String::new();
         let mut stderr = String::new();
@@ -377,11 +399,45 @@ impl Client<'_> {
         })
     }
 
-    fn _remote_before_copy(sess: &Session, items: &str) -> Result<String, ClientError> {
+    fn remote_get_user(
+        sess: &Session,
+        user_name: &str,
+        password: &str,
+    ) -> Result<String, ClientError> {
+        let mut ch = sess.channel_session().unwrap();
+        let command = &*format!(
+            "{} {user_name} {password}",
+            Client::command(COMMAND_GET_LOCAL_USER)
+        );
+        ch.exec(command).unwrap();
+        let mut output = String::new();
+        let mut stderr = String::new();
+        ch.read_to_string(&mut output).unwrap();
+        ch.stderr().read_to_string(&mut stderr).unwrap();
+
+        let result = ch.exit_status().unwrap();
+
+        if result == 0 {
+            return Ok(output);
+        }
+
+        Err(ClientError {
+            message: stderr,
+            code: result,
+            http_code: None,
+        })
+    }
+
+    fn _remote_before_copy(
+        sess: &Session,
+        user_id: u32,
+        items: &str,
+    ) -> Result<String, ClientError> {
         let mut ch = sess.channel_session().unwrap();
         ch.exec(&*format!(
-            "{} {}",
+            "{} {} {}",
             Client::command(COMMAND_LOCAL_BEFORE_COPY),
+            user_id,
             items
         ))
         .unwrap();
@@ -401,7 +457,7 @@ impl Client<'_> {
     }
 
     /*fn _remote_do_copy(&self, archive_name: &str) -> Result<(), ClientError> {
-        // create arguments list for scp command
+        // create argument list for scp command
         let local_path = format!(
             "{}{}{}",
             DEFAULTS.temp_data_dir, archive_name, ".agent.tar.gz"

@@ -39,8 +39,8 @@ impl FilesApi {
         ()
     }
 
-    pub fn get_local_resource(&self, path: &str) -> Result<String, ClientError> {
-        let uri = format!("/api/agent/resources/{path}");
+    pub fn get_local_resource(&self, user_id: u32, path: &str) -> Result<String, ClientError> {
+        let uri = format!("/api/agent/{user_id}/resources/{path}");
 
         let mut response = match self.make_get_request(&uri) {
             Ok(r) => r,
@@ -82,10 +82,10 @@ impl FilesApi {
         }
     }
 
-    pub fn local_before_copy(&self, items: String) -> Result<String, ClientError> {
-        let uri = "/api/agent/copy?action=remote-copy";
+    pub fn local_before_copy(&self, user_id: u32, items: String) -> Result<String, ClientError> {
+        let uri = format!("/api/agent/{user_id}/copy?action=remote-copy");
 
-        let mut response = match self.make_post_request(uri, items) {
+        let mut response = match self.make_post_request(&uri, items) {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
@@ -119,6 +119,53 @@ impl FilesApi {
             Ok(_) => Ok(output),
             Err(e) => Err(ClientError {
                 code: 194,
+                message: e.to_string(),
+                http_code: Some(500),
+            }),
+        }
+    }
+
+    pub fn get_local_user(&self, user_name: &str, password: &str) -> Result<String, ClientError> {
+        let uri = "/api/agent/verify-user-credentials";
+        let request = format!(
+            "{{\"name\": \"{}\", \"password\": \"{}\"}}",
+            user_name, password
+        );
+
+        let mut response = match self.make_post_request(uri, request) {
+            Ok(r) => r,
+            Err(e) => {
+                return Err(ClientError {
+                    code: 195,
+                    message: e.message,
+                    http_code: Some(500),
+                })
+            }
+        };
+
+        let mut output = String::new();
+        let result = response.read_to_string(&mut output);
+
+        if result.is_err() {
+            return Err(ClientError {
+                code: 196,
+                message: result.unwrap_err().to_string(),
+                http_code: Some(500),
+            });
+        }
+
+        if response.status() != StatusCode::OK {
+            return Err(ClientError {
+                code: 198,
+                message: response.status().to_string(),
+                http_code: Some(response.status().as_u16() as i32),
+            });
+        }
+
+        match response.read_to_string(&mut output) {
+            Ok(_) => Ok(output),
+            Err(e) => Err(ClientError {
+                code: 199,
                 message: e.to_string(),
                 http_code: Some(500),
             }),

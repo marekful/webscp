@@ -13,12 +13,16 @@ mod files_api;
 
 mod key_exchange;
 mod miscellaneous;
+mod remote_user;
 mod resource;
 mod transfer;
 
 #[macro_use]
 extern crate rocket;
-use crate::{files_api::FilesApi, key_exchange::*, miscellaneous::*, resource::*, transfer::*};
+use crate::{
+    files_api::FilesApi, key_exchange::*, miscellaneous::*, remote_user::*, resource::*,
+    transfer::*,
+};
 
 pub struct Files {
     pub api: FilesApi,
@@ -32,6 +36,7 @@ async fn main() -> Result<(), rocket::Error> {
     let _rocket = rocket::build()
         .manage(Files { api: files })
         .mount(api, routes![register_public_key])
+        .mount(api, routes![get_remote_user])
         .mount(api, routes![ping])
         .mount(api, routes![resources])
         .mount(api, routes![copy])
