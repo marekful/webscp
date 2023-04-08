@@ -99,9 +99,9 @@ func addAgentRoutes(
 	agents := api.PathPrefix("/agents").Subrouter()
 	agents.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
 	agents.Handle("", monkey(agentPostHandler, "")).Methods("POST")
-	agents.Handle("/{id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
-	agents.Handle("/{id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
-	agents.Handle("/{id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
+	agents.Handle("/{agent_id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
+	agents.Handle("/{agent_id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
+	agents.Handle("/{agent_id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
 
 	agent := api.PathPrefix("/agent").Subrouter()
 	remote := api.PathPrefix("/remote").Subrouter()

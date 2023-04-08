@@ -2,21 +2,17 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/golang-jwt/jwt/v4/request"
-	"github.com/gorilla/mux"
-
 	"github.com/filebrowser/filebrowser/v2/errors"
 	"github.com/filebrowser/filebrowser/v2/users"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4/request"
 )
 
 const (
@@ -100,68 +96,6 @@ func withAdmin(fn handleFunc) handleFunc {
 		if !d.user.Perm.Admin {
 			return http.StatusForbidden, nil
 		}
-
-		return fn(w, r, d)
-	})
-}
-
-func withAgent(fn handleFunc) handleFunc {
-	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		// Deny access to requests whose 'Host' header doesn't match the internal docker address (e.g. http://filebrowser:80).
-		internalHost := os.Getenv("INTERNAL_ADDRESS")
-		requestHost := "http://" + r.Host
-		if requestHost != internalHost {
-			return http.StatusUnauthorized, fmt.Errorf("error: %s does not match %s", internalHost, requestHost)
-		}
-
-		vars := mux.Vars(r)
-		agentID := vars["agent_id"]
-		id64, err := strconv.ParseUint(agentID, 10, 64)
-		if err == nil {
-			agent, dErr := d.store.Agents.Get(uint(id64))
-			if dErr == nil {
-				d.agent = agent
-			}
-		}
-
-		if len(vars["url"]) > 0 {
-			decodedURL, err := url.QueryUnescape(vars["url"])
-			if err == nil {
-				r.URL.Path = decodedURL
-			}
-		}
-
-		return fn(w, r, d)
-	}
-}
-
-func withAgentAdmin(fn handleFunc) handleFunc {
-	return withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		user, err := d.store.Users.Get(d.server.Root, uint(1))
-		if err != nil {
-			return http.StatusInternalServerError, nil
-		}
-		d.user = user
-
-		return fn(w, r, d)
-	})
-}
-
-func withAgentUser(fn handleFunc) handleFunc {
-	return withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		vars := mux.Vars(r)
-		userID := vars["user_id"]
-		id64, err := strconv.ParseUint(userID, 10, 64)
-		if err != nil {
-			return http.StatusUnauthorized, nil
-		}
-
-		user, dErr := d.store.Users.Get(d.server.Root, uint(id64))
-		if dErr != nil {
-			return http.StatusUnauthorized, nil
-		}
-
-		d.user = user
 
 		return fn(w, r, d)
 	})
