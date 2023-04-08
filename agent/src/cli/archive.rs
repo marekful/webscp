@@ -18,10 +18,11 @@ pub struct ArchiveWriter {
     compress: bool,
     gzip_writer: Option<Builder<GzEncoder<File>>>,
     tar_writer: Option<Builder<File>>,
+    source_base_path: String,
 }
 
 impl ArchiveWriter {
-    pub fn new(archive_path: &str, compress: bool) -> Result<Self, ArchiveError> {
+    pub fn new(archive_path: &str, compress: bool, source_base_path: &str) -> Result<Self, ArchiveError> {
         let file = match File::create(archive_path) {
             Ok(f) => f,
             Err(_) => {
@@ -39,6 +40,7 @@ impl ArchiveWriter {
                 compress,
                 tar_writer: None,
                 gzip_writer: Some(writer),
+                source_base_path: String::from(source_base_path),
             })
         } else {
             let writer = Builder::new(file);
@@ -46,6 +48,7 @@ impl ArchiveWriter {
                 compress,
                 tar_writer: Some(writer),
                 gzip_writer: None,
+                source_base_path: String::from(source_base_path),
             })
         };
     }
@@ -58,7 +61,7 @@ impl ArchiveWriter {
             for item in items.iter() {
                 let src_ = decode(&item.source).unwrap().into_owned();
                 let dst_ = decode(&item.destination).unwrap().into_owned();
-                let src = String::from(src_.replacen("/files", "/srv", 1));
+                let src = String::from(src_.replacen("/files", &self.source_base_path, 1));
                 let dst = String::from(dst_.trim_start_matches("/"));
 
                 let res = match self.add_file_to_archive(src.clone(), dst) {

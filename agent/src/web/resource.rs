@@ -25,9 +25,10 @@ pub struct ResourceItem {
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
-pub struct BeforeCopyRequest {
+pub struct CopyRequest {
     items: Vec<ResourceItem>,
-    //items: &'r str,
+    source_root: String,
+    destination_root: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -38,7 +39,7 @@ pub struct ResourcesResponse {
 }
 
 #[derive(Serialize, Debug)]
-pub struct BeforeCopyResponse {
+pub struct CopyResponse {
     code: i32,
     message: Option<String>,
 }
@@ -82,8 +83,8 @@ pub async fn copy(
     port: &str,
     user_id: &str,
     archive_name: &str,
-    request: Json<BeforeCopyRequest>,
-) -> (Status, Json<BeforeCopyResponse>) {
+    request: Json<CopyRequest>,
+) -> (Status, Json<CopyResponse>) {
     // create arguments for 'remote-before-copy' command
     let items_json = get_items_json(&request.items);
     let mut before_copy_args: Vec<&str> = Vec::new();
@@ -105,7 +106,7 @@ pub async fn copy(
         Err(err) => {
             return (
                 err.status,
-                Json(BeforeCopyResponse {
+                Json(CopyResponse {
                     code: err.code,
                     message: Some(err.message),
                 }),
@@ -121,6 +122,8 @@ pub async fn copy(
         String::from(port),
         items_copy,
         String::from(archive_name),
+        String::from(&request.source_root),
+        String::from(&request.destination_root),
     ));
 
     /* The task has started execution at this point and
@@ -156,7 +159,7 @@ pub async fn copy(
     // return success response
     (
         Status::Ok,
-        Json(BeforeCopyResponse {
+        Json(CopyResponse {
             code: 0,
             message: Some(archive_name.to_string()),
         }),
@@ -173,6 +176,8 @@ fn finish_upload_in_background(
     port: String,
     req_items: Vec<ResourceItem>,
     archive_name: String,
+    local_path: String,
+    remote_path: String,
 ) -> impl Future<Output = Result<(), FutureError>> + 'static {
     async move {
         // allow some time for the upload state poll to initialize
@@ -196,7 +201,7 @@ fn finish_upload_in_background(
 
         // create archive of files
         let archive_path = &*format!("{}{archive_name}.agent.tar.gz", DEFAULTS.temp_data_dir);
-        let mut archive_writer = match ArchiveWriter::new(archive_path, false) {
+        let mut archive_writer = match ArchiveWriter::new(archive_path, false, &local_path) {
             Ok(w) => w,
             Err(e) => {
                 files_api
@@ -247,7 +252,7 @@ fn finish_upload_in_background(
         };*/
         // <---ORIG
 
-        match Client::remote_do_copy_async(&files_api, &host, &port, &archive_name).await {
+        match Client::remote_do_copy_async(&files_api, &host, &port, &archive_name, &remote_path).await {
             Ok(_) => {
                 files_api
                     .send_upload_status_update_async(&archive_name, "complete")

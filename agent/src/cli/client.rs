@@ -25,6 +25,7 @@ use crate::{
     files_api::FilesApi,
 };
 
+
 #[derive(Debug)]
 pub struct Client<'r> {
     host: &'r str,
@@ -167,6 +168,7 @@ impl Client<'_> {
         host: &str,
         port: &str,
         archive_name: &str,
+        remote_base_path: &str,
     ) -> Result<(), ClientError> {
         let local_path = format!(
             "{}{}{}",
@@ -263,7 +265,7 @@ impl Client<'_> {
         // extract uploaded archive on remote
         let prt: i16 = port.to_string().parse().unwrap();
         let client = Client::new(host, prt);
-        match client.remote_extract_archive(&archive_name) {
+        match client.remote_extract_archive(&archive_name, &remote_base_path) {
             Ok(_) => Ok(()),
             Err(e) => {
                 let err_msg = e.message.as_str();
@@ -275,13 +277,13 @@ impl Client<'_> {
         }
     }
 
-    pub fn remote_extract_archive(&self, archive_name: &str) -> Result<(), ClientError> {
+    pub fn remote_extract_archive(&self, archive_name: &str, remote_path: &str) -> Result<(), ClientError> {
         let sess = self.create_session(None).unwrap();
         let mut ch = sess.channel_session().unwrap();
         let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
         let command = &*format!(
-            "{} {} {} && {} {}",
-            "tar -xf", archive_path, "-C /srv", "rm -f", archive_path,
+            "tar -xf {} -C {} && rm -rf {}",
+            archive_path, remote_path, archive_path,
         );
         ch.exec(command).unwrap();
         let mut output = String::new();
