@@ -6,30 +6,16 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
-	"strconv"
-
-	"github.com/gorilla/mux"
 
 	"github.com/filebrowser/filebrowser/v2/agents"
 )
 
-var remoteResourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-	vars := mux.Vars(r)
-	id64, err := strconv.ParseUint(vars["agent_id"], 10, 64)
-	if err != nil {
-		return http.StatusBadRequest, err
-	}
-
-	agent, err := d.store.Agents.Get(uint(id64))
-	if err != nil {
-		return http.StatusBadRequest, err
-	}
-
+var remoteResourceGetHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	client := agents.AgentClient{
-		Agent: agent,
+		Agent: d.agent,
 	}
 
-	resp, err := client.GetResource(agent.RemoteUser.ID, agent.Host, agent.Port, vars["url"])
+	resp, err := client.GetResource(d.agent.RemoteUser.ID, d.agent.Host, d.agent.Port, r.URL.Path)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -38,19 +24,12 @@ var remoteResourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Requ
 })
 
 func remoteSourceResourcePostHandler() handleFunc {
-	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	return injectAgentWithUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		var req []agents.ResourceItem
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			return http.StatusBadRequest, err
 		}
-
-		vars := mux.Vars(r)
-		id64, err := strconv.ParseUint(vars["agent_id"], 10, 64)
-		if err != nil {
-			return http.StatusBadRequest, err
-		}
-		agentID := uint(id64)
 
 		action := r.URL.Query().Get("action")
 		for idx, item := range req {
@@ -73,7 +52,7 @@ func remoteSourceResourcePostHandler() handleFunc {
 		}
 
 		//TODO: consider running hooks
-		status, response, err := remoteResourcePostAction(agentID, action, req, d)
+		status, response, err := remoteResourcePostAction(action, req, d)
 		if status == http.StatusOK {
 			return renderJSON(w, r, response)
 		}
@@ -125,7 +104,6 @@ func remoteDestinationResourcePostHandler() handleFunc {
 }
 
 func remoteResourcePostAction(
-	agentID uint,
 	action string,
 	items []agents.ResourceItem,
 	d *data,
@@ -140,16 +118,24 @@ func remoteResourcePostAction(
 		}
 
 		// execute remote copy operation
-		agent, err := d.store.Agents.Get(agentID)
-		if err != nil {
-			return http.StatusInternalServerError, nil, err
-		}
-
 		client := agents.AgentClient{
-			Agent: agent,
+			Agent: d.agent,
 		}
 
-		resp, status, err := client.RemoteCopy(agent.RemoteUser.ID, agent.Host, agent.Port, string(uuid), items)
+		srcScope := d.user.Scope
+		if srcScope == "." {
+			srcScope = ""
+		}
+
+		resp, status, err := client.RemoteCopy(
+			d.agent.RemoteUser.ID,
+			d.agent.Host,
+			d.agent.Port,
+			string(uuid),
+			d.server.Root+srcScope,
+			d.agent.RemoteUser.Root,
+			items,
+		)
 		if err != nil {
 			return status, nil, err
 		}

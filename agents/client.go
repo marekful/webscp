@@ -55,7 +55,9 @@ type ResourceItem struct {
 }
 
 type RemoteResourceAgentRequest struct {
-	Items []ResourceItem `json:"items"`
+	Items           []ResourceItem `json:"items"`
+	SourceRoot      string         `json:"source_root"`
+	DestinationRoot string         `json:"destination_root"`
 }
 
 type CancelTransferRequest struct {
@@ -220,18 +222,20 @@ func (c *AgentClient) RemoteCopy(
 	userID uint,
 	host,
 	port,
-	archiveName string,
+	archiveName,
+	srcRoot,
+	dstRoot string,
 	items []ResourceItem,
 ) (response *BeforeCopyResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/copy/%s/%s/%d/%s", agentAddress, host, port, userID, strings.Trim(archiveName, "\n"))
-	request := RemoteResourceAgentRequest{Items: items}
-	requestItems, err := json.Marshal(request)
+	request := RemoteResourceAgentRequest{Items: items, SourceRoot: srcRoot, DestinationRoot: dstRoot}
+	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error decoding items: %v", err)
 	}
 
-	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewReader(requestItems))
+	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewReader(requestBody))
 	if err != nil {
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
 	}
