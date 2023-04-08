@@ -5,6 +5,7 @@ RUN apt update && apt install -y libssl-dev openssh-server figlet
 ##
 
 ENV S6_OVERLAY_VERSION=3.1.4.1
+ENV DEVELOPMENT=1
 
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
@@ -32,6 +33,8 @@ COPY src /app/src
 COPY config/Rocket.toml /app/Rocket.toml
 
 RUN cargo build
+RUN ln -s target/debug/cli cli
+RUN ln -s target/debug/webserver webserver
 #RUN --mount=type=cache,target=/root/.cargo ["cargo", "build"]
 
 ##

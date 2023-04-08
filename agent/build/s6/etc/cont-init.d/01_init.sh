@@ -2,8 +2,12 @@
 
 mkdir -p /run/s6/container_environment /run/sshd
 
-echo "Adding user 'agent'"
-useradd -m agent -p $(echo "$AGENT_SECRET" | openssl passwd -1 -stdin)
+if grep agent /etc/passwd >/dev/null; then
+  echo "User 'agent' exists"
+else
+  echo "Adding user 'agent'"
+  useradd -m agent -p $(echo "$AGENT_SECRET" | openssl passwd -1 -stdin)
+fi
 
 mkdir -p /home/agent/.tmp-data
 chown -R agent:agent /home/agent
