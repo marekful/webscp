@@ -2,7 +2,10 @@
 
 echo "Starting Rocket "
 
-cd /app
-export RUST_BACKTRACE=1;
+cd /app || exit
 
-/usr/bin/execlineb -P -c "s6-setuidgid agent target/debug/webserver"
+if [ "$DEVELOPMENT" == "1" ]; then
+  export RUST_BACKTRACE=1;
+fi
+
+/usr/bin/execlineb -P -c "s6-setuidgid agent /app/webserver"
