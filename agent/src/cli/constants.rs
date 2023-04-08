@@ -11,7 +11,6 @@ pub const COMMAND_GET_LOCAL_USER: &'static str = "get-local-user";
 pub const COMMAND_PING: &'static str = "ping";
 
 pub struct Defaults {
-    pub cli_command: &'static str,
     pub cli_executable_path: &'static str,
     pub default_fb_api_address: &'static str,
     pub authorized_keys_file: &'static str,
@@ -23,12 +22,10 @@ pub struct Defaults {
     pub env_name_fb_api_address: &'static str,
     pub uploader_script_path: &'static str,
     pub cancel_transfer_script_path: &'static str,
-    /*fb_root_dir: &'static str,*/
 }
 
 pub const DEFAULTS: Defaults = Defaults {
-    cli_command: "with-contenv /app/target/debug/cli",
-    cli_executable_path: "/app/target/debug/cli",
+    cli_executable_path: "/app/cli",
     default_fb_api_address: "http://filebrowser:80",
     authorized_keys_file: "/home/agent/.ssh/authorized_keys",
     known_hosts_file: "/home/agent/.ssh/known_hosts",
@@ -38,6 +35,5 @@ pub const DEFAULTS: Defaults = Defaults {
     with_contenv: "with-contenv",
     env_name_fb_api_address: "FILEBROWSER_ADDRESS",
     uploader_script_path: "/etc/scripts/uploader.sh",
-    cancel_transfer_script_path: "/etc/scripts/cancel-transfer.sh",
-    /*fb_root_dir: "/srv",*/
+    cancel_transfer_script_path: "/etc/scripts/cancel-transfer.sh"
 };

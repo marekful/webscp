@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 
 use tokio::process::Command as AsyncCommand;
 
-use crate::constants::DEFAULTS;
+use crate::constants::{DEFAULTS};
 
 pub struct CommandError {
     pub code: i32,
