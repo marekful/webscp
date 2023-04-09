@@ -1,7 +1,8 @@
 use rocket::{
-    http::Status,
+    http::{CookieJar, Status},
     serde::{json::Json, Deserialize, Serialize},
     tokio::{task, time},
+    State,
 };
 use std::{future::Future, time::Duration};
 
@@ -12,6 +13,7 @@ use crate::{
     command_runner::run_command_async,
     constants::{COMMAND_GET_REMOTE_RESOURCE, COMMAND_REMOTE_BEFORE_COPY, DEFAULTS},
     files_api::FilesApi,
+    Files,
 };
 
 #[derive(Deserialize, Debug, Clone)]
@@ -44,17 +46,32 @@ pub struct CopyResponse {
     message: Option<String>,
 }
 
-#[get("/resources/<host>/<port>/<user_id>/<path>")]
+#[get("/resources/<agent_id>/<path>")]
 pub async fn resources(
-    host: &str,
-    port: &str,
-    user_id: &str,
+    agent_id: u32,
     path: &str,
+    files: &State<Files>,
+    cookies: &CookieJar<'_>,
 ) -> (Status, Json<ResourcesResponse>) {
+    let agent = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
+        Ok(a) => a,
+        Err(e) => {
+            return (
+                Status::new(e.http_code.unwrap_or(401)),
+                Json(ResourcesResponse {
+                    code: 902,
+                    resource: None,
+                    error: Some(e.message),
+                }),
+            )
+        }
+    };
+
     let mut args: Vec<&str> = Vec::new();
-    args.push(host);
-    args.push(port);
-    args.push(user_id);
+    let remote_user_id = agent.remote_user.id.clone().to_string();
+    args.push(&agent.host);
+    args.push(&agent.port);
+    args.push(&remote_user_id);
     args.push(path);
 
     return match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
@@ -77,20 +94,34 @@ pub async fn resources(
     };
 }
 
-#[post("/copy/<host>/<port>/<user_id>/<archive_name>", data = "<request>")]
+#[post("/copy/<agent_id>/<archive_name>", data = "<request>")]
 pub async fn copy(
-    host: &str,
-    port: &str,
-    user_id: &str,
+    agent_id: u32,
     archive_name: &str,
     request: Json<CopyRequest>,
+    files: &State<Files>,
+    cookies: &CookieJar<'_>,
 ) -> (Status, Json<CopyResponse>) {
+    let agent = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
+        Ok(a) => a,
+        Err(e) => {
+            return (
+                Status::new(e.http_code.unwrap_or(401)),
+                Json(CopyResponse {
+                    code: 912,
+                    message: None,
+                }),
+            )
+        }
+    };
+
     // create arguments for 'remote-before-copy' command
+    let remote_user_id = &agent.remote_user.id.clone().to_string();
     let items_json = get_items_json(&request.items);
     let mut before_copy_args: Vec<&str> = Vec::new();
-    before_copy_args.push(host);
-    before_copy_args.push(port);
-    before_copy_args.push(user_id);
+    before_copy_args.push(&agent.host);
+    before_copy_args.push(&agent.port);
+    before_copy_args.push(remote_user_id);
     before_copy_args.push(&items_json);
     // execute command
     match run_command_async(
@@ -118,8 +149,8 @@ pub async fn copy(
     // run remaining tasks asynchronously in a future:
     let items_copy = request.items.to_vec();
     let _future = task::spawn(finish_upload_in_background(
-        String::from(host),
-        String::from(port),
+        String::from(&agent.host),
+        String::from(&agent.port.to_string()),
         items_copy,
         String::from(archive_name),
         String::from(&request.source_root),
@@ -252,7 +283,9 @@ fn finish_upload_in_background(
         };*/
         // <---ORIG
 
-        match Client::remote_do_copy_async(&files_api, &host, &port, &archive_name, &remote_path).await {
+        match Client::remote_do_copy_async(&files_api, &host, &port, &archive_name, &remote_path)
+            .await
+        {
             Ok(_) => {
                 files_api
                     .send_upload_status_update_async(&archive_name, "complete")

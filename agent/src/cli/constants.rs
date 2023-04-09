@@ -35,5 +35,5 @@ pub const DEFAULTS: Defaults = Defaults {
     with_contenv: "with-contenv",
     env_name_fb_api_address: "FILEBROWSER_ADDRESS",
     uploader_script_path: "/etc/scripts/uploader.sh",
-    cancel_transfer_script_path: "/etc/scripts/cancel-transfer.sh"
+    cancel_transfer_script_path: "/etc/scripts/cancel-transfer.sh",
 };
