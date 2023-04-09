@@ -1,7 +1,16 @@
 <template>
   <div>
-    <p v-if="loading === 0">Loading directory listing</p>
-    <p v-else-if="loading === 2">Couldn't load directory listing</p>
+    <div v-if="remoteLoading">
+      <h2 class="message delayed">
+        <div class="spinner">
+          <div class="bounce1"></div>
+          <div class="bounce2"></div>
+          <div class="bounce3"></div>
+        </div>
+        <span>{{ $t("files.loading") }}</span>
+      </h2>
+    </div>
+    <p v-else-if="loadState === 2">Couldn't load directory listing</p>
     <p>
       <code>{{ nav }}</code>
     </p>
@@ -13,7 +22,7 @@
         role="button"
         tabindex="0"
         :aria-label="item.name"
-        :aria-selected="selected == item.url"
+        :aria-selected="selected === item.url"
         :key="item.name"
         v-for="item in items"
         :data-url="item.url"
@@ -40,7 +49,7 @@ export default {
       },
       selected: null,
       current: window.location.pathname,
-      loading: 0,
+      loadState: 0,
     };
   },
   props: {
@@ -59,7 +68,7 @@ export default {
     },
   },
   computed: {
-    ...mapState(["req", "user"]),
+    ...mapState(["req", "user", "remoteLoading"]),
     nav() {
       return decodeURIComponent(this.current);
     },
@@ -70,7 +79,7 @@ export default {
       // the current items.
       this.current = req.url;
       this.items = [];
-      this.loading = 1;
+      this.loadState = 1;
 
       this.$emit("update:selected", this.current);
 
@@ -118,6 +127,7 @@ export default {
       }
     },
     remote: function (agent_id, uri) {
+      this.$store.commit("setRemoteLoading", true);
       this.resetItems();
       remote_files
         .fetch(agent_id, uri)
@@ -125,10 +135,11 @@ export default {
         .catch((e) => {
           this.resetItems(true);
           this.$showError(e);
-        });
+        })
+        .finally(() => this.$store.commit("setRemoteLoading", false));
     },
     resetItems(withError) {
-      this.loading = withError ? 2 : 0;
+      this.loadState = withError ? 2 : 0;
       this.items = [];
       this.current = "";
     },
