@@ -9,15 +9,16 @@
         @action="openSearch()"
       />
 
+      <action
+        id="transfers-button"
+        icon="sync"
+        :label="$t('buttons.transfers')"
+        show="transfers"
+        :counter="transfersInProgress"
+      />
+
       <template #actions>
         <template v-if="!isMobile">
-          <action
-            id="transfers-button"
-            icon="sync"
-            :label="$t('buttons.transfers')"
-            show="transfers"
-            :counter="transfersInProgress"
-          />
           <action
             v-if="headerButtons.share"
             icon="share"
