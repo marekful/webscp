@@ -25,7 +25,6 @@ use crate::{
     files_api::FilesApi,
 };
 
-
 #[derive(Debug)]
 pub struct Client<'r> {
     host: &'r str,
@@ -277,7 +276,11 @@ impl Client<'_> {
         }
     }
 
-    pub fn remote_extract_archive(&self, archive_name: &str, remote_path: &str) -> Result<(), ClientError> {
+    pub fn remote_extract_archive(
+        &self,
+        archive_name: &str,
+        remote_path: &str,
+    ) -> Result<(), ClientError> {
         let sess = self.create_session(None).unwrap();
         let mut ch = sess.channel_session().unwrap();
         let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
