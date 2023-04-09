@@ -15,7 +15,9 @@ var remoteResourceGetHandler = injectAgentWithUser(func(w http.ResponseWriter, r
 		Agent: d.agent,
 	}
 
-	resp, err := client.GetResource(d.agent.RemoteUser.ID, d.agent.Host, d.agent.Port, r.URL.Path)
+	authCookie, _ := r.Cookie("auth")
+
+	resp, err := client.GetResource(d.agent, r.URL.Path, authCookie.Value)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
@@ -52,7 +54,7 @@ func remoteSourceResourcePostHandler() handleFunc {
 		}
 
 		//TODO: consider running hooks
-		status, response, err := remoteResourcePostAction(action, req, d)
+		status, response, err := remoteResourcePostAction(r, action, req, d)
 		if status == http.StatusOK {
 			return renderJSON(w, r, response)
 		}
@@ -104,6 +106,7 @@ func remoteDestinationResourcePostHandler() handleFunc {
 }
 
 func remoteResourcePostAction(
+	r *http.Request,
 	action string,
 	items []agents.ResourceItem,
 	d *data,
@@ -127,13 +130,13 @@ func remoteResourcePostAction(
 			srcScope = ""
 		}
 
+		authCookie, _ := r.Cookie("auth")
+
 		resp, status, err := client.RemoteCopy(
-			d.agent.RemoteUser.ID,
-			d.agent.Host,
-			d.agent.Port,
+			d.agent,
 			string(uuid),
 			d.server.Root+srcScope,
-			d.agent.RemoteUser.Root,
+			authCookie.Value,
 			items,
 		)
 		if err != nil {

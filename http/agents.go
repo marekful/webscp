@@ -234,15 +234,16 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 		return httpStatus, err
 	}
 
-	req.Data.UserID = d.user.ID
+	req.Data.Secret = ""
 	req.Data.RemoteUser.Password = ""
+	req.Data.UserID = d.user.ID
 
 	err = d.store.Agents.Save(req.Data)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	w.Header().Set("Location", "/settings/agents/"+strconv.FormatUint(uint64(req.Data.ID), 10))
+	w.Header().Set("Location", "/settings/agents")
 	return http.StatusCreated, nil
 })
 
