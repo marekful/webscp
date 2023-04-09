@@ -191,15 +191,18 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 	}
 }
 
-func (c *AgentClient) GetResource(userID uint, host, port, url string) (response *GetResourceResponse, err error) {
+func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *GetResourceResponse, err error) {
 	url = neturl.QueryEscape(url)
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/resources/%s/%s/%d/%s", agentAddress, host, port, userID, url)
+	requestURL := fmt.Sprintf("%s/api/resources/%d/%s", agentAddress, agent.ID, url)
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing agent API reqeuest: %v", err)
 	}
+
+	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookie)
 
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
@@ -219,17 +222,16 @@ func (c *AgentClient) GetResource(userID uint, host, port, url string) (response
 }
 
 func (c *AgentClient) RemoteCopy(
-	userID uint,
-	host,
-	port,
+	agent *Agent,
 	archiveName,
 	srcRoot,
-	dstRoot string,
+	token string,
 	items []ResourceItem,
 ) (response *BeforeCopyResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/copy/%s/%s/%d/%s", agentAddress, host, port, userID, strings.Trim(archiveName, "\n"))
-	request := RemoteResourceAgentRequest{Items: items, SourceRoot: srcRoot, DestinationRoot: dstRoot}
+	requestURL := fmt.Sprintf("%s/api/copy/%d/%s", agentAddress, agent.ID, strings.Trim(archiveName, "\n"))
+
+	request := RemoteResourceAgentRequest{Items: items, SourceRoot: srcRoot, DestinationRoot: agent.RemoteUser.Root}
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error decoding items: %v", err)
@@ -240,6 +242,10 @@ func (c *AgentClient) RemoteCopy(
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
 	}
 	r.Header.Add("Content-Type", "application/json")
+
+	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookie)
+
 	client := &nethttps.Client{}
 	agentResponse, err := client.Do(r)
 	if err != nil {
