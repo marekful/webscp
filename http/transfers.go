@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var transferDeleteHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var transferDeleteHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	vars := mux.Vars(r)
 	transferID := vars["transfer_id"]
 
