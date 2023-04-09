@@ -127,6 +127,10 @@ func injectAgentWithUser(fn handleFunc) handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		injectAgent(r, d)
 
+		if d.agent.UserID != d.user.ID {
+			return http.StatusForbidden, nil
+		}
+
 		return fn(w, r, d)
 	})
 }
