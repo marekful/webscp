@@ -65,10 +65,10 @@ function create(
 function prepareItems(items) {
   return items.map((item) => {
     let trailingSlash = item.from[item.from.length - 1] === "/" ? "/" : "";
-    item.from = removePrefix(item.from);
+    item.from = removePrefix(decodeURIComponent(item.from));
     item.from = item.from.replace(item.name + "/", "");
     item.from = item.from.replace(item.name, "");
-    item.to = removePrefix(item.to);
+    item.to = removePrefix(decodeURIComponent(item.to));
     item.to = item.to.replace(item.name, "");
     item.name += trailingSlash;
     return item;
