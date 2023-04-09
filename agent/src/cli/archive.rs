@@ -22,7 +22,11 @@ pub struct ArchiveWriter {
 }
 
 impl ArchiveWriter {
-    pub fn new(archive_path: &str, compress: bool, source_base_path: &str) -> Result<Self, ArchiveError> {
+    pub fn new(
+        archive_path: &str,
+        compress: bool,
+        source_base_path: &str,
+    ) -> Result<Self, ArchiveError> {
         let file = match File::create(archive_path) {
             Ok(f) => f,
             Err(_) => {
@@ -92,7 +96,7 @@ impl ArchiveWriter {
         let src_path = Path::new(src.as_str());
         let src_meta = match src_path.metadata() {
             Ok(m) => m,
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         };
 
         if src_meta.is_dir() {
