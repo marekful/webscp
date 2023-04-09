@@ -19,17 +19,17 @@
   color: var(--blue);
 }
 
-main .spinner {
+main .spinner,
+.card .spinner {
   display: block;
   text-align: center;
   line-height: 0;
   padding: 1em 0;
 }
 
-main .spinner > div {
-  width: .8em;
-  height: .8em;
-  margin: 0 .1em;
+main .spinner > div,
+.card .spinner > div {
+  margin: 0 0.1em;
   font-size: 1em;
   background-color: rgba(0, 0, 0, 0.3);
   border-radius: 100%;
@@ -37,11 +37,22 @@ main .spinner > div {
   animation: sk-bouncedelay 1.4s infinite ease-in-out both;
 }
 
-main .spinner .bounce1 {
+main .spinner > div {
+  width: 0.8em;
+  height: 0.8em;
+}
+.card .spinner > div {
+  width: 0.4em;
+  height: 0.4em;
+}
+
+main .spinner .bounce1,
+.card .spinner .bounce1 {
   animation-delay: -0.32s;
 }
 
-main .spinner .bounce2 {
+main .spinner .bounce2,
+.card .spinner .bounce2 {
   animation-delay: -0.16s;
 }
 

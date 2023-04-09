@@ -71,12 +71,19 @@ body.rtl #listing {
 
 .message {
   text-align: center;
-  font-size: 2em;
   margin: 1em auto;
   display: block !important;
   width: 95%;
   color: rgba(0, 0, 0, 0.3);
   font-weight: 500;
+}
+
+main .message {
+  font-size: 2em;
+}
+
+.card .message {
+  font-size: 1.25em;
 }
 
 .message i {
