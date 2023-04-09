@@ -1,5 +1,5 @@
 <template>
-  <div class="card transfers">
+  <div class="card transfers top">
     <section class="card-content">
       <div v-for="(transfer, index) in transfers" :key="index" class="transfer">
         <div class="title ellipse" :title="transfer.title">
@@ -20,14 +20,14 @@
             </i>
           </div>
           <div
-            :class="
-              'icon ' +
-              (transfer.error === true || transfer.canceled === true
-                ? 'icon-error'
-                : transfer.pending === false
-                ? 'icon-success'
-                : '')
-            "
+            :class="{
+              icon: true,
+              iconError: transfer.error === true || transfer.canceled === true,
+              iconSuccess:
+                transfer.pending === false &&
+                transfer.error === false &&
+                transfer.canceled === false,
+            }"
           >
             <i class="material-icons">{{ transfer.icon }}</i>
           </div>
@@ -66,10 +66,10 @@
             </div>
             <ul v-if="transfer.showDetails === true" class="content">
               <li v-for="(item, index) in transfer.items" :key="index">
-                  <span class="path">{{ item.from }}</span>
-                  <span class="name">{{ item.name }}</span>
-                  <i class="material-icons">east</i>
-                  <span class="to">{{ item.to }}</span>
+                <span class="path">{{ item.from }}</span>
+                <span class="name">{{ item.name }}</span>
+                <i class="material-icons">east</i>
+                <span class="to">{{ item.to }}</span>
               </li>
             </ul>
           </div>
@@ -105,7 +105,7 @@ export default {
     return {};
   },
   computed: {
-    ...mapState(["req", "transfers"]),
+    ...mapState(["req", "user", "transfers"]),
   },
   methods: {
     cancel: function () {
@@ -119,27 +119,40 @@ export default {
         return;
       }
 
-      if (!transfer.pending) {
-        transfers.remove(this.$store, transferID);
-        transfers.setButtonActive(this.transfers);
+      let cancel = () => {
+        if (!transfer.pending) {
+          transfers.remove(this.$store, transferID);
+          transfers.setButtonActive(this.transfers);
 
-        return;
-      }
+          return;
+        }
 
-      transfer.sseClient && transfer.sseClient.close();
+        transfer.sseClient && transfer.sseClient.close();
+      };
+
+      let update = () => {
+        transfers.update(this.$store, {
+          transferID,
+          canceled: true,
+          pending: false,
+          icon: "highlight_off",
+          status: i18n.t("transfer.canceled"),
+        });
+      };
+
+      let error = (e) => {
+        if (e.message.indexOf("403 Forbidden") > -1) {
+          this.$showError(e);
+        } else {
+          cancel();
+        }
+      };
 
       remote_files
         .cancelTransfer(transfer.agent.id, transferID)
-        .then(() => {
-          transfers.update(this.$store, {
-            transferID,
-            canceled: true,
-            pending: false,
-            icon: "highlight_off",
-            status: i18n.t("transfer.canceled"),
-          });
-        })
-        .catch(() => transfers.remove(this.$store, transferID))
+        .then(cancel)
+        .then(update)
+        .catch(error)
         .finally(() => transfers.setButtonActive(this.transfers));
     },
     showDetails: function (transfer) {
@@ -156,14 +169,25 @@ export default {
 .card.transfers {
   position: fixed;
   top: 4.2em;
-  right: 5%;
   z-index: 99999;
   color: var(--card-text-color);
   max-width: 30em;
-  width: 90%;
   max-height: 95%;
   animation: 0.1s show forwards;
 }
+
+.card.transfers.top {
+  right: 5%;
+  width: 90%;
+}
+
+@media (max-width: 736px) {
+  .card.transfers.top {
+    right: 0;
+    width: 100%;
+  }
+}
+
 .transfer {
   border-width: 0 0 1px 0;
   border-style: solid;
@@ -252,7 +276,7 @@ export default {
   font-size: 2rem;
 }
 
-.transfer > .content > .icon:not(.icon-error):not(.icon-success) i {
+.transfer > .content > .icon:not(.iconError):not(.iconSuccess) i {
   color: #546e7a;
   animation-duration: 5s;
   animation-name: change-color;
@@ -270,11 +294,11 @@ export default {
   }
 }
 
-.transfer .icon-error i {
+.transfer .iconError i {
   color: var(--dark-red);
 }
 
-.transfer .icon-success i {
+.transfer .iconSuccess i {
   color: var(--icon-green);
 }
 
