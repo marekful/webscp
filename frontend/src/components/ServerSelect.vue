@@ -32,9 +32,9 @@ export default {
   },
   methods: {
     changed(val) {
-      let agent = {id: 0};
-      if (val in this.servers) {
-        agent = this.servers[val];
+      let agent = { id: 0 };
+      if (val.index in this.servers) {
+        agent = this.servers[val.index];
       }
       this.$emit("update:selected", agent);
     },
@@ -42,28 +42,18 @@ export default {
       let servers = await agents.getAll();
       this.serverList = ["Local"];
 
-      for (let server of servers) {
-        let key = server.host + ":" + server.port;
-        this.servers[key] = {
+      for (let index = 0; index < servers.length; index++) {
+        let server = servers[index];
+        let label = `${server.host}:${server.port} (${server.remote_user.name})`;
+        this.servers[index + 1] = {
           id: server.id,
+          user: { id: this.user.id },
           host: server.host,
           port: server.port,
         };
-        this.serverList.push(key);
+        this.serverList.push(label);
       }
     },
-    /*select: function (event) {
-      // If the element is already selected, unselect it.
-      if (this.selected === event.currentTarget.dataset.url) {
-        this.selected = null;
-        this.$emit("update:selected", this.current);
-        return;
-      }
-
-      // Otherwise select the element.
-      this.selected = event.currentTarget.dataset.url;
-      this.$emit("update:selected", this.selected);
-    },*/
   },
 };
 </script>
