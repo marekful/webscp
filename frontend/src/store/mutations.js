@@ -27,6 +27,9 @@ const mutations = {
   setLoading: (state, value) => {
     state.loading = value;
   },
+  setRemoteLoading: (state, value) => {
+    state.remoteLoading = value;
+  },
   setReload: (state, value) => {
     state.reload = value;
   },
