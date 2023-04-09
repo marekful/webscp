@@ -448,6 +448,8 @@ export default {
 
         transfer = JSON.parse(transfer);
 
+        if (transfer.agent.user.id !== this.user.id) continue;
+
         transfers.create(
           this.$store,
           transferID,
