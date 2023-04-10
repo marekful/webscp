@@ -13,6 +13,7 @@ use crate::{command_runner::run_command_async, constants::COMMAND_GET_REMOTE_USE
 pub struct GetRemoteUserRequest<'r> {
     name: &'r str,
     password: &'r str,
+    access_token: &'r str,
 }
 #[derive(Serialize, Debug)]
 pub struct GetRemoteUserResponse {
@@ -34,6 +35,7 @@ pub async fn get_remote_user(
     get_user_args.push(port);
     get_user_args.push(request.name);
     get_user_args.push(request.password);
+    get_user_args.push(request.access_token);
 
     // execute command
     let result = run_command_async(274, true, false, COMMAND_GET_REMOTE_USER, get_user_args).await;

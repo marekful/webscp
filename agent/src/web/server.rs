@@ -15,13 +15,15 @@ mod key_exchange;
 mod miscellaneous;
 mod remote_user;
 mod resource;
+mod temporary_access_token;
 mod transfer;
 
 #[macro_use]
 extern crate rocket;
+
 use crate::{
     files_api::FilesApi, key_exchange::*, miscellaneous::*, remote_user::*, resource::*,
-    transfer::*,
+    temporary_access_token::*, transfer::*,
 };
 
 pub struct Files {
@@ -35,6 +37,7 @@ async fn main() -> Result<(), rocket::Error> {
     let api = "/api";
     let _rocket = rocket::build()
         .manage(Files { api: files })
+        .mount(api, routes![get_temporary_access_token])
         .mount(api, routes![register_public_key])
         .mount(api, routes![get_remote_user])
         .mount(api, routes![ping])
