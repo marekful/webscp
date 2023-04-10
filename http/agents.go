@@ -221,17 +221,21 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 	client := agents.AgentClient{
 		Agent: req.Data,
 	}
-	err = client.ExchangeKeys(req.Data.Host, req.Data.Port, req.Data.Secret)
+
+	userStatus, err := client.GetRemoteUser(&req.Data.RemoteUser, req.Data.Secret)
 	if err != nil {
-		return http.StatusBadRequest, err
+		if userStatus == http.StatusUnauthorized {
+			userStatus = http.StatusForbidden
+		}
+		return userStatus, err
 	}
 
-	httpStatus, err := client.GetRemoteUserID(&req.Data.RemoteUser)
+	kexStatus, err := client.ExchangeKeys(req.Data.Host, req.Data.Port, req.Data.Secret)
 	if err != nil {
-		if httpStatus == http.StatusUnauthorized {
-			httpStatus = http.StatusForbidden
+		if kexStatus == http.StatusUnauthorized {
+			kexStatus = http.StatusForbidden
 		}
-		return httpStatus, err
+		return kexStatus, err
 	}
 
 	req.Data.Secret = ""
@@ -245,6 +249,20 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 
 	w.Header().Set("Location", "/settings/agents")
 	return http.StatusCreated, nil
+})
+
+var agentTemporaryAccessTokenGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	authCookie, _ := r.Cookie("auth")
+
+	accessTokenResponse, httpStatus, err := agents.GetTemporaryAccessToken(authCookie.Value, d.user.ID)
+	if err != nil {
+		if httpStatus == http.StatusUnauthorized {
+			httpStatus = http.StatusForbidden
+		}
+		return httpStatus, err
+	}
+
+	return renderJSON(w, r, accessTokenResponse)
 })
 
 var agentVerifyUserCredentialsPostHandler = withAgentAdmin(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

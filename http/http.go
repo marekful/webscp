@@ -107,6 +107,7 @@ func addAgentRoutes(
 	remote := api.PathPrefix("/remote").Subrouter()
 
 	agent.Handle("/verify-user-credentials", monkey(agentVerifyUserCredentialsPostHandler, "")).Methods("POST")
+	agent.Handle("/temporary-access-token", monkey(agentTemporaryAccessTokenGetHandler, "")).Methods("GET")
 
 	remote.Handle("/{agent_id:[0-9]+}/resources/{url:.*}", monkey(remoteResourceGetHandler, "")).Methods("GET")
 	agent.Handle("/{user_id:[0-9]+}/resources/{url:.*}", monkey(agentResourceGetHandler, "")).Methods("GET")
