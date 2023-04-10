@@ -4,6 +4,7 @@ use std::{
     fs::OpenOptions,
     io::{prelude::*, Error},
     net::TcpStream,
+    os::unix::fs::OpenOptionsExt,
     path::Path,
     process::exit,
     time::Instant,
@@ -15,6 +16,8 @@ use tokio::{
 };
 
 use std::process::Stdio;
+
+use sha256::digest;
 
 use crate::{
     command_runner::{run_command, run_command_async},
@@ -72,7 +75,7 @@ impl Client<'_> {
             return send_result;
         }
 
-        let receive_result = self.receive_public_key(&sess);
+        let receive_result = self.receive_host_key(&sess, secret);
         if receive_result != 0 {
             return receive_result;
         }
@@ -80,8 +83,8 @@ impl Client<'_> {
         0
     }
 
-    pub fn get_remote_user(&self, user_name: &str, password: &str) -> i32 {
-        let sess = self.create_session(None).unwrap();
+    pub fn get_remote_user(&self, user_name: &str, password: &str, secret: &str) -> i32 {
+        let sess = self.create_session(Some(secret)).unwrap();
         match Client::remote_get_user(&sess, user_name, password) {
             Ok(resources_result) => {
                 print!("{resources_result}");
@@ -311,6 +314,13 @@ impl Client<'_> {
         exit(code);
     }
 
+    pub fn random_hex() -> String {
+        let key_id: u64 = rand::random::<u64>();
+        let key_id_hex = format!("{:x}", key_id);
+
+        String::from(key_id_hex)
+    }
+
     fn create_session(&self, secret: Option<&str>) -> Option<Session> {
         // create ssh connection
         let tcp = match TcpStream::connect(self.host.to_owned() + ":" + &*self.port.to_string()) {
@@ -333,31 +343,85 @@ impl Client<'_> {
         sess.handshake().unwrap();
 
         match secret {
-            // authenticate session via public key
+            // authenticate session via default public-key
             None => {
                 let pubkey: &Path = Path::new(DEFAULTS.public_key_file);
                 let privkey: &Path = Path::new(DEFAULTS.private_key_file);
                 match sess.userauth_pubkey_file("agent", Some(pubkey), privkey, None) {
                     Ok(r) => r,
                     Err(_e) => {
-                        eprintln!("Public key authentication failed");
+                        eprintln!("401 Public key authentication failed");
                         exit(135);
                     }
                 }
             }
-            // authenticate session via password (for exchange-keys)
-            Some(s) => {
-                match sess.userauth_password("agent", s) {
+            // authenticate session via temporary private-key
+            Some(secret) => {
+                let key_id = Self::random_hex();
+                let key_id_copy = key_id.clone();
+                Self::create_key_file_from_access_token(key_id, secret.to_string());
+
+                let path = format!("{}-{}-atmp", DEFAULTS.temporary_key_file_name, key_id_copy);
+                let privkey: &Path = Path::new(&path);
+                match sess.userauth_pubkey_file("agent", None, privkey, None) {
                     Ok(r) => r,
                     Err(_e) => {
-                        eprintln!("Invalid agent secret");
+                        eprintln!("401 Invalid access token");
                         exit(134);
                     }
                 };
+
+                Self::remove_key_file(key_id_copy.as_str());
             }
         }
 
         Some(sess)
+    }
+
+    fn create_key_file_from_access_token(key_id: String, secret: String) {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .mode(0o600)
+            .open(format!(
+                "{}-{}-atmp",
+                DEFAULTS.temporary_key_file_name, key_id
+            ))
+            .unwrap();
+
+        let secret_lines = secret
+            .chars()
+            .collect::<Vec<char>>()
+            .chunks(64)
+            .map(|c| c.iter().collect::<String>())
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        if let Err(e) = writeln!(
+            file,
+            "-----BEGIN EC PRIVATE KEY-----\n{}\n-----END EC PRIVATE KEY-----",
+            secret_lines
+        ) {
+            eprintln!("Couldn't write to file: {}", e);
+            exit(133);
+        }
+
+        ()
+    }
+
+    fn remove_key_file(key_id: &str) {
+        match fs::remove_file(format!(
+            "{}-{}-atmp",
+            DEFAULTS.temporary_key_file_name, key_id
+        )) {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Couldn't remove file: {}", e);
+                exit(131);
+            }
+        }
+
+        ()
     }
 
     fn get_agent_version(sess: &Session) -> String {
@@ -461,47 +525,6 @@ impl Client<'_> {
         Ok(output)
     }
 
-    /*fn _remote_do_copy(&self, archive_name: &str) -> Result<(), ClientError> {
-        // create argument list for scp command
-        let local_path = format!(
-            "{}{}{}",
-            DEFAULTS.temp_data_dir, archive_name, ".agent.tar.gz"
-        );
-        let remote_path = format!("{}{}{}", DEFAULTS.temp_data_dir, archive_name, ".dst.tar");
-        let remote_scp_path = format!("{}:{}", self.host, remote_path);
-        let port = self.port.to_string();
-        let mut scp_args: Vec<&str> = Vec::new();
-
-        scp_args.push("-P");
-        scp_args.push(port.as_str());
-        scp_args.push(local_path.as_str());
-        scp_args.push(remote_scp_path.as_str());
-
-        // execute scp
-        if let Err(e) = run_command(81, false, false, "scp", scp_args) {
-            return Err(ClientError {
-                code: e.code,
-                message: e.message,
-                http_code: Some(e.status.code as i32),
-            });
-        };
-
-        send_upload_status_update(&archive_name, "extracting");
-
-        // remove archive
-        let mut rm_args: Vec<&str> = Vec::new();
-        rm_args.push("-f");
-        rm_args.push(local_path.as_str());
-
-        let _rm_result = run_command(81, false, true, "rm", rm_args);
-
-        // extract uploaded archive
-        match self.remote_extract_archive(archive_name) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
-        }
-    }*/
-
     fn send_public_key(&self, sess: &Session) -> i32 {
         // read our public key
         let key = &fs::read_to_string(DEFAULTS.public_key_file).unwrap();
@@ -524,9 +547,9 @@ impl Client<'_> {
         0
     }
 
-    fn receive_public_key(&self, sess: &Session) -> i32 {
+    fn receive_host_key(&self, sess: &Session, secret: &str) -> i32 {
         // download their public key
-        let mut download = sess.channel_session().unwrap();
+        /*let mut download = sess.channel_session().unwrap();
         download
             .exec(&*format!("cat {}", DEFAULTS.public_key_file))
             .unwrap();
@@ -549,9 +572,9 @@ impl Client<'_> {
 
         if let Err(e) = writeln!(file, "{}", &key.trim()) {
             eprintln!("Couldn't write to file: {}", e);
-        }
+        }*/
 
-        // add their host key
+        // retrieve their host key
         let mut args: Vec<&str> = Vec::new();
         let port_str = self.port.to_string();
         args.push("-H");
@@ -568,6 +591,7 @@ impl Client<'_> {
             }
         };
 
+        // add their host key
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
@@ -578,6 +602,16 @@ impl Client<'_> {
         if let Err(e) = writeln!(file, "{}", &host_key.trim()) {
             eprintln!("Couldn't write to file: {}", e);
         }
+
+        // remove lock file on remote: this will signal that the temporary key
+        // used for authenticating this key exchange session can be revoked
+        let lock_file = digest(secret);
+        let mut result = sess.channel_session().unwrap();
+        result
+            .exec(&*format!("rm -f {}/{}", DEFAULTS.ssh_dir_path, lock_file))
+            .unwrap();
+        let mut key = String::new();
+        result.read_to_string(&mut key).unwrap();
 
         0
     }

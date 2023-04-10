@@ -17,16 +17,17 @@ pub fn command_exchange_keys(client: Client, args: Option<Vec<String>>) {
 
 pub fn command_get_remote_user(client: Client, args: Option<Vec<String>>) {
     let args = args.unwrap();
-    if args.len() < 6 {
+    if args.len() < 7 {
         eprintln!(
-            "Usage: cli {} <host> <port> <username> <password>",
+            "Usage: cli {} <host> <port> <username> <password> <access_token>",
             COMMAND_GET_REMOTE_USER
         );
         exit(140);
     }
     let user_name = &args[4];
     let password = &args[5];
-    let exit_code = client.get_remote_user(user_name, password);
+    let token = &args[6];
+    let exit_code = client.get_remote_user(user_name, password, token);
 
     if exit_code != 0 {
         exit(exit_code);

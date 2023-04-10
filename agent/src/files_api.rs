@@ -1,5 +1,5 @@
 use reqwest::{blocking::Response, Error, Response as AsyncResponse, StatusCode};
-use rocket::{futures::AsyncReadExt, http::Cookie, serde::json::serde_json};
+use rocket::{http::Cookie, serde::json::serde_json};
 use std::{env, io::Read, time::Duration};
 
 use serde::Deserialize;
@@ -99,7 +99,7 @@ impl FilesApi {
         if !response.status().is_success() {
             return Err(RequestError {
                 code: 416,
-                message: format!("zzz {auth_token} {}", response.status().to_string()),
+                message: response.status().to_string(),
                 http_code: Some(response.status().as_u16()),
             });
         }
@@ -117,6 +117,62 @@ impl FilesApi {
         let agent: Agent = deserialize_result.unwrap();
 
         Ok(agent)
+    }
+
+    pub async fn check_user_auth(
+        &self,
+        user_id: u32,
+        auth_cookie: Option<&Cookie<'_>>,
+    ) -> Result<(), RequestError> {
+        // fail if cannot unwrap cookie value
+        if auth_cookie.is_none() {
+            return Err(RequestError {
+                code: 424,
+                message: "".to_string(),
+                http_code: Some(401),
+            });
+        }
+        let auth_token = auth_cookie.unwrap().value();
+
+        // create async get request to retrieve agent from files backend api
+        let uri = format!("/api/users/{user_id}");
+        let request_url = self.request_url(&uri);
+
+        // send request
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(4))
+            .build()
+            .unwrap();
+        let result: Result<AsyncResponse, Error> = match client
+            .get(request_url)
+            .header("Cookie", format!("auth={auth_token}"))
+            .send()
+            .await
+        {
+            Ok(r) => Ok(r),
+            Err(e) => Err(e),
+        };
+
+        // fail if couldn't send request
+        if result.is_err() {
+            return Err(RequestError {
+                code: 425,
+                message: result.unwrap_err().to_string(),
+                http_code: Some(500),
+            });
+        }
+        let response = result.unwrap();
+
+        // fail if response is not 2xx
+        if !response.status().is_success() {
+            return Err(RequestError {
+                code: 426,
+                message: response.status().to_string(),
+                http_code: Some(response.status().as_u16()),
+            });
+        }
+
+        Ok(())
     }
 
     pub async fn send_upload_status_update_async(&self, transfer_id: &str, message: &str) {

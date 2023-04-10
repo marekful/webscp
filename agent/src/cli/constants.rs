@@ -22,6 +22,10 @@ pub struct Defaults {
     pub env_name_fb_api_address: &'static str,
     pub uploader_script_path: &'static str,
     pub cancel_transfer_script_path: &'static str,
+    pub generate_key_pair_script_path: &'static str,
+    pub revoke_key_pair_script_path: &'static str,
+    pub temporary_key_file_name: &'static str,
+    pub ssh_dir_path: &'static str,
 }
 
 pub const DEFAULTS: Defaults = Defaults {
@@ -36,4 +40,8 @@ pub const DEFAULTS: Defaults = Defaults {
     env_name_fb_api_address: "FILEBROWSER_ADDRESS",
     uploader_script_path: "/etc/scripts/uploader.sh",
     cancel_transfer_script_path: "/etc/scripts/cancel-transfer.sh",
+    generate_key_pair_script_path: "/etc/scripts/generate-key-pair.sh",
+    revoke_key_pair_script_path: "/etc/scripts/revoke-key-pair.sh",
+    temporary_key_file_name: "/home/agent/.ssh/id_ecdsa-pem",
+    ssh_dir_path: "/home/agent/.ssh",
 };

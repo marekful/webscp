@@ -16,5 +16,5 @@ alias halt='/run/s6/basedir/bin/halt'
 . /etc/os-release
 
 echo -e -n '\E[1;34m'
-figlet -w 120 "Filebrowser Agent"
+figlet -w 120 "RemoteCop Agent"
 echo -e '\E[0m'
