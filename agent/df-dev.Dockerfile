@@ -37,6 +37,8 @@ RUN ln -s target/debug/cli cli
 RUN ln -s target/debug/webserver webserver
 #RUN --mount=type=cache,target=/root/.cargo ["cargo", "build"]
 
+RUN rustup toolchain install nightly
+RUN rustup component add rustfmt --toolchain nightly-x86_64-unknown-linux-gnu
 ##
 
 COPY build/s6 /
