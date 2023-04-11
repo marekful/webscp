@@ -25,7 +25,7 @@ use crate::{
         COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_USER, COMMAND_GET_LOCAL_VERSION,
         COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
     },
-    files_api::FilesApi,
+    files_api::{FilesApi, Transfer},
 };
 
 #[derive(Debug)]
@@ -167,6 +167,7 @@ impl Client<'_> {
 
     pub async fn remote_do_copy_async(
         files_api: &FilesApi,
+        transfer: &Transfer,
         host: &str,
         port: &str,
         archive_name: &str,
@@ -197,7 +198,7 @@ impl Client<'_> {
         let mut reader = BufReader::new(stdout).lines();
 
         // kick off execution
-        let archive_name_copy = String::from(archive_name);
+        let transfer_copy = transfer.clone();
         let upload_result = tokio::spawn(async move {
             let status = child.wait().await.expect("child error");
 
@@ -223,7 +224,7 @@ impl Client<'_> {
 
                 let err_msg = error.as_str();
                 FilesApi::new()
-                    .send_upload_status_update_async(&archive_name_copy, err_msg)
+                    .send_upload_status_update_async(&transfer_copy, err_msg)
                     .await;
 
                 return Err(ClientError {
@@ -237,14 +238,14 @@ impl Client<'_> {
         });
 
         files_api
-            .send_upload_status_update_async(&archive_name, "starting upload")
+            .send_upload_status_update_async(transfer, "starting upload")
             .await;
 
         // read lines from script output as they are written to its stdout
         while let Some(line) = reader.next_line().await? {
             let message = format!("progress::{}", line);
             files_api
-                .send_upload_status_update_async(&archive_name, &message)
+                .send_upload_status_update_async(transfer, &message)
                 .await;
         }
 
@@ -252,7 +253,7 @@ impl Client<'_> {
         let mut rm_args: Vec<&str> = Vec::new();
         rm_args.push("-f");
         rm_args.push(local_path.as_str());
-        let _rm_result = run_command_async(81, false, true, "rm", rm_args).await;
+        let _rm_result = run_command_async(83, false, true, "rm", rm_args).await;
 
         // abort process on any errors from command execution (including usr1 signal)
         match upload_result.await.unwrap() {
@@ -261,7 +262,7 @@ impl Client<'_> {
         };
 
         files_api
-            .send_upload_status_update_async(&archive_name, "extracting")
+            .send_upload_status_update_async(transfer, "extracting")
             .await;
 
         // extract uploaded archive on remote
@@ -272,7 +273,7 @@ impl Client<'_> {
             Err(e) => {
                 let err_msg = e.message.as_str();
                 files_api
-                    .send_upload_status_update_async(&archive_name, err_msg)
+                    .send_upload_status_update_async(transfer, err_msg)
                     .await;
                 Err(e)
             }
