@@ -45,7 +45,7 @@ var sseTransferPollGetHandler = withUser(func(w http.ResponseWriter, r *http.Req
 	}
 })
 
-var sseTransferUpdateGetHandler = withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var sseTransferUpdateGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	vars := mux.Vars(r)
 	chanID := vars["id"]
 	message := vars["message"]
