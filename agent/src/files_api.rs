@@ -1,4 +1,4 @@
-use reqwest::{blocking::Response, Error, Response as AsyncResponse, StatusCode};
+use reqwest::{blocking::Response, Response as AsyncResponse, StatusCode};
 use rocket::{http::Cookie, serde::json::serde_json};
 use std::{env, io::Read, time::Duration};
 
@@ -25,6 +25,7 @@ pub struct RemoteUser {
     pub root: String,
 }
 
+#[derive(Debug)]
 pub struct RequestError {
     pub code: i32,
     pub message: String,
@@ -34,6 +35,22 @@ pub struct RequestError {
 #[derive(Debug)]
 pub struct FilesApi {
     base_url: String,
+}
+
+pub struct Transfer {
+    pub agent_id: u32,
+    pub transfer_id: String,
+    pub rc_auth: String,
+}
+
+impl Clone for Transfer {
+    fn clone(&self) -> Self {
+        Self {
+            agent_id: self.agent_id.clone(),
+            transfer_id: self.transfer_id.clone(),
+            rc_auth: self.rc_auth.clone(),
+        }
+    }
 }
 
 impl FilesApi {
@@ -55,7 +72,7 @@ impl FilesApi {
         &self,
         agent_id: u32,
         auth_cookie: Option<&Cookie<'_>>,
-    ) -> Result<Agent, RequestError> {
+    ) -> Result<(Agent, String), RequestError> {
         // fail if cannot unwrap cookie value
         if auth_cookie.is_none() {
             return Err(RequestError {
@@ -66,30 +83,17 @@ impl FilesApi {
         }
         let auth_token = auth_cookie.unwrap().value();
 
-        // create async get request to retrieve agent from files backend api
+        // retrieve agent from files backend api
         let uri = format!("/api/agents/{agent_id}");
-        let request_url = self.request_url(&uri);
-
-        // send request
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(4))
-            .build()
-            .unwrap();
-        let result: Result<AsyncResponse, Error> = match client
-            .get(request_url)
-            .header("Cookie", format!("auth={auth_token}"))
-            .send()
-            .await
-        {
-            Ok(r) => Ok(r),
-            Err(e) => Err(e),
-        };
+        let result: Result<AsyncResponse, RequestError> = self
+            .make_async_request("GET", &uri, None, Some(auth_token.to_string()))
+            .await;
 
         // fail if couldn't send request
         if result.is_err() {
             return Err(RequestError {
                 code: 415,
-                message: result.unwrap_err().to_string(),
+                message: result.unwrap_err().message,
                 http_code: Some(500),
             });
         }
@@ -116,7 +120,7 @@ impl FilesApi {
         }
         let agent: Agent = deserialize_result.unwrap();
 
-        Ok(agent)
+        Ok((agent, auth_token.to_string()))
     }
 
     pub async fn check_user_auth(
@@ -134,30 +138,17 @@ impl FilesApi {
         }
         let auth_token = auth_cookie.unwrap().value();
 
-        // create async get request to retrieve agent from files backend api
+        // retrieve user from Files backend api
         let uri = format!("/api/users/{user_id}");
-        let request_url = self.request_url(&uri);
-
-        // send request
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(4))
-            .build()
-            .unwrap();
-        let result: Result<AsyncResponse, Error> = match client
-            .get(request_url)
-            .header("Cookie", format!("auth={auth_token}"))
-            .send()
-            .await
-        {
-            Ok(r) => Ok(r),
-            Err(e) => Err(e),
-        };
+        let result: Result<AsyncResponse, RequestError> = self
+            .make_async_request("GET", &uri, None, Some(auth_token.to_string()))
+            .await;
 
         // fail if couldn't send request
         if result.is_err() {
             return Err(RequestError {
                 code: 425,
-                message: result.unwrap_err().to_string(),
+                message: result.unwrap_err().message,
                 http_code: Some(500),
             });
         }
@@ -175,18 +166,26 @@ impl FilesApi {
         Ok(())
     }
 
-    pub async fn send_upload_status_update_async(&self, transfer_id: &str, message: &str) {
-        let uri = format!("/api/sse/transfers/{transfer_id}/update/{message}");
+    pub async fn send_upload_status_update_async(&self, transfer: &Transfer, message: &str) {
+        let uri = format!(
+            "/api/agent/{}/transfers/{}/update/{message}",
+            transfer.agent_id, transfer.transfer_id
+        );
 
-        let _ = self.make_async_get_request(&uri).await;
+        let auth = Some(transfer.rc_auth.to_string());
+        let _ = self.make_async_request("PATCH", &uri, None, auth).await;
 
         ()
     }
 
-    pub fn send_upload_status_update(&self, transfer_id: &str, message: &str) {
-        let uri = format!("/api/sse/transfers/{transfer_id}/update/{message}");
+    pub fn send_upload_status_update(&self, transfer: &Transfer, message: &str) {
+        let uri = format!(
+            "/api/agent/{}/transfers/{}/update/{message}",
+            transfer.agent_id, transfer.transfer_id
+        );
 
-        let _ = self.make_get_request(&uri);
+        let auth = Some(transfer.rc_auth.to_string());
+        let _ = self.make_request("PATCH", &uri, None, auth);
 
         ()
     }
@@ -194,7 +193,7 @@ impl FilesApi {
     pub fn get_local_resource(&self, user_id: u32, path: &str) -> Result<String, ClientError> {
         let uri = format!("/api/agent/{user_id}/resources/{path}");
 
-        let mut response = match self.make_get_request(&uri) {
+        let mut response = match self.make_request("GET", &uri, None, None) {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
@@ -237,7 +236,7 @@ impl FilesApi {
     pub fn local_before_copy(&self, user_id: u32, items: String) -> Result<String, ClientError> {
         let uri = format!("/api/agent/{user_id}/copy?action=remote-copy");
 
-        let mut response = match self.make_post_request(&uri, items) {
+        let mut response = match self.make_request("POST", &uri, Some(items), None) {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
@@ -284,7 +283,7 @@ impl FilesApi {
             user_name, password
         );
 
-        let mut response = match self.make_post_request(uri, request) {
+        let mut response = match self.make_request("POST", uri, Some(request), None) {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
@@ -325,7 +324,7 @@ impl FilesApi {
     }
 
     pub fn get_version(&self) -> String {
-        let mut response = match self.make_get_request("/api/version") {
+        let mut response = match self.make_request("GET", "/api/version", None, None) {
             Ok(r) => r,
             Err(_e) => return "unknown".to_string(),
         };
@@ -337,57 +336,108 @@ impl FilesApi {
         };
     }
 
-    fn make_post_request(&self, uri: &str, body: String) -> Result<Response, RequestError> {
-        let request_url = format!("{}{uri}", self.base_url);
+    fn make_request(
+        &self,
+        method: &str,
+        uri: &str,
+        body: Option<String>,
+        auth_token: Option<String>,
+    ) -> Result<Response, RequestError> {
+        let request_url = self.request_url(uri);
 
         let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(100))
+            .timeout(Duration::from_secs(10))
             .build()
             .unwrap();
 
-        match client
-            .post(request_url)
-            .header("Content-Type", "application/json")
-            .body(body)
-            .send()
-        {
+        let mut req = match method {
+            "GET" => client.get(request_url),
+            "DELETE" => client.delete(request_url),
+            "PATCH" => client.patch(request_url),
+            "POST" => client.post(request_url),
+            _ => {
+                return Err(RequestError {
+                    code: 338,
+                    message: format!("Invalid request method: {method}"),
+                    http_code: Some(500),
+                })
+            }
+        };
+
+        if body.is_some() {
+            req = req
+                .header("Content-Type", "application/json")
+                .body(body.unwrap());
+        }
+
+        if auth_token.is_some() {
+            if method == "GET" {
+                req = req.header("Cookie", format!("auth={}", auth_token.unwrap()));
+            } else {
+                req = req.header("X-Auth", format!("{}", auth_token.unwrap()));
+            }
+        }
+
+        match req.send() {
             Ok(r) => Ok(r),
             Err(e) => Err(RequestError {
-                code: 369,
+                code: 349,
                 message: e.to_string(),
                 http_code: Some(500),
             }),
         }
     }
 
-    async fn make_async_get_request(&self, uri: &str) -> Result<AsyncResponse, RequestError> {
+    async fn make_async_request(
+        &self,
+        method: &str,
+        uri: &str,
+        body: Option<String>,
+        auth_token: Option<String>,
+    ) -> Result<AsyncResponse, RequestError> {
         let request_url = self.request_url(uri);
 
-        return match reqwest::get(request_url).await {
-            Ok(r) => Ok(r),
-            Err(e) => {
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .unwrap();
+
+        let mut req = match method {
+            "GET" => client.get(request_url),
+            "DELETE" => client.delete(request_url),
+            "PATCH" => client.patch(request_url),
+            "POST" => client.post(request_url),
+            _ => {
                 return Err(RequestError {
-                    code: 370,
-                    message: e.to_string(),
+                    code: 348,
+                    message: format!("Invalid request method: {method}"),
                     http_code: Some(500),
-                });
+                })
             }
         };
-    }
 
-    fn make_get_request(&self, uri: &str) -> Result<Response, RequestError> {
-        let request_url = self.request_url(uri);
+        if body.is_some() {
+            req = req
+                .header("Content-Type", "application/json")
+                .body(body.unwrap());
+        }
 
-        return match reqwest::blocking::get(request_url) {
-            Ok(r) => Ok(r),
-            Err(e) => {
-                return Err(RequestError {
-                    code: 371,
-                    message: e.to_string(),
-                    http_code: Some(500),
-                });
+        if auth_token.is_some() {
+            if method == "GET" {
+                req = req.header("Cookie", format!("auth={}", auth_token.unwrap()));
+            } else {
+                req = req.header("X-Auth", format!("{}", auth_token.unwrap()));
             }
-        };
+        }
+
+        match req.send().await {
+            Ok(r) => Ok(r),
+            Err(e) => Err(RequestError {
+                code: 349,
+                message: e.to_string(),
+                http_code: Some(500),
+            }),
+        }
     }
 
     fn request_url(&self, uri: &str) -> String {

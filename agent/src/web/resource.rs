@@ -12,7 +12,7 @@ use crate::{
     archive::{ArchiveItem, ArchiveWriter},
     command_runner::run_command_async,
     constants::{COMMAND_GET_REMOTE_RESOURCE, COMMAND_REMOTE_BEFORE_COPY, DEFAULTS},
-    files_api::FilesApi,
+    files_api::{FilesApi, Transfer},
     Files,
 };
 
@@ -53,7 +53,7 @@ pub async fn resources(
     files: &State<Files>,
     cookies: &CookieJar<'_>,
 ) -> (Status, Json<ResourcesResponse>) {
-    let agent = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
+    let (agent, _) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
         Ok(a) => a,
         Err(e) => {
             return (
@@ -102,7 +102,8 @@ pub async fn copy(
     files: &State<Files>,
     cookies: &CookieJar<'_>,
 ) -> (Status, Json<CopyResponse>) {
-    let agent = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
+    // verify that the requester has a valid session in Files and owns the referred agent
+    let (agent, auth_token) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
         Ok(a) => a,
         Err(e) => {
             return (
@@ -145,10 +146,17 @@ pub async fn copy(
         }
     };
 
+    let transfer = Transfer {
+        agent_id,
+        transfer_id: archive_name.to_string(),
+        rc_auth: auth_token.to_string(),
+    };
+
     /*<alt:async execution of tar and scp> */
-    // run remaining tasks asynchronously in a future:
+    // run remaining tasks asynchronously in a future
     let items_copy = request.items.to_vec();
     let _future = task::spawn(finish_upload_in_background(
+        transfer,
         String::from(&agent.host),
         String::from(&agent.port.to_string()),
         items_copy,
@@ -203,6 +211,7 @@ pub struct FutureError {
 }
 
 fn finish_upload_in_background(
+    transfer: Transfer,
     host: String,
     port: String,
     req_items: Vec<ResourceItem>,
@@ -217,7 +226,7 @@ fn finish_upload_in_background(
         let files_api = FilesApi::new();
 
         files_api
-            .send_upload_status_update_async(&archive_name, "archiving")
+            .send_upload_status_update_async(&transfer, "archiving")
             .await;
 
         // create list of files to archive
@@ -236,7 +245,7 @@ fn finish_upload_in_background(
             Ok(w) => w,
             Err(e) => {
                 files_api
-                    .send_upload_status_update_async(&archive_name, &e.message)
+                    .send_upload_status_update_async(&transfer, &e.message)
                     .await;
                 return Err(FutureError {
                     code: e.code,
@@ -248,7 +257,7 @@ fn finish_upload_in_background(
 
         if let Err(e) = archive_writer.crate_archive(items).await {
             files_api
-                .send_upload_status_update_async(&archive_name, &e.message)
+                .send_upload_status_update_async(&transfer, &e.message)
                 .await;
             return Err(FutureError {
                 code: e.code,
@@ -258,7 +267,7 @@ fn finish_upload_in_background(
         task::yield_now().await;
 
         files_api
-            .send_upload_status_update_async(&archive_name, "uploading")
+            .send_upload_status_update_async(&transfer, "uploading")
             .await;
 
         // --->ORIG execute command
@@ -283,12 +292,19 @@ fn finish_upload_in_background(
         };*/
         // <---ORIG
 
-        match Client::remote_do_copy_async(&files_api, &host, &port, &archive_name, &remote_path)
-            .await
+        match Client::remote_do_copy_async(
+            &files_api,
+            &transfer,
+            &host,
+            &port,
+            &archive_name,
+            &remote_path,
+        )
+        .await
         {
             Ok(_) => {
                 files_api
-                    .send_upload_status_update_async(&archive_name, "complete")
+                    .send_upload_status_update_async(&transfer, "complete")
                     .await;
                 Ok(())
             }
@@ -301,7 +317,7 @@ fn finish_upload_in_background(
                     err_msg = error.clone();
                 }
                 files_api
-                    .send_upload_status_update_async(&archive_name, &err_msg)
+                    .send_upload_status_update_async(&transfer, &err_msg)
                     .await;
                 return Err(FutureError {
                     code: e.code,
