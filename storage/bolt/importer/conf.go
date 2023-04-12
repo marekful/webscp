@@ -44,6 +44,13 @@ type oldConf struct {
 		Secret string `json:"secret" yaml:"secret" toml:"secret"`
 		Host   string `json:"host" yaml:"host" toml:"host"`
 	} `json:"recaptcha" yaml:"recaptcha" toml:"recaptcha"`
+	OIDC struct {
+		ClientID               string `json:"clientID" yaml:"clientID" toml:"clientID"`
+		ClientSecret           string `json:"clientSecret" yaml:"clientSecret" toml:"clientSecret"`
+		Issuer                 string `json:"issuer" yaml:"issuer" toml:"issuer"`
+		RedirectURL            string `json:"redirectURL" yaml:"redirectURL" toml:"redirectURL"`
+		RedirectURLAppendQuery bool   `json:"redirectURLAppendQuery" yaml:"redirectURLAppendQuery" toml:"redirectURLAppendQuery"`
+	} `json:"oidc" yaml:"oidc" toml:"oidc"`
 	Auth oldAuth `json:"auth" yaml:"auth" toml:"auth"`
 }
 
@@ -150,6 +157,17 @@ func importConf(db *storm.DB, path string, sto *storage.Storage) error {
 	case "proxy":
 		auther = &auth.ProxyAuth{Header: cfg.Auth.Header}
 		s.AuthMethod = auth.MethodProxyAuth
+	case "oidc":
+		auther = &auth.OIDCAuth{
+			OIDC: &auth.OAuthClient{
+				ClientID:               cfg.OIDC.ClientID,
+				ClientSecret:           cfg.OIDC.ClientSecret,
+				Issuer:                 cfg.OIDC.Issuer,
+				RedirectURL:            cfg.OIDC.RedirectURL,
+				RedirectURLAppendQuery: cfg.OIDC.RedirectURLAppendQuery,
+			},
+		}
+		s.AuthMethod = auth.MethodOIDCAuth
 	case "hook":
 		auther = &auth.HookAuth{Command: cfg.Auth.Command}
 		s.AuthMethod = auth.MethodHookAuth
