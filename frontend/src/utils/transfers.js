@@ -21,21 +21,18 @@ function create(
   stats = stats || { progress: [], total: [] };
   let cancelable = true;
   let showDetails = false;
+  let showItems = false;
+  let showPaths = false;
   let sseClient;
-  let title = "";
-  switch (action) {
-    case "copy":
-      title = i18n.t("transfer.copying");
-      break;
-    case "move":
-      title = i18n.t("transfer.moving");
-      break;
-  }
+  let title = i18n.t(`transfer.continuous.${action}`);
   let plural = items.length > 1 ? "s" : "";
   title += ` ${items.length} item${plural} to ${agent.host}:${agent.port}`;
+  agent.localAddress = location.hostname;
 
   if (!canceled && pending) {
-    sseClient = new EventSource(`/api/sse/transfers/${transferID}/poll`);
+    sseClient = new EventSource(
+      `/api/agent/${agent.id}/transfers/${transferID}/poll`
+    );
     sseClient.onmessage = handleMessage($store);
     sseClient.onerror = handleError($store);
     sseClient.transferID = transferID;
@@ -57,6 +54,8 @@ function create(
     uploading,
     cancelable,
     showDetails,
+    showItems,
+    showPaths,
   };
   $store.commit("addTransfer", data);
   storeAdd(data);
@@ -64,13 +63,15 @@ function create(
 
 function prepareItems(items) {
   return items.map((item) => {
-    let trailingSlash = item.from[item.from.length - 1] === "/" ? "/" : "";
+    let isDir = item.from[item.from.length - 1] === "/";
+    let trailingSlash = isDir ? "/" : "";
     item.from = removePrefix(decodeURIComponent(item.from));
     item.from = item.from.replace(item.name + "/", "");
     item.from = item.from.replace(item.name, "");
     item.to = removePrefix(decodeURIComponent(item.to));
     item.to = item.to.replace(item.name, "");
     item.name += trailingSlash;
+    item.isDir = isDir;
     return item;
   });
 }
@@ -109,6 +110,8 @@ function update($store, data) {
         "cancelable",
         "uploading",
         "showDetails",
+        "showItems",
+        "showPaths",
       ].forEach((attr) => {
         if (data[attr] !== undefined) {
           newTransfer[attr] = data[attr];

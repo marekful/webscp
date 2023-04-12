@@ -175,12 +175,14 @@
     "admin": "Admin",
     "administrator": "Administrator",
     "agent": {
+      "accessToken": "Access Token",
       "address": "Address",
       "agentStatus": "Agent status",
       "agentVersion": "Version",
       "agentVersionHint": "Agent / File Browser",
       "connectionDelete": "Remote Agent Connection deleted",
       "connectionCreated": "Remote Agent Connection created",
+      "generateAccessToken": "Generate Access Token",
       "host": "Host",
       "hostLabel": "Hostname, FQDN or IP address",
       "latency": "Latency",
@@ -197,7 +199,9 @@
       "root": "Root",
       "secret": "Agent secret",
       "status": "Status",
-      "user": "User"
+      "tokenHint": "It's the only time this token is shown and it expires after first use or 5 minutes.",
+      "user": "User",
+      "validUntil": "Valid until"
     },
     "allowCommands": "Execute commands",
     "allowEdit": "Edit, rename and delete files or directories",
@@ -304,17 +308,32 @@
     "unit": "Time Unit"
   },
   "transfer": {
-    "showDetails": "show details",
-    "cancel": "Cancel upload",
-    "remove": "Remove transfer",
-    "copying": "Copying",
-    "moving": "Moving",
-    "startingUpload": "Starting upload",
-    "archiving": "Archiving",
-    "extracting": "Extracting",
-    "uploading": "Uploading",
-    "complete": "Complete",
     "aborted": "Aborted",
-    "canceled": "Canceled"
+    "and": "and",
+    "archiving": "Archiving",
+    "cancel": "Cancel upload",
+    "canceled": "Canceled",
+    "complete": "Complete",
+    "continuous": {
+      "copy": "Copying",
+      "move": "Moving"
+    },
+    "destination": "destination",
+    "directory": "directory",
+    "directories": "directories",
+    "extracting": "Extracting",
+    "file": "file",
+    "files": "files",
+    "from": "from",
+    "hideDetails": "hide details",
+    "hidePaths": "hide paths",
+    "local": "local",
+    "remove": "Remove transfer",
+    "showDetails": "show details",
+    "showPaths": "show paths",
+    "source": "source",
+    "startingUpload": "Starting upload",
+    "to": "to",
+    "uploading": "Uploading"
   }
 }

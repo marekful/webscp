@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+import { mapState, mapMutations } from "vuex";
 import url from "@/utils/url";
 import { files, remote_files } from "@/api";
 
@@ -74,6 +74,7 @@ export default {
     },
   },
   methods: {
+    ...mapMutations(["setRemoteLoading"]),
     fillOptions(req) {
       // Sets the current path and resets
       // the current items.
@@ -117,17 +118,19 @@ export default {
         files.fetch(uri).then(this.fillOptions).catch(this.$showError);
       } else {
         this.resetItems();
+        this.setRemoteLoading(true);
         remote_files
           .fetch(this.agentId, uri)
           .then(this.fillOptions)
           .catch((e) => {
             this.resetItems(true);
             this.$showError(e);
-          });
+          })
+          .finally(() => this.setRemoteLoading(false));
       }
     },
     remote: function (agent_id, uri) {
-      this.$store.commit("setRemoteLoading", true);
+      this.setRemoteLoading(true);
       this.resetItems();
       remote_files
         .fetch(agent_id, uri)
@@ -136,7 +139,7 @@ export default {
           this.resetItems(true);
           this.$showError(e);
         })
-        .finally(() => this.$store.commit("setRemoteLoading", false));
+        .finally(() => this.setRemoteLoading(false));
     },
     resetItems(withError) {
       this.loadState = withError ? 2 : 0;

@@ -162,7 +162,7 @@ export default {
             setTimeout(() => {
               buttons.active("transfers");
               buttons.loading("transfers");
-            }, 100);
+            }, 10);
           })
           .catch((e) => {
             buttons.donePromise("copy").then(() => {
