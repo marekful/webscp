@@ -9,8 +9,7 @@
         <div class="content">
           <div
             :class="transfer.cancelable ? 'remove' : 'remove disabled'"
-            @click="handleCancel"
-            :data-id="transfer.transferID"
+            @click="handleCancel(transfer)"
             :title="
               transfer.pending ? $t('transfer.cancel') : $t('transfer.remove')
             "
@@ -22,8 +21,9 @@
           <div
             :class="{
               icon: true,
-              iconError: transfer.error === true || transfer.canceled === true,
-              iconSuccess:
+              'icon-error': transfer.error === true,
+              'icon-canceled': transfer.canceled === true,
+              'icon-success':
                 transfer.pending === false &&
                 transfer.error === false &&
                 transfer.canceled === false,
@@ -61,17 +61,99 @@
           </div>
           <div class="details">
             <div class="icon" @click="showDetails(transfer)">
-              <i class="material-icons">arrow_drop_down_circle</i>
-              <span class="label">{{ $t("transfer.showDetails") }}</span>
+              <span v-if="transfer.showDetails === false">
+                <i class="material-icons">keyboard_arrow_down</i>
+                <span class="label">{{ $t("transfer.showDetails") }}</span>
+              </span>
+              <span v-else>
+                <i class="material-icons">keyboard_arrow_up</i>
+                <span class="label">{{ $t("transfer.hideDetails") }} </span>
+              </span>
             </div>
-            <ul v-if="transfer.showDetails === true" class="content">
-              <li v-for="(item, index) in transfer.items" :key="index">
-                <span class="path">{{ item.from }}</span>
-                <span class="name">{{ item.name }}</span>
-                <i class="material-icons">east</i>
-                <span class="to">{{ item.to }}</span>
-              </li>
-            </ul>
+            <div v-if="transfer.showDetails">
+              <div class="summary">
+                <div class="title">
+                  <span>{{ $t(`transfer.continuous.${transfer.action}`) }}</span
+                  >&nbsp;
+                  <a href="#" @click.prevent="showItems(transfer)">
+                    <span v-if="numFiles(transfer) > 0">
+                      {{ numFiles(transfer) }}
+                      {{
+                        $t(`transfer.file${numFiles(transfer) > 1 ? "s" : ""}`)
+                      }}
+                    </span>
+                    <span v-if="numDirs(transfer) > 0">
+                      <span v-if="numFiles(transfer) > 0">
+                        {{ $t("transfer.and") }}
+                      </span>
+                      {{ numDirs(transfer) }}
+                      {{
+                        $t(
+                          `transfer.director${
+                            numDirs(transfer) > 1 ? "ies" : "y"
+                          }`
+                        )
+                      }}
+                    </span>
+                  </a>
+                </div>
+                <div class="content">
+                  <div>
+                    <div class="location label">
+                      <span>{{ $t("transfer.from") }}</span>
+                      <i class="material-icons">home</i>
+                    </div>
+                    <div class="location">
+                      <span class="server">
+                        {{ transfer.agent.localAddress }}
+                      </span>
+                      <i class="material-icons">east</i>
+                      <span class="path">{{ transfer.items[0].from }}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="location label">
+                      <span>{{ $t("transfer.to") }}</span>
+                      <i class="material-icons">vpn_lock</i>
+                    </div>
+                    <div class="location">
+                      <span class="server">
+                        {{ transfer.agent.host }}:{{ transfer.agent.port }}
+                      </span>
+                      <i class="material-icons">east</i>
+                      <span class="path">{{ transfer.items[0].to }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="content">
+                <div v-if="transfer.showItems" class="show-paths">
+                  <a href="#" @click.prevent="showFullPaths(transfer)">
+                    <span v-if="transfer.showPaths === false">
+                      {{ $t("transfer.showPaths") }}
+                    </span>
+                    <span v-else>
+                      {{ $t("transfer.hidePaths") }}
+                    </span>
+                  </a>
+                </div>
+                <ul v-if="transfer.showItems">
+                  <li
+                    v-for="(item, index) in transfer.items"
+                    :key="index"
+                    :class="{
+                      item: true,
+                      compact: !transfer.showPaths,
+                    }"
+                  >
+                    <span class="path">{{ item.from }}</span>
+                    <span class="name">{{ item.name }}</span>
+                    <i class="material-icons">east</i>
+                    <span class="to">{{ item.to }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -111,9 +193,24 @@ export default {
     cancel: function () {
       this.$store.commit("closeHovers");
     },
-    handleCancel: function (event) {
-      let transferID = event.target.parentNode.dataset["id"];
-      let transfer = transfers.get(this.transfers, transferID);
+    numFiles: function (transfer) {
+      if (transfer.numDirs === undefined) {
+        transfer.numDirs = transfer.items.reduce(function (total, item) {
+          return total + (item.isDir ? 0 : 1);
+        }, 0);
+      }
+      return transfer.numDirs;
+    },
+    numDirs: function (transfer) {
+      if (transfer.numFiles === undefined) {
+        transfer.numFiles = transfer.items.reduce(function (total, item) {
+          return total + (item.isDir ? 1 : 0);
+        }, 0);
+      }
+      return transfer.numFiles;
+    },
+    handleCancel: function (transfer) {
+      let transferID = transfer.transferID;
 
       if (!transfer || !transfer.cancelable) {
         return;
@@ -161,6 +258,18 @@ export default {
         showDetails: !transfer.showDetails,
       });
     },
+    showItems: function (transfer) {
+      transfers.update(this.$store, {
+        transferID: transfer.transferID,
+        showItems: !transfer.showItems,
+      });
+    },
+    showFullPaths: function (transfer) {
+      transfers.update(this.$store, {
+        transferID: transfer.transferID,
+        showPaths: !transfer.showPaths,
+      });
+    },
   },
 };
 </script>
@@ -179,6 +288,7 @@ export default {
 .card.transfers.top {
   right: 5%;
   width: 90%;
+  max-height: 88%;
 }
 
 @media (max-width: 736px) {
@@ -241,7 +351,8 @@ export default {
 
 .transfer .error {
   color: var(--dark-red);
-  background: transparent;
+  font-size: small;
+  margin: 0.25em 0 0.75em 0;
 }
 
 .transfer .stats {
@@ -276,7 +387,10 @@ export default {
   font-size: 2rem;
 }
 
-.transfer > .content > .icon:not(.iconError):not(.iconSuccess) i {
+.transfer
+  > .content
+  > .icon:not(.icon-error):not(.icon-success):not(.icon-canceled)
+  i {
   color: #546e7a;
   animation-duration: 5s;
   animation-name: change-color;
@@ -294,12 +408,16 @@ export default {
   }
 }
 
-.transfer .iconError i {
+.transfer .icon-error i {
   color: var(--dark-red);
 }
 
-.transfer .iconSuccess i {
-  color: var(--icon-green);
+.transfer .icon-success i {
+  color: var(--icon-blue);
+}
+
+.transfer .icon-canceled i {
+  color: var(--mid-grey);
 }
 
 .transfer.no-content {
@@ -329,23 +447,59 @@ export default {
   font-size: 90%;
 }
 
-.transfer > .content > .details .path {
+.transfer > .content > .details .content .show-paths {
+  margin: 0.5em 0 0 0;
+  text-align: right;
+  text-decoration: underline;
+  font-size: small;
+}
+
+.transfer > .content > .details .content .item .path {
   color: var(--mid-grey);
 }
 
-.transfer > .content > .details .name {
+.transfer > .content > .details .content .item.compact .path {
+  display: none;
+}
+
+.transfer > .content > .details .content .item.compact .name {
+  font-weight: normal;
+}
+
+.transfer > .content > .details .content .item.compact i {
+  display: none;
+}
+
+.transfer > .content > .details .content .item.compact .to {
+  display: none;
+}
+
+.transfer > .content > .details .content .item .name {
   font-weight: bold;
   margin-right: 0.25em;
 }
 
-.transfer > .content > .details .to {
+.transfer > .content > .details .content .to {
   margin-left: 1.25em;
 }
 
-.transfer > .content > .details > .content i {
+.transfer > .content > .details > div > .content {
+  clear: left;
+}
+
+.transfer > .content > .details > div > .content i {
   position: absolute;
   font-size: 1rem;
   width: 18px;
+}
+
+.transfer > .content > .details > div > .content ul {
+  margin: 0.3em 0 0 0;
+  padding: 0 0 0 1em;
+}
+
+.transfer > .content > .details > div > .content ul > li {
+  line-height: 1.33em;
 }
 
 .transfer > .content > .details > .icon {
@@ -359,23 +513,72 @@ export default {
   opacity: 0.8;
 }
 
-.transfer > .content > .details > .icon > i {
+.transfer > .content > .details > .icon i {
   font-size: 1em;
   vertical-align: middle;
 }
 
-.transfer > .content > .details > .icon > .label {
+.transfer > .content > .details > .icon .label {
   font-size: 90%;
   margin: 0 0 0 0.25em;
 }
 
-.transfer > .content > .details > ul.content {
+.transfer > .content > .details > div > .summary {
   margin: 1.5em 0 0 0;
-  padding: 0 0 0 1em;
 }
 
-.transfer > .content > .details > ul > li {
-  margin: 0 0 0.25em 0;
+.transfer > .content > .details > div > .summary > div > a {
+  text-decoration: underline;
+}
+
+.transfer > .content > .details > div > .summary .content i {
+  font-size: 1.25em;
+  margin: 0 0.33em;
+}
+
+.transfer > .content > .details > div > .summary > .content {
+  margin: 0.5em 0 0 0;
+  border: 1px solid var(--card-border);
+  border-radius: 2px;
+  padding: 0.5em 0 0 0;
+  background: var(--distinct-background2);
+}
+
+.transfer > .content > .details .summary > .content .location.label {
+  float: left;
+  clear: left;
+  width: 5em;
+  text-align: right;
+}
+
+.transfer > .content > .details .summary > .content .location:not(.label) i {
+  margin: 0;
+}
+
+.transfer > .content > .details .summary > .content .location {
+  line-height: 1.5em;
+  display: table;
+}
+
+.transfer > .content > .details .summary > .content .server {
+  font-weight: bold;
+}
+
+.transfer > .content > .details .summary > .content .path {
+  color: var(--mid-grey);
+}
+
+.transfer > .content > .details .summary > .content span {
+  position: relative;
+  bottom: 0.3em;
+}
+
+.transfer > .content > .details > div > .summary > div.title {
+  font-size: initial;
+  padding: 0.6em 0;
+}
+
+@media (max-width: 736px) {
 }
 
 section.card-action {
