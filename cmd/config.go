@@ -41,6 +41,12 @@ func addConfigFlags(flags *pflag.FlagSet) {
 	flags.String("recaptcha.key", "", "ReCaptcha site key")
 	flags.String("recaptcha.secret", "", "ReCaptcha secret")
 
+	flags.String("oidc.clientID", "", "Open ID Connect Client ID for auth.method=oidc")
+	flags.String("oidc.clientSecret", "", "Open ID Connect Client Secret for auth.method=oidc")
+	flags.String("oidc.issuer", "", "Open ID Connect Configuration Issuer URL for auth.method=oidc")
+	flags.String("oidc.redirectURL", "", "Open ID Connect Redirect URL for auth.method=oidc")
+	flags.Bool("oidc.redirectURLAppendQuery", false, "Whether to append '?redirect=...' to the redirectURL")
+
 	flags.String("branding.name", "", "replace 'File Browser' by this name")
 	flags.String("branding.color", "", "set the theme color")
 	flags.String("branding.files", "", "path to directory with images and custom styles")
@@ -48,11 +54,8 @@ func addConfigFlags(flags *pflag.FlagSet) {
 	flags.Bool("branding.disableUsedPercentage", false, "disable used disk percentage graph")
 }
 
-//nolint:gocyclo
-func getAuthentication(flags *pflag.FlagSet, defaults ...interface{}) (settings.AuthMethod, auth.Auther) {
-	method := settings.AuthMethod(mustGetString(flags, "auth.method"))
-
-	var defaultAuther map[string]interface{}
+func getDefaultAuther(method settings.AuthMethod, defaults ...interface{}) (map[string]interface{}, settings.AuthMethod) {
+	var d map[string]interface{}
 	if len(defaults) > 0 {
 		if hasAuth := defaults[0]; hasAuth != true {
 			for _, arg := range defaults {
@@ -62,12 +65,20 @@ func getAuthentication(flags *pflag.FlagSet, defaults ...interface{}) (settings.
 				case auth.Auther:
 					ms, err := json.Marshal(def)
 					checkErr(err)
-					err = json.Unmarshal(ms, &defaultAuther)
+					err = json.Unmarshal(ms, &d)
 					checkErr(err)
 				}
 			}
 		}
 	}
+	return d, method
+}
+
+//nolint:gocyclo
+func getAuthentication(flags *pflag.FlagSet, defaults ...interface{}) (settings.AuthMethod, auth.Auther) {
+	method := settings.AuthMethod(mustGetString(flags, "auth.method"))
+
+	defaultAuther, method := getDefaultAuther(method, defaults)
 
 	var auther auth.Auther
 	if method == auth.MethodProxyAuth {
@@ -114,6 +125,26 @@ func getAuthentication(flags *pflag.FlagSet, defaults ...interface{}) (settings.
 			}
 		}
 		auther = jsonAuth
+	}
+
+	if method == auth.MethodOIDCAuth {
+		oidcAuth := &auth.OIDCAuth{}
+		id := mustGetString(flags, "oidc.clientID")
+		secret := mustGetString(flags, "oidc.clientSecret")
+		url := mustGetString(flags, "oidc.issuer")
+		redirect := mustGetString(flags, "oidc.redirectURL")
+		appendQuery := mustGetBool(flags, "oidc.redirectURLAppendQuery")
+
+		if id != "" && secret != "" && url != "" && redirect != "" {
+			oidcAuth.OIDC = &auth.OAuthClient{
+				ClientID:               id,
+				ClientSecret:           secret,
+				Issuer:                 url,
+				RedirectURL:            redirect,
+				RedirectURLAppendQuery: appendQuery,
+			}
+		}
+		auther = oidcAuth
 	}
 
 	if method == auth.MethodHookAuth {
