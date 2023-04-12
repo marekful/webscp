@@ -1,6 +1,6 @@
 <template>
   <div
-    class="item"
+    :class="{ item: true, dotfile: this.isDotFile, hidden: this.isDotFile && !showDotfiles }"
     role="button"
     tabindex="0"
     :draggable="isDraggable"
@@ -61,7 +61,7 @@ export default {
     "path",
   ],
   computed: {
-    ...mapState(["user", "selected", "req", "jwt"]),
+    ...mapState(["user", "selected", "req", "jwt", "showDotfiles"]),
     ...mapGetters(["selectedCount"]),
     singleClick() {
       return this.readOnly == undefined && this.user.singleClick;
@@ -93,6 +93,9 @@ export default {
     },
     isThumbsEnabled() {
       return enableThumbs;
+    },
+    isDotFile: function () {
+      return this.name[0] === ".";
     },
   },
   methods: {

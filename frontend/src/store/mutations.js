@@ -9,6 +9,9 @@ const mutations = {
   toggleShell: (state) => {
     state.showShell = !state.showShell;
   },
+  toggleDotfiles: (state) => {
+    state.showDotfiles = !state.showDotfiles;
+  },
   showHover: (state, value) => {
     if (typeof value !== "object") {
       state.show = value;
