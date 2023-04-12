@@ -2,19 +2,41 @@
   <errors v-if="error" :errorCode="error.status" />
   <div class="row" v-else-if="!loading">
     <div class="column">
-      <form class="card" @submit.prevent="save">
+      <div class="card" @submit.prevent="save">
         <div class="card-title">
           <h2>{{ $t("settings.agent.agentStatus") }}</h2>
         </div>
 
-        <div class="card-action">
-          <input
-            class="button button--flat"
-            type="submit"
-            :value="$t('buttons.update')"
-          />
+        <div class="card-content">
+          <div v-if="tokens.length > 0">
+            <div class="token" v-for="(token, index) in tokens" :key="index">
+              <div class="info">
+                <div>
+                  <i class="material-icons">info</i>
+                </div>
+                <div>
+                  {{ $t("settings.agent.tokenHint") }}
+                </div>
+              </div>
+              <p>
+                <label>{{ $t("settings.agent.accessToken") }}</label>
+                <textarea readonly v-model="token.token" @focus="$event.target.select()"></textarea>
+              </p>
+              <p>
+                <label>{{ $t("settings.agent.validUntil") }}</label>
+                <span>{{ new Date(token.valid_until * 1000) }}</span>
+              </p>
+            </div>
+          </div>
         </div>
-      </form>
+
+        <div class="card-action">
+          <button
+            class="button button--flat"
+            @click="token"
+          >{{ $t("settings.agent.generateAccessToken")}} </button>
+        </div>
+      </div>
     </div>
 
     <div class="column column-w">
@@ -98,6 +120,7 @@ export default {
     return {
       error: null,
       agents: [],
+      tokens: [],
     };
   },
   computed: {
@@ -140,7 +163,13 @@ export default {
   },
   methods: {
     ...mapMutations(["setLoading"]),
-    capitalize(name, where = "_") {
+    async token() {
+      await api.getTemporaryAccessToken()
+          .then((token) => {
+            this.tokens.push(token);
+          });
+    },
+    /*capitalize(name, where = "_") {
       if (where === "caps") where = /(?=[A-Z])/;
       let splitted = name.split(where);
       name = "";
@@ -151,8 +180,8 @@ export default {
       }
 
       return name.slice(0, -1);
-    },
-    async save() {
+    },*/
+    /*async save() {
       let agent = {
         ...this.agent,
       };
@@ -163,12 +192,12 @@ export default {
       } catch (e) {
         this.$showError(e);
       }
-    },
+    },*/
   },
 };
 </script>
 
-<style>
+<style scoped>
 .version {
   max-width: 18em;
 }
@@ -200,4 +229,39 @@ td.status {
   max-width: 1.5em;
   margin-top: 0.1em;
 }
+
+.card .token textarea {
+  width: 100%;
+  background-color: var(--moon-grey);
+  height: 4em;
+  border: 1px solid var(--icon-blue);
+  padding: 0.5em;
+  border-radius: 2px;
+  color: var(--card-text-color);
+}
+
+.card .token p label {
+  font-size: initial;
+  margin: 1.25em 0 0.75em 0;
+}
+
+.card .token .info {
+  background-color: var(--distinct-background);
+  padding: 0.75em;
+  border-radius: 2px;
+  border: 1px solid var(--card-border);
+  color: var(--card-text-color);
+}
+
+.card .token .info i {
+  font-size: 1.25em;
+  vertical-align: bottom;
+  color: var(--icon-blue);
+}
+
+.card .token .info > div:first-child {
+  float: left;
+  margin-right: 0.5em;
+}
+
 </style>

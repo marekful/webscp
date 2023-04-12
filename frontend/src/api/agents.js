@@ -23,7 +23,11 @@ export async function create(agent) {
   }
 }
 
-export async function update(agent, which = ["all"]) {
+export async function getTemporaryAccessToken() {
+  return fetchJSON("/api/agent/temporary-access-token", {});
+}
+
+/*export async function update(agent, which = ["all"]) {
   await fetchURL(`/api/agents/${agent.id}`, {
     method: "PUT",
     body: JSON.stringify({
@@ -32,7 +36,7 @@ export async function update(agent, which = ["all"]) {
       data: agent,
     }),
   });
-}
+}*/
 
 export async function remove(id) {
   await fetchURL(`/api/agents/${id}`, {

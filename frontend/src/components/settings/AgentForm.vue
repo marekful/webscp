@@ -32,7 +32,7 @@
     </p>
 
     <p v-if="isNew">
-      <label for="secret">{{ $t("settings.agent.secret") }}</label>
+      <label for="secret">{{ $t("settings.agent.accessToken") }}</label>
       <input
         class="input input--block"
         type="password"
@@ -44,7 +44,7 @@
 
     <p>
       <label for="remote-user-name">
-        {{ $t("settings.agent.remoteUser") }}
+        {{ $t("settings.agent.remoteUserName") }}
       </label>
       <input
         v-if="isNew"
@@ -59,7 +59,7 @@
       </code>
     </p>
 
-    <p>
+    <p v-if="!isNew">
       <label>{{ $t("settings.agent.remotePath") }}</label>
       <code>
         {{ agent.remote_user.root }}

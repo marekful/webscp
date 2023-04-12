@@ -141,10 +141,6 @@ export default {
           const loc = await api.create(agent);
           this.$router.push({ path: loc });
           this.$showSuccess(this.$t("settings.agent.connectionCreated"));
-        } else {
-          await api.update(agent);
-
-          this.$showSuccess(this.$t("settings.agen.connectionUpdated"));
         }
       } catch (e) {
         this.$showError(e);
