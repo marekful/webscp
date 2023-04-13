@@ -41,7 +41,7 @@ pub struct ClientError {
     pub http_code: Option<i32>,
 }
 
-impl From<std::io::Error> for ClientError {
+impl From<Error> for ClientError {
     fn from(err: Error) -> Self {
         return ClientError {
             code: 987,
@@ -168,11 +168,8 @@ impl Client<'_> {
     pub async fn remote_do_copy_async(
         files_api: &FilesApi,
         transfer: &Transfer,
-        host: &str,
-        port: &str,
-        archive_name: &str,
-        remote_base_path: &str,
     ) -> Result<(), ClientError> {
+        let archive_name = &transfer.transfer_id;
         let local_path = format!(
             "{}{}{}",
             DEFAULTS.temp_data_dir, archive_name, ".agent.tar.gz"
@@ -183,8 +180,8 @@ impl Client<'_> {
         let mut script_args: Vec<&str> = Vec::new();
         script_args.push(DEFAULTS.uploader_script_path);
         script_args.push(&local_path);
-        script_args.push(host);
-        script_args.push(port);
+        script_args.push(&transfer.host);
+        script_args.push(&transfer.port);
         script_args.push(&remote_path);
 
         // setup command for asynchronous execution
@@ -266,9 +263,9 @@ impl Client<'_> {
             .await;
 
         // extract uploaded archive on remote
-        let prt: i16 = port.to_string().parse().unwrap();
-        let client = Client::new(host, prt);
-        match client.remote_extract_archive(&archive_name, &remote_base_path) {
+        let port: i16 = transfer.port.to_string().parse::<i16>().unwrap();
+        let client = Client::new(&transfer.host, port);
+        match client.remote_extract_archive(&archive_name, &transfer.remote_path) {
             Ok(_) => Ok(()),
             Err(e) => {
                 let err_msg = e.message.as_str();

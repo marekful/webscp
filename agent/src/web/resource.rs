@@ -148,22 +148,18 @@ pub async fn copy(
 
     let transfer = Transfer {
         agent_id,
+        host: agent.host,
+        port: agent.port,
         transfer_id: archive_name.to_string(),
+        local_path: String::from(&request.source_root),
+        remote_path: String::from(&request.destination_root),
         rc_auth: auth_token.to_string(),
     };
 
     /*<alt:async execution of tar and scp> */
     // run remaining tasks asynchronously in a future
     let items_copy = request.items.to_vec();
-    let _future = task::spawn(finish_upload_in_background(
-        transfer,
-        String::from(&agent.host),
-        String::from(&agent.port.to_string()),
-        items_copy,
-        String::from(archive_name),
-        String::from(&request.source_root),
-        String::from(&request.destination_root),
-    ));
+    let _future = task::spawn(finish_upload_in_background(transfer, items_copy));
 
     /* The task has started execution at this point and
      * .await-ing it will be non-blocking. The task will
@@ -212,12 +208,7 @@ pub struct FutureError {
 
 fn finish_upload_in_background(
     transfer: Transfer,
-    host: String,
-    port: String,
     req_items: Vec<ResourceItem>,
-    archive_name: String,
-    local_path: String,
-    remote_path: String,
 ) -> impl Future<Output = Result<(), FutureError>> + 'static {
     async move {
         // allow some time for the upload state poll to initialize
@@ -240,8 +231,12 @@ fn finish_upload_in_background(
         task::yield_now().await;
 
         // create archive of files
-        let archive_path = &*format!("{}{archive_name}.agent.tar.gz", DEFAULTS.temp_data_dir);
-        let mut archive_writer = match ArchiveWriter::new(archive_path, false, &local_path) {
+        let archive_path = &*format!("{}{}.agent.tar.gz", DEFAULTS.temp_data_dir, transfer.transfer_id);
+        let mut archive_writer = match ArchiveWriter::new(
+            archive_path,
+            false,
+            &transfer.local_path
+        ) {
             Ok(w) => w,
             Err(e) => {
                 files_api
@@ -293,16 +288,7 @@ fn finish_upload_in_background(
         };*/
         // <---ORIG
 
-        match Client::remote_do_copy_async(
-            &files_api,
-            &transfer,
-            &host,
-            &port,
-            &archive_name,
-            &remote_path,
-        )
-        .await
-        {
+        match Client::remote_do_copy_async(&files_api, &transfer).await {
             Ok(_) => {
                 files_api
                     .send_upload_status_update_async(&transfer, "complete")
