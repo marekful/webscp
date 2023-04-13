@@ -136,18 +136,7 @@ func injectAgentWithUser(fn handleFunc) handleFunc {
 }
 
 var agentsGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-	var find func() ([]*agents.Agent, error)
-	if d.user.Perm.Admin {
-		find = func() ([]*agents.Agent, error) {
-			return d.store.Agents.Gets()
-		}
-	} else {
-		find = func() ([]*agents.Agent, error) {
-			return d.store.Agents.FindByUserID(d.user.ID)
-		}
-	}
-
-	agents, err := find()
+	agents, err := d.store.Agents.FindByUserID(d.user.ID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
