@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div v-if="remoteLoading">
+  <div class="top">
+    <div v-if="remoteLoading" class="remote-loading">
       <h2 class="message delayed">
         <div class="spinner">
           <div class="bounce1"></div>
@@ -10,7 +10,6 @@
         <span>{{ $t("files.loading") }}</span>
       </h2>
     </div>
-    <p v-else-if="loadState === 2">Couldn't load directory listing</p>
     <p>
       <code>{{ nav }}</code>
     </p>
@@ -117,13 +116,14 @@ export default {
       if (this.agentId === 0) {
         files.fetch(uri).then(this.fillOptions).catch(this.$showError);
       } else {
-        this.resetItems();
         this.setRemoteLoading(true);
         remote_files
           .fetch(this.agentId, uri)
-          .then(this.fillOptions)
+          .then((res) => {
+            this.resetItems();
+            this.fillOptions(res);
+          })
           .catch((e) => {
-            this.resetItems(true);
             this.$showError(e);
           })
           .finally(() => this.setRemoteLoading(false));
@@ -131,12 +131,13 @@ export default {
     },
     remote: function (agent_id, uri) {
       this.setRemoteLoading(true);
-      this.resetItems();
       remote_files
         .fetch(agent_id, uri)
-        .then(this.fillOptions)
+        .then((res) => {
+          this.resetItems();
+          this.fillOptions(res);
+        })
         .catch((e) => {
-          this.resetItems(true);
           this.$showError(e);
         })
         .finally(() => this.setRemoteLoading(false));
@@ -190,3 +191,16 @@ export default {
   },
 };
 </script>
+
+<style>
+.top {
+  position: relative;
+}
+.remote-loading {
+  position: absolute;
+  z-index: 9999;
+  background: rgba(255,255,255, 0.2);
+  width: 100%;
+  height: 100%;
+}
+</style>

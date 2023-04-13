@@ -8,13 +8,15 @@ export async function fetch(agentId, url) {
     {}
   );
 
-  let data = await res.json();
+  console.log("remote_files.fetch() > ", res);
 
-  if (data.error) {
-    throw new Error(data.error);
+  if (res.status !== 200) {
+    throw new Error(await res.text());
   }
 
-  data = JSON.parse(data.resource);
+  let data = await res.json();
+
+  data = JSON.parse(data);
 
   data.url = `/files${url}`;
 
