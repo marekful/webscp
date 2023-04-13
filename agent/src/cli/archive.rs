@@ -9,6 +9,7 @@ pub struct ArchiveItem {
     pub destination: String,
 }
 
+#[derive(Clone)]
 pub struct ArchiveError {
     pub code: i32,
     pub message: String,
@@ -16,6 +17,7 @@ pub struct ArchiveError {
 
 pub struct ArchiveWriter {
     compress: bool,
+    file_path: String,
     gzip_writer: Option<Builder<GzEncoder<File>>>,
     tar_writer: Option<Builder<File>>,
     source_base_path: String,
@@ -42,6 +44,7 @@ impl ArchiveWriter {
             let writer = Builder::new(enc);
             Ok(Self {
                 compress,
+                file_path: archive_path.to_string(),
                 tar_writer: None,
                 gzip_writer: Some(writer),
                 source_base_path: String::from(source_base_path),
@@ -50,6 +53,7 @@ impl ArchiveWriter {
             let writer = Builder::new(file);
             Ok(Self {
                 compress,
+                file_path: archive_path.to_string(),
                 tar_writer: Some(writer),
                 gzip_writer: None,
                 source_base_path: String::from(source_base_path),
@@ -73,7 +77,7 @@ impl ArchiveWriter {
                     Err(e) => {
                         return Err(ArchiveError {
                             code: 301,
-                            message: format!("Couldn't add {src} to archive: {}", e.to_string()),
+                            message: e.to_string(),
                         });
                     }
                 };
@@ -90,6 +94,10 @@ impl ArchiveWriter {
 
             Ok(())
         }
+    }
+
+    fn remove_archive(&self) {
+        let _ = fs::remove_file(&self.file_path);
     }
 
     fn add_file_to_archive(&mut self, src: String, path: String) -> Result<(), Error> {
@@ -117,10 +125,13 @@ impl ArchiveWriter {
             }
         }
 
+        // skip non regular files
         if !src_meta.file_type().is_file() {
             return Ok(());
         }
 
+        // try add file
+        let src_copy = src.clone();
         let res = match self.compress {
             true => self
                 .gzip_writer
@@ -136,7 +147,11 @@ impl ArchiveWriter {
         };
 
         if res.is_err() {
-            Err(res.unwrap_err())
+            self.remove_archive();
+            // include problem file path in error message
+            let orig_err = res.unwrap_err();
+            let err_msg = format!("{} {}", orig_err, src_copy);
+            Err(Error::new(orig_err.kind(), err_msg))
         } else {
             Ok(())
         }
