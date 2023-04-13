@@ -66,7 +66,7 @@ pub fn command_get_local_resource(client: Client, args: Option<Vec<String>>) {
             print!("{resources_result}");
         }
         Err(e) => {
-            eprint!("{}{}", e.http_code.unwrap_or(500), e.message);
+            eprint!("{}", e.message);
             exit(e.code);
         }
     }

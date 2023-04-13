@@ -37,6 +37,7 @@ pub struct FilesApi {
     base_url: String,
 }
 
+#[derive(Debug)]
 pub struct Transfer {
     pub agent_id: u32,
     pub transfer_id: String,

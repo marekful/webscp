@@ -256,8 +256,9 @@ fn finish_upload_in_background(
         task::yield_now().await;
 
         if let Err(e) = archive_writer.crate_archive(items).await {
+            let err_msg = format!("{} code:({})", e.message, e.code);
             files_api
-                .send_upload_status_update_async(&transfer, &e.message)
+                .send_upload_status_update_async(&transfer, &err_msg)
                 .await;
             return Err(FutureError {
                 code: e.code,
