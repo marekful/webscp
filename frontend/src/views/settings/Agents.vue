@@ -20,7 +20,11 @@
               </div>
               <p>
                 <label>{{ $t("settings.agent.accessToken") }}</label>
-                <textarea readonly v-model="token.token" @focus="$event.target.select()"></textarea>
+                <textarea
+                  readonly
+                  v-model="token.token"
+                  @focus="$event.target.select()"
+                ></textarea>
               </p>
               <p>
                 <label>{{ $t("settings.agent.validUntil") }}</label>
@@ -31,10 +35,9 @@
         </div>
 
         <div class="card-action">
-          <button
-            class="button button--flat"
-            @click="token"
-          >{{ $t("settings.agent.generateAccessToken")}} </button>
+          <button class="button button--flat" @click="token">
+            {{ $t("settings.agent.generateAccessToken") }}
+          </button>
         </div>
       </div>
     </div>
@@ -87,10 +90,10 @@
               <td>{{ agent.port }}</td>
               <td>{{ agent.remote_user.name }}</td>
               <td v-if="!agent.error" class="version">{{ agent.version }}</td>
-              <td v-else class="version">
+              <td v-else class="version" :colspan="agent.error ? '2' : ''">
                 <div class="error">{{ agent.error }}</div>
               </td>
-              <td>
+              <td v-if="!agent.error">
                 <small>{{ agent.latency }}</small>
               </td>
               <td class="small">
@@ -164,35 +167,10 @@ export default {
   methods: {
     ...mapMutations(["setLoading"]),
     async token() {
-      await api.getTemporaryAccessToken()
-          .then((token) => {
-            this.tokens.push(token);
-          });
+      await api
+        .getTemporaryAccessToken()
+        .then((token) => this.tokens.push(token));
     },
-    /*capitalize(name, where = "_") {
-      if (where === "caps") where = /(?=[A-Z])/;
-      let splitted = name.split(where);
-      name = "";
-
-      for (let i = 0; i < splitted.length; i++) {
-        name +=
-          splitted[i].charAt(0).toUpperCase() + splitted[i].slice(1) + " ";
-      }
-
-      return name.slice(0, -1);
-    },*/
-    /*async save() {
-      let agent = {
-        ...this.agent,
-      };
-
-      try {
-        await api.update(agent);
-        this.$showSuccess(this.$t("settings.settingsUpdated"));
-      } catch (e) {
-        this.$showError(e);
-      }
-    },*/
   },
 };
 </script>
@@ -209,7 +187,7 @@ td.status {
   word-wrap: break-word;
   word-break: break-word;
   font-size: 80%;
-  background-color: var(--moon-grey);
+  background-color: var(--distinct-background);
   padding: 0.5em;
 }
 .status-online {
@@ -263,5 +241,4 @@ td.status {
   float: left;
   margin-right: 0.5em;
 }
-
 </style>

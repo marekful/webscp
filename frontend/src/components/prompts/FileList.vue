@@ -33,7 +33,7 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from "vuex";
+import { mapState } from "vuex";
 import url from "@/utils/url";
 import { files, remote_files } from "@/api";
 
@@ -48,7 +48,7 @@ export default {
       },
       selected: null,
       current: window.location.pathname,
-      loadState: 0,
+      remoteLoading: false,
     };
   },
   props: {
@@ -67,19 +67,17 @@ export default {
     },
   },
   computed: {
-    ...mapState(["req", "user", "remoteLoading"]),
+    ...mapState(["req", "user"]),
     nav() {
       return decodeURIComponent(this.current);
     },
   },
   methods: {
-    ...mapMutations(["setRemoteLoading"]),
     fillOptions(req) {
       // Sets the current path and resets
       // the current items.
       this.current = req.url;
       this.items = [];
-      this.loadState = 1;
 
       this.$emit("update:selected", this.current);
 
@@ -116,34 +114,29 @@ export default {
       if (this.agentId === 0) {
         files.fetch(uri).then(this.fillOptions).catch(this.$showError);
       } else {
-        this.setRemoteLoading(true);
+        this.remoteLoading = true;
         remote_files
           .fetch(this.agentId, uri)
           .then((res) => {
             this.resetItems();
             this.fillOptions(res);
           })
-          .catch((e) => {
-            this.$showError(e);
-          })
-          .finally(() => this.setRemoteLoading(false));
+          .catch(this.$showError)
+          .finally(() => (this.remoteLoading = false));
       }
     },
     remote: function (agent_id, uri) {
-      this.setRemoteLoading(true);
+      this.remoteLoading = true;
       remote_files
         .fetch(agent_id, uri)
         .then((res) => {
           this.resetItems();
           this.fillOptions(res);
         })
-        .catch((e) => {
-          this.$showError(e);
-        })
-        .finally(() => this.setRemoteLoading(false));
+        .catch(this.$showError)
+        .finally(() => (this.remoteLoading = false));
     },
-    resetItems(withError) {
-      this.loadState = withError ? 2 : 0;
+    resetItems() {
       this.items = [];
       this.current = "";
     },
@@ -199,7 +192,7 @@ export default {
 .remote-loading {
   position: absolute;
   z-index: 9999;
-  background: rgba(255,255,255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
   width: 100%;
   height: 100%;
 }

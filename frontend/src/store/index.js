@@ -17,7 +17,6 @@ const state = {
   jwt: "",
   progress: 0,
   loading: false,
-  remoteLoading: false,
   reload: false,
   selected: [],
   multiple: false,

@@ -8,8 +8,6 @@ export async function fetch(agentId, url) {
     {}
   );
 
-  console.log("remote_files.fetch() > ", res);
-
   if (res.status !== 200) {
     throw new Error(await res.text());
   }
