@@ -105,9 +105,8 @@
                     </div>
                     <div class="location">
                       <span class="server">
-                        {{ transfer.agent.localAddress }}
-                      </span>
-                      <i class="material-icons">east</i>
+                        {{ transfer.agent.localAddress }}</span
+                      ><i class="material-icons">chevron_right</i>
                       <span class="path">{{ transfer.items[0].from }}</span>
                     </div>
                   </div>
@@ -118,9 +117,10 @@
                     </div>
                     <div class="location">
                       <span class="server">
-                        {{ transfer.agent.host }}:{{ transfer.agent.port }}
-                      </span>
-                      <i class="material-icons">east</i>
+                        {{ transfer.agent.host }}:{{
+                          transfer.agent.port
+                        }}</span
+                      ><i class="material-icons">chevron_right</i>
                       <span class="path">{{ transfer.items[0].to }}</span>
                     </div>
                   </div>
@@ -490,7 +490,7 @@ export default {
 .transfer > .content > .details > div > .content i {
   position: absolute;
   font-size: 1rem;
-  width: 18px;
+  line-height: 1.25rem;
 }
 
 .transfer > .content > .details > div > .content ul {
@@ -540,7 +540,7 @@ export default {
   margin: 0.5em 0 0 0;
   border: 1px solid var(--card-border);
   border-radius: 2px;
-  padding: 0.5em 0 0 0;
+  padding: 0.5em 0 0.25em 0;
   background: var(--distinct-background2);
 }
 
@@ -549,10 +549,18 @@ export default {
   clear: left;
   width: 5em;
   text-align: right;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.transfer .summary .location:not(:first-child).label,
+.transfer .summary .location:not(:first-child) {
+  margin-top: 0.25em;
 }
 
 .transfer > .content > .details .summary > .content .location:not(.label) i {
   margin: 0;
+  color: var(--card-border);
 }
 
 .transfer > .content > .details .summary > .content .location {
