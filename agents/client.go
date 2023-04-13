@@ -198,14 +198,14 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 	}
 }
 
-func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *GetResourceResponse, err error) {
+func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *GetResourceResponse, status int, err error) {
 	url = neturl.QueryEscape(url)
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/resources/%d/%s", agentAddress, agent.ID, url)
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing agent API reqeuest: %v", err)
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API reqeuest: %v", err)
 	}
 
 	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
@@ -214,7 +214,7 @@ func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *Ge
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("error sending agent API request: %v", err)
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error sending agent API request: %v", err)
 	}
 
 	defer res.Body.Close()
@@ -222,10 +222,10 @@ func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *Ge
 	resp := &GetResourceResponse{}
 	dErr := json.NewDecoder(res.Body).Decode(resp)
 	if dErr != nil {
-		return nil, dErr
+		return nil, nethttps.StatusInternalServerError, dErr
 	}
 
-	return resp, nil
+	return resp, res.StatusCode, nil
 }
 
 func (c *AgentClient) RemoteCopy(

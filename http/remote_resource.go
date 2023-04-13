@@ -17,12 +17,16 @@ var remoteResourceGetHandler = injectAgentWithUser(func(w http.ResponseWriter, r
 
 	authCookie, _ := r.Cookie("auth")
 
-	resp, err := client.GetResource(d.agent, r.URL.Path, authCookie.Value)
+	resp, status, err := client.GetResource(d.agent, r.URL.Path, authCookie.Value)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
 
-	return renderJSON(w, r, resp)
+	if status == http.StatusOK {
+		return renderJSON(w, r, resp.Resource)
+	}
+
+	return status, fmt.Errorf("%s", resp.Error)
 })
 
 func remoteSourceResourcePostHandler() handleFunc {
