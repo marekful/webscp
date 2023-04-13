@@ -33,14 +33,13 @@ pub struct RequestError {
 }
 
 #[derive(Debug)]
-pub struct FilesApi {
-    base_url: String,
-}
-
-#[derive(Debug)]
 pub struct Transfer {
     pub agent_id: u32,
+    pub host: String,
+    pub port: String,
     pub transfer_id: String,
+    pub local_path: String,
+    pub remote_path: String,
     pub rc_auth: String,
 }
 
@@ -48,10 +47,19 @@ impl Clone for Transfer {
     fn clone(&self) -> Self {
         Self {
             agent_id: self.agent_id.clone(),
+            host: self.host.clone(),
+            port: self.port.clone(),
             transfer_id: self.transfer_id.clone(),
+            local_path: self.local_path.clone(),
+            remote_path: self.remote_path.clone(),
             rc_auth: self.rc_auth.clone(),
         }
     }
+}
+
+#[derive(Debug)]
+pub struct FilesApi {
+    base_url: String,
 }
 
 impl FilesApi {
