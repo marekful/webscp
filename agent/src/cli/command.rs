@@ -144,8 +144,8 @@ pub fn command_local_before_copy(client: Client<'_>, args: Option<Vec<String>>) 
             print!("{}", response.trim().to_string());
         }
         Err(e) => {
-            print!("{}", e.message);
-            exit(150);
+            eprintln!("{}", e.message.trim());
+            exit(e.code);
         }
     }
 }
