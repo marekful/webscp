@@ -270,7 +270,7 @@ impl FilesApi {
         if response.status() != StatusCode::OK {
             return Err(ClientError {
                 code: 193,
-                message: response.status().to_string(),
+                message: format!("{output}"),
                 http_code: Some(response.status().as_u16() as i32),
             });
         }

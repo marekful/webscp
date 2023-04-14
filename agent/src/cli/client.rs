@@ -508,14 +508,17 @@ impl Client<'_> {
             items
         ))
         .unwrap();
+
         let mut output = String::new();
         ch.read_to_string(&mut output).unwrap();
 
         let exit_code = ch.exit_status().unwrap();
         if exit_code != 0 {
+            let mut err_msg = String::new();
+            let _ = ch.stderr().read_to_string(&mut err_msg);
             return Err(ClientError {
                 code: exit_code,
-                message: output,
+                message: err_msg,
                 http_code: None,
             });
         }
