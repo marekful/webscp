@@ -6,8 +6,12 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/filebrowser/filebrowser/v2/agents"
+
+	"golang.org/x/sys/unix"
 )
 
 var remoteResourceGetHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
@@ -42,6 +46,11 @@ func remoteSourceResourcePostHandler() handleFunc {
 			src := item.Source
 			dst := item.Destination
 
+			src, sErr := url.QueryUnescape(src)
+			if sErr != nil {
+				return errToStatus(err), err
+			}
+
 			dst, dErr := url.QueryUnescape(dst)
 			if dErr != nil {
 				return errToStatus(err), err
@@ -54,6 +63,10 @@ func remoteSourceResourcePostHandler() handleFunc {
 
 			if src == "/" {
 				return http.StatusForbidden, nil
+			}
+
+			if !checkReadable(src, d) {
+				return http.StatusForbidden, fmt.Errorf("cannot read %s", src)
 			}
 		}
 
@@ -90,6 +103,10 @@ func remoteDestinationResourcePostHandler() handleFunc {
 				return http.StatusForbidden, nil
 			}
 
+			if writeable, dir := checkWriteable(dst, d); !writeable {
+				return http.StatusForbidden, fmt.Errorf("cannot write into %s", dir)
+			}
+
 			override := item.Overwrite
 			rename := item.Rename
 
@@ -107,6 +124,26 @@ func remoteDestinationResourcePostHandler() handleFunc {
 
 		return errToStatus(nil), nil
 	})
+}
+
+func checkWriteable(dst string, d *data) (writeable bool, base string) {
+	dir := filepath.Dir(dst)
+	scope := d.user.Scope
+	if scope == "." {
+		scope = ""
+	}
+	path := d.server.Root + scope + dir
+	return unix.Access(path, unix.W_OK) == nil, dir
+}
+
+func checkReadable(src string, d *data) bool {
+	scope := d.user.Scope
+	if scope == "." {
+		scope = ""
+	}
+	src = strings.Replace(src, "/files", "", 1)
+	path := d.server.Root + scope + src
+	return unix.Access(path, unix.R_OK) == nil
 }
 
 func remoteResourcePostAction(

@@ -268,7 +268,7 @@ func (c *AgentClient) RemoteCopy(
 	}
 
 	if agentResponse.StatusCode != nethttps.StatusOK {
-		return nil, agentResponse.StatusCode, fmt.Errorf("copy error: %s", resp.Message)
+		return nil, agentResponse.StatusCode, fmt.Errorf("%s", resp.Message)
 	}
 
 	return resp, nethttps.StatusOK, nil
