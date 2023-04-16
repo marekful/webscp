@@ -211,7 +211,9 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 		Agent: req.Data,
 	}
 
-	userStatus, err := client.GetRemoteUser(&req.Data.RemoteUser, req.Data.Secret)
+	authCookie, _ := r.Cookie("auth")
+
+	userStatus, err := client.GetRemoteUser(d.user.ID, &req.Data.RemoteUser, req.Data.Secret, authCookie.Value)
 	if err != nil {
 		if userStatus == http.StatusUnauthorized {
 			userStatus = http.StatusForbidden
@@ -219,7 +221,7 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 		return userStatus, err
 	}
 
-	kexStatus, err := client.ExchangeKeys(req.Data.Host, req.Data.Port, req.Data.Secret)
+	kexStatus, err := client.ExchangeKeys(d.user.ID, req.Data.Host, req.Data.Port, req.Data.Secret, authCookie.Value)
 	if err != nil {
 		if kexStatus == http.StatusUnauthorized {
 			kexStatus = http.StatusForbidden
@@ -285,8 +287,10 @@ var agentGetVersionHandler = withUser(func(w http.ResponseWriter, r *http.Reques
 		return http.StatusNotFound, err
 	}
 
+	authCookie, _ := r.Cookie("auth")
+
 	client := agents.AgentClient{Agent: agent}
-	version := client.GetVersion()
+	version := client.GetVersion(authCookie.Value)
 
 	versionResponse := agents.GetVersionResponse{
 		Latency: version.Latency,

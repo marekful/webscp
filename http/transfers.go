@@ -16,7 +16,9 @@ var transferDeleteHandler = injectAgentWithUser(func(w http.ResponseWriter, r *h
 		Agent: d.agent,
 	}
 
-	status, err := client.CancelTransfer(transferID)
+	authCookie, _ := r.Cookie("auth")
+
+	status, err := client.CancelTransfer(transferID, authCookie.Value)
 	if err != nil {
 		return status, err
 	}

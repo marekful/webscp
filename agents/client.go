@@ -70,9 +70,9 @@ type CancelTransferRequest struct {
 	TransferID string `json:"transfer_id"`
 }
 
-func (c *AgentClient) ExchangeKeys(host, port, secret string) (status int, err error) {
+func (c *AgentClient) ExchangeKeys(userID uint, host, port, secret, token string) (status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := agentAddress + "/api/register-public-key"
+	requestURL := fmt.Sprintf("%s/api/users/%d/connections", agentAddress, userID)
 	body := []byte(`{
 		"host": "` + host + `", 
 		"port": "` + port + `",
@@ -83,6 +83,9 @@ func (c *AgentClient) ExchangeKeys(host, port, secret string) (status int, err e
 	if err != nil {
 		return nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
 	}
+
+	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookie)
 
 	r.Header.Add("Content-Type", "application/json")
 
@@ -111,13 +114,13 @@ func (c *AgentClient) ExchangeKeys(host, port, secret string) (status int, err e
 	return nethttps.StatusOK, nil
 }
 
-func (c *AgentClient) GetRemoteUser(user *RemoteUser, accessToken string) (status int, err error) {
+func (c *AgentClient) GetRemoteUser(userID uint, user *RemoteUser, accessToken, token string) (status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := agentAddress + "/api/get-remote-user/" + c.Agent.Host + "/" + c.Agent.Port
+	requestURL := fmt.Sprintf("%s/api/users/%d/connections/%s/%s/login", agentAddress, userID, c.Agent.Host, c.Agent.Port)
 	body := []byte(`{
 		"name": "` + user.Name + `",
 		"password": "` + user.Password + `",
-		"access_token": "` + accessToken + `"
+		"access_token": "` + accessToken + `" 
 	}`)
 
 	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewBuffer(body))
@@ -125,6 +128,9 @@ func (c *AgentClient) GetRemoteUser(user *RemoteUser, accessToken string) (statu
 		message := fmt.Errorf("error initializing agent API request: %v", err)
 		return nethttps.StatusInternalServerError, message
 	}
+
+	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookie)
 
 	r.Header.Add("Content-Type", "application/json")
 
@@ -156,9 +162,9 @@ func (c *AgentClient) GetRemoteUser(user *RemoteUser, accessToken string) (statu
 	return 0, nil
 }
 
-func (c *AgentClient) GetVersion() GetVersionResponse {
+func (c *AgentClient) GetVersion(token string) GetVersionResponse {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/version/%s/%s", agentAddress, c.Agent.Host, c.Agent.Port)
+	requestURL := fmt.Sprintf("%s/api/agents/%d/version", agentAddress, c.Agent.ID)
 
 	returnVersion := ""
 	returnError := ""
@@ -167,6 +173,9 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 	if err != nil {
 		returnError = fmt.Sprintf("error initializing agent API request: %v", err)
 	}
+
+	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookie)
 
 	client := &nethttps.Client{}
 	res, err := client.Do(r)
@@ -201,7 +210,7 @@ func (c *AgentClient) GetVersion() GetVersionResponse {
 func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *GetResourceResponse, status int, err error) {
 	url = neturl.QueryEscape(url)
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/resources/%d/%s", agentAddress, agent.ID, url)
+	requestURL := fmt.Sprintf("%s/api/agents/%d/resources/%s", agentAddress, agent.ID, url)
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
@@ -229,22 +238,21 @@ func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *Ge
 }
 
 func (c *AgentClient) RemoteCopy(
-	agent *Agent,
 	archiveName,
 	srcRoot,
 	token string,
 	items []ResourceItem,
 ) (response *BeforeCopyResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/copy/%d/%s", agentAddress, agent.ID, strings.Trim(archiveName, "\n"))
+	requestURL := fmt.Sprintf("%s/api/agents/%d/resources/%s", agentAddress, c.Agent.ID, strings.Trim(archiveName, "\n"))
 
-	request := RemoteResourceAgentRequest{Items: items, SourceRoot: srcRoot, DestinationRoot: agent.RemoteUser.Root}
+	request := RemoteResourceAgentRequest{Items: items, SourceRoot: srcRoot, DestinationRoot: c.Agent.RemoteUser.Root}
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error decoding items: %v", err)
 	}
 
-	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewReader(requestBody))
+	r, err := nethttps.NewRequest("PATCH", requestURL, bytes.NewReader(requestBody))
 	if err != nil {
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
 	}
@@ -275,15 +283,19 @@ func (c *AgentClient) RemoteCopy(
 }
 
 func (c *AgentClient) CancelTransfer(
-	transferID string,
+	transferID, token string,
 ) (status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/transfers/%s", agentAddress, transferID)
+	requestURL := fmt.Sprintf("%s/api/agents/%d/transfers/%s", agentAddress, c.Agent.ID, transferID)
 
 	r, err := nethttps.NewRequest("DELETE", requestURL, nethttps.NoBody)
 	if err != nil {
 		return nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
 	}
+
+	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookie)
+
 	client := &nethttps.Client{}
 	agentResponse, err := client.Do(r)
 	if err != nil {
@@ -301,7 +313,7 @@ func (c *AgentClient) CancelTransfer(
 
 func GetTemporaryAccessToken(token string, userID uint) (response *GenerateAccessTokenResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/temporary-access-token/%d", agentAddress, userID)
+	requestURL := fmt.Sprintf("%s/api/users/%d/temporary-access-token", agentAddress, userID)
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
