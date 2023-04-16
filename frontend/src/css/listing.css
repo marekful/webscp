@@ -69,6 +69,10 @@ body.rtl #listing {
   vertical-align: bottom;
 }
 
+#listing .item.dotfile.hidden {
+  display: none;
+}
+
 .message {
   text-align: center;
   margin: 1em auto;

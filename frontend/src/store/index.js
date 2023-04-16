@@ -24,6 +24,7 @@ const state = {
   showShell: false,
   showConfirm: null,
   transfers: [],
+  showDotfiles: true,
 };
 
 export default new Vuex.Store({
