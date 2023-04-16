@@ -165,7 +165,7 @@ export default {
             }, 10);
           })
           .catch((e) => {
-            buttons.donePromise("copy").then(() => {
+            buttons.donePromise("transfers").then(() => {
               this.$showError(e);
             });
           });
