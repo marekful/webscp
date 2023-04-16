@@ -1,8 +1,8 @@
 
 ## Get resources (directory listing)
 
-**local**
 
+**local**
 ```mermaid
 sequenceDiagram
     FB-front->>+FB-back: HTTP GET<br>/api/resources/[path]
@@ -12,7 +12,6 @@ sequenceDiagram
 ```
 
 **remote**
-
 ```mermaid
 sequenceDiagram
     src_FB-front->>+src_FB-back: HTTP GET<br>/api/remote/resources/[agent]/[path]
