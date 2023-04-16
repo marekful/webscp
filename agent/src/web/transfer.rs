@@ -1,10 +1,26 @@
-use rocket::http::Status;
+use rocket::{
+    http::{CookieJar, Status},
+    State,
+};
 use tokio::process::Command;
 
-use crate::constants::DEFAULTS;
+use crate::{constants::DEFAULTS, Files};
 
-#[delete("/transfers/<transfer_id>")]
-pub async fn cancel_transfer(transfer_id: &str) -> Status {
+#[delete("/agents/<agent_id>/transfers/<transfer_id>")]
+pub async fn cancel_transfer(
+    agent_id: u32,
+    transfer_id: &str,
+    files: &State<Files>,
+    cookies: &CookieJar<'_>,
+) -> Status {
+    // verify that the requester has a valid session in Files and owns the referred agent
+    let (_, _) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
+        Ok(a) => a,
+        Err(_) => {
+            return Status::Forbidden;
+        }
+    };
+
     // create argument list for uploader script
     let mut script_args: Vec<&str> = Vec::new();
     script_args.push(DEFAULTS.cancel_transfer_script_path);

@@ -1,12 +1,13 @@
 use rocket::{
-    http::Status,
+    http::{CookieJar, Status},
     serde::{
         json::{serde_json, Json, Value},
         Deserialize, Serialize,
     },
+    State,
 };
 
-use crate::{command_runner::run_command_async, constants::COMMAND_GET_REMOTE_USER};
+use crate::{command_runner::run_command_async, constants::COMMAND_GET_REMOTE_USER, Files};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -23,12 +24,33 @@ pub struct GetRemoteUserResponse {
     error: Option<String>,
 }
 
-#[post("/get-remote-user/<host>/<port>", data = "<request>")]
+#[post("/users/<user_id>/connections/<host>/<port>/login", data = "<request>")]
 pub async fn get_remote_user(
+    user_id: u32,
     host: &str,
     port: &str,
     request: Json<GetRemoteUserRequest<'_>>,
+    files: &State<Files>,
+    cookies: &CookieJar<'_>,
 ) -> (Status, Json<GetRemoteUserResponse>) {
+    // check user session
+    let res = files
+        .api
+        .check_user_auth(user_id, cookies.get("rc_auth"))
+        .await;
+    if res.is_err() {
+        let err = res.unwrap_err();
+        return (
+            Status::Unauthorized,
+            Json(GetRemoteUserResponse {
+                code: err.code,
+                id: None,
+                root: None,
+                error: Some(err.message),
+            }),
+        );
+    }
+
     // create argument list for the get-remote-user command
     let mut get_user_args: Vec<&str> = Vec::new();
     get_user_args.push(host);

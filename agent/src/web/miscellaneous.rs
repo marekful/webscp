@@ -1,8 +1,13 @@
-use rocket::serde::{json::Json, Serialize};
+use rocket::{
+    http::CookieJar,
+    serde::{json::Json, Serialize},
+    State,
+};
 
 use crate::{
     command_runner::run_command_async,
     constants::{COMMAND_GET_REMOTE_VERSION, COMMAND_PING},
+    Files,
 };
 
 #[derive(Serialize, Debug)]
@@ -18,11 +23,27 @@ pub struct PingResponse {
     error: Option<String>,
 }
 
-#[get("/version/<host>/<port>")]
-pub async fn version(host: &str, port: &str) -> Json<VersionResponse> {
+#[get("/agents/<agent_id>/version")]
+pub async fn version(
+    agent_id: u32,
+    files: &State<Files>,
+    cookies: &CookieJar<'_>,
+) -> Json<VersionResponse> {
+    // verify that the requester has a valid session in Files and owns the referred agent
+    let (agent, _) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
+        Ok(a) => a,
+        Err(e) => {
+            return Json(VersionResponse {
+                version: None,
+                latency: None,
+                error: Some("403 Forbidden".to_string()),
+            })
+        }
+    };
+
     let mut version_ags: Vec<&str> = Vec::new();
-    version_ags.push(host);
-    version_ags.push(port);
+    version_ags.push(&agent.host);
+    version_ags.push(&agent.port);
 
     let version =
         match run_command_async(81, true, false, COMMAND_GET_REMOTE_VERSION, version_ags).await {
@@ -37,8 +58,8 @@ pub async fn version(host: &str, port: &str) -> Json<VersionResponse> {
         };
 
     let mut ping_args: Vec<&str> = Vec::new();
-    ping_args.push(host);
-    ping_args.push(port);
+    ping_args.push(&agent.host);
+    ping_args.push(&agent.port);
 
     let ping = match run_command_async(91, true, false, COMMAND_PING, ping_args).await {
         Ok(ping) => ping,
@@ -58,11 +79,26 @@ pub async fn version(host: &str, port: &str) -> Json<VersionResponse> {
     })
 }
 
-#[get("/ping/<host>/<port>")]
-pub async fn ping(host: &str, port: &str) -> Json<PingResponse> {
+#[get("/agents/<agent_id>/ping")]
+pub async fn ping(
+    agent_id: u32,
+    files: &State<Files>,
+    cookies: &CookieJar<'_>,
+) -> Json<PingResponse> {
+    // verify that the requester has a valid session in Files and owns the referred agent
+    let (agent, _) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
+        Ok(a) => a,
+        Err(e) => {
+            return Json(PingResponse {
+                latency: None,
+                error: Some("403 Forbidden".to_string()),
+            })
+        }
+    };
+
     let mut args: Vec<&str> = Vec::new();
-    args.push(host);
-    args.push(port);
+    args.push(&agent.host);
+    args.push(&agent.port);
 
     return match run_command_async(71, true, false, COMMAND_PING, args).await {
         Ok(output) => Json(PingResponse {

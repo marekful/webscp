@@ -23,7 +23,7 @@ pub struct TemporaryAccessTokenResponse {
     error: Option<String>,
 }
 
-#[get("/temporary-access-token/<user_id>")]
+#[get("/users/<user_id>/temporary-access-token")]
 pub async fn get_temporary_access_token(
     user_id: u32,
     files: &State<Files>,
