@@ -174,7 +174,6 @@ func remoteResourcePostAction(
 		authCookie, _ := r.Cookie("auth")
 
 		resp, status, err := client.RemoteCopy(
-			d.agent,
 			string(uuid),
 			d.server.Root+srcScope,
 			authCookie.Value,
