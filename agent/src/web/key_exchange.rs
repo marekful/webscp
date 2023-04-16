@@ -1,9 +1,10 @@
 use rocket::{
-    http::Status,
+    http::{CookieJar, Status},
     serde::{json::Json, Deserialize, Serialize},
+    State,
 };
 
-use crate::{command_runner::run_command_async, constants::COMMAND_EXCHANGE_KEYS};
+use crate::{command_runner::run_command_async, constants::COMMAND_EXCHANGE_KEYS, Files};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -20,10 +21,30 @@ pub struct RegisterPublicKeyResponse {
     code: Option<i32>,
 }
 
-#[post("/register-public-key", data = "<host_info>")]
+#[post("/users/<user_id>/connections", data = "<host_info>")]
 pub async fn register_public_key(
+    user_id: u32,
     host_info: Json<HostInfo<'_>>,
+    files: &State<Files>,
+    cookies: &CookieJar<'_>,
 ) -> (Status, Json<RegisterPublicKeyResponse>) {
+    // check user session
+    let res = files
+        .api
+        .check_user_auth(user_id, cookies.get("rc_auth"))
+        .await;
+    if res.is_err() {
+        let err = res.unwrap_err();
+        return (
+            Status::Unauthorized,
+            Json(RegisterPublicKeyResponse {
+                code: Some(err.code),
+                success: None,
+                error: Some(err.message),
+            }),
+        );
+    }
+
     let mut args: Vec<&str> = Vec::new();
     args.push(host_info.host);
     args.push(host_info.port);

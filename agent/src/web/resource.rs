@@ -46,7 +46,7 @@ pub struct CopyResponse {
     message: Option<String>,
 }
 
-#[get("/resources/<agent_id>/<path>")]
+#[get("/agents/<agent_id>/resources/<path>")]
 pub async fn resources(
     agent_id: u32,
     path: &str,
@@ -94,7 +94,7 @@ pub async fn resources(
     };
 }
 
-#[post("/copy/<agent_id>/<archive_name>", data = "<request>")]
+#[patch("/agents/<agent_id>/resources/<archive_name>", data = "<request>")]
 pub async fn copy(
     agent_id: u32,
     archive_name: &str,
@@ -231,12 +231,12 @@ fn finish_upload_in_background(
         task::yield_now().await;
 
         // create archive of files
-        let archive_path = &*format!("{}{}.agent.tar.gz", DEFAULTS.temp_data_dir, transfer.transfer_id);
-        let mut archive_writer = match ArchiveWriter::new(
-            archive_path,
-            false,
-            &transfer.local_path
-        ) {
+        let archive_path = &*format!(
+            "{}{}.agent.tar.gz",
+            DEFAULTS.temp_data_dir, transfer.transfer_id
+        );
+        let mut archive_writer = match ArchiveWriter::new(archive_path, false, &transfer.local_path)
+        {
             Ok(w) => w,
             Err(e) => {
                 files_api
