@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/filebrowser/filebrowser/v2/version"
+	"github.com/marekful/webscp/version"
 )
 
 func init() {
@@ -16,6 +16,6 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("File Browser v" + version.Version + "/" + version.CommitSHA)
+		fmt.Println("WebSCP v" + version.Version + "/" + version.CommitSHA)
 	},
 }

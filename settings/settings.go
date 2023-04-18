@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"strings"
 
-	"github.com/filebrowser/filebrowser/v2/rules"
+	"github.com/marekful/webscp/rules"
 )
 
 const DefaultUsersHomeBasePath = "/users"

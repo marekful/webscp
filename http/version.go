@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/filebrowser/filebrowser/v2/version"
+	"github.com/marekful/webscp/version"
 )
 
 var versionHandler = func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

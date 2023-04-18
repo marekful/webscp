@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/filebrowser/filebrowser/v2/search"
+	"github.com/marekful/webscp/search"
 )
 
 var searchHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

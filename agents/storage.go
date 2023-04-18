@@ -3,7 +3,7 @@ package agents
 import (
 	"sync"
 
-	"github.com/filebrowser/filebrowser/v2/errors"
+	"github.com/marekful/webscp/errors"
 )
 
 // StorageBackend is the interface to implement for remote agents storage.

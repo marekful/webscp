@@ -40,7 +40,7 @@ RUN apk --update add ca-certificates \
                      bash \
                      uuidgen
 
-RUN adduser -D -H -s /bin/ash filebrowser
+RUN adduser -D -H -s /bin/ash webscp
 
 HEALTHCHECK --start-period=2s --interval=5s --timeout=3s \
   CMD curl -f http://localhost/health || exit 1
@@ -50,10 +50,10 @@ EXPOSE 80 8080 44000 45000
 
 WORKDIR /app
 
-COPY --from=go-builder /work/filebrowser .
+COPY --from=go-builder /work/webscp .
 COPY docker_config.json /.filebrowser.json
 
 ENV NODE_OPTIONS=--openssl-legacy-provider
 
-ENTRYPOINT chown filebrowser:filebrowser /database.db && capsh --caps="cap_net_raw+eip cap_setpcap,cap_setuid,cap_setgid+ep" --keep=1 --user=filebrowser --addamb=cap_net_raw -- -c "/app/filebrowser"
+ENTRYPOINT chown webscp:webscp /database.db && capsh --caps="cap_net_raw+eip cap_setpcap,cap_setuid,cap_setgid+ep" --keep=1 --user=webscp --addamb=cap_net_raw -- -c "/app/webscp"
 

@@ -9,10 +9,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/files"
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/errors"
+	"github.com/marekful/webscp/files"
+	"github.com/marekful/webscp/settings"
+	"github.com/marekful/webscp/users"
 )
 
 // MethodHookAuth is used to identify hook auth.

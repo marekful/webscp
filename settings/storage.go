@@ -1,9 +1,9 @@
 package settings
 
 import (
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/rules"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/errors"
+	"github.com/marekful/webscp/rules"
+	"github.com/marekful/webscp/users"
 )
 
 // StorageBackend is a settings storage backend.

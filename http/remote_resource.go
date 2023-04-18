@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/filebrowser/filebrowser/v2/agents"
+	"github.com/marekful/webscp/agents"
 
 	"golang.org/x/sys/unix"
 )
