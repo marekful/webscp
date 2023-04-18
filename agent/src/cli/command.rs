@@ -15,60 +15,66 @@ pub fn command_exchange_keys(client: Client, args: Option<Vec<String>>) {
     client.exchange_keys(secret);
 }
 
-pub fn command_get_remote_user(client: Client, args: Option<Vec<String>>) {
+pub fn command_get_remote_resource(client: Client, args: Option<Vec<String>>) {
     let args = args.unwrap();
     if args.len() < 7 {
         eprintln!(
-            "Usage: cli {} <host> <port> <username> <password> <access_token>",
+            "Usage: cli {} <host> <port> <user_id> <remote_token> <path>",
+            COMMAND_GET_REMOTE_RESOURCE
+        );
+        exit(137);
+    }
+    let user_id: u32 = args[4].parse().unwrap_or(0);
+    let remote_token = &args[5];
+    let path = &args[6];
+
+    client.get_remote_resource(user_id, remote_token, path);
+}
+
+pub fn command_get_local_resource(client: Client, args: Option<Vec<String>>) {
+    let args = args.unwrap();
+    if args.len() < 5 {
+        eprintln!(
+            "Usage: cli {} <user_id> <token> <path>",
+            COMMAND_GET_LOCAL_RESOURCE
+        );
+        exit(138);
+    }
+    let user_id: u32 = args[2].parse().unwrap_or(0);
+    let token = &args[3];
+    let path = &args[4];
+
+    match client.files_api.get_local_resource(user_id, token, path) {
+        Ok(resources_result) => {
+            print!("{resources_result}");
+        }
+        Err(e) => {
+            eprint!("{} {}", e.http_code.unwrap_or(500), e.message);
+            exit(e.code);
+        }
+    }
+}
+
+pub fn command_get_remote_user(client: Client, args: Option<Vec<String>>) {
+    let args = args.unwrap();
+    if args.len() < 6 {
+        eprintln!(
+            "Usage: cli {} <host> <port> <username> <password> [<access_token>]",
             COMMAND_GET_REMOTE_USER
         );
         exit(140);
     }
     let user_name = &args[4];
     let password = &args[5];
-    let token = &args[6];
+    let token = match args.len() {
+        7 => Some(args[6].as_str()),
+        6 => None,
+        _ => None,
+    };
     let exit_code = client.get_remote_user(user_name, password, token);
 
     if exit_code != 0 {
         exit(exit_code);
-    }
-}
-
-pub fn command_get_remote_resource(client: Client, args: Option<Vec<String>>) {
-    let args = args.unwrap();
-    if args.len() < 6 {
-        eprintln!(
-            "Usage: cli {} <host> <port> <user_id> <path>",
-            COMMAND_GET_REMOTE_RESOURCE
-        );
-        exit(137);
-    }
-    let user_id: u32 = args[4].parse().unwrap_or(0);
-    let path = &args[5];
-
-    client.get_remote_resource(user_id, path);
-}
-
-pub fn command_get_local_resource(client: Client, args: Option<Vec<String>>) {
-    let args = args.unwrap();
-    if args.len() < 4 {
-        eprintln!(
-            "Usage: client {} <user_id> <path>",
-            COMMAND_GET_LOCAL_RESOURCE
-        );
-        exit(138);
-    }
-    let user_id: u32 = args[2].parse().unwrap_or(0);
-    let path = &args[3];
-
-    match client.files_api.get_local_resource(user_id, path) {
-        Ok(resources_result) => {
-            print!("{resources_result}");
-        }
-        Err(e) => {
-            eprint!("{}", e.message);
-            exit(e.code);
-        }
     }
 }
 
@@ -113,33 +119,35 @@ pub fn command_get_local_version(client: Client, _: Option<Vec<String>>) {
 
 pub fn command_remote_before_copy(client: Client, args: Option<Vec<String>>) {
     let args = args.unwrap();
-    if args.len() < 6 {
+    if args.len() < 7 {
         eprintln!(
-            "Usage: cli {} <host> <port> <user_id> <items>",
+            "Usage: cli {} <host> <port> <user_id> <remote_token> <items>",
             COMMAND_REMOTE_BEFORE_COPY
         );
         exit(140);
     }
     let user_id: u32 = args[4].parse().unwrap_or(0);
-    let items = &args[5];
-    let exit_code = client.remote_before_copy(user_id, items);
+    let remote_token = &args[5];
+    let items = &args[6];
 
-    if exit_code != 0 {
-        exit(exit_code);
-    }
+    client.remote_before_copy(user_id, remote_token, items);
 }
 
 pub fn command_local_before_copy(client: Client<'_>, args: Option<Vec<String>>) {
     let args = args.unwrap();
-    if args.len() < 4 {
-        eprintln!("Usage: cli {} <user_id> <items>", COMMAND_LOCAL_BEFORE_COPY);
+    if args.len() < 5 {
+        eprintln!(
+            "Usage: cli {} <user_id> <token> <items>",
+            COMMAND_LOCAL_BEFORE_COPY
+        );
         exit(142);
     }
 
     let user_id: u32 = args[2].parse().unwrap_or(0);
-    let items = String::from(&args[3]);
+    let token = String::from(&args[3]);
+    let items = String::from(&args[4]);
 
-    match client.files_api.local_before_copy(user_id, items) {
+    match client.files_api.local_before_copy(user_id, token, items) {
         Ok(response) => {
             print!("{}", response.trim().to_string());
         }

@@ -72,6 +72,7 @@ pub async fn resources(
     args.push(&agent.host);
     args.push(&agent.port);
     args.push(&remote_user_id);
+    args.push(&agent.remote_user.token);
     args.push(path);
 
     return match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
@@ -123,6 +124,7 @@ pub async fn copy(
     before_copy_args.push(&agent.host);
     before_copy_args.push(&agent.port);
     before_copy_args.push(remote_user_id);
+    before_copy_args.push(&agent.remote_user.token);
     before_copy_args.push(&items_json);
     // execute command
     match run_command_async(
