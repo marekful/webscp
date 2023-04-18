@@ -1,3 +1,5 @@
+#![allow(unused)]  // FIXME
+
 mod archive;
 mod client;
 mod command;
