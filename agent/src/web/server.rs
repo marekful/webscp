@@ -1,3 +1,5 @@
+#![allow(unused)]  // FIXME
+
 #[path = "../cli/archive.rs"]
 mod archive;
 #[path = "../cli/client.rs"]
