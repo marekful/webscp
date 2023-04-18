@@ -25,6 +25,7 @@ const state = {
   showConfirm: null,
   showDotfiles: true,
   transfers: [],
+  loginAgent: null,
 };
 
 export default new Vuex.Store({

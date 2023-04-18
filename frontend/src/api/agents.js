@@ -23,6 +23,16 @@ export async function create(agent) {
   }
 }
 
+export async function remoteUserLogin(agentID, name, password) {
+  return fetchURL(`/api/remote/${agentID}/verify-user-credentials`, {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      password,
+    }),
+  });
+}
+
 export async function getTemporaryAccessToken() {
   return fetchJSON("/api/agent/temporary-access-token", {});
 }

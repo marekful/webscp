@@ -7,6 +7,7 @@
       <div
         v-for="(option, i) of options"
         :key="i"
+        :class="'option-' + i + (i === selectedIndex ? ' selected' : '')"
         @click="click($event, option, i)"
       >
         {{ option }}
@@ -42,11 +43,16 @@ export default {
         ? this.options[0]
         : null,
       open: false,
-      selectedIndex: null,
+      selectedIndex: 0,
     };
   },
-  mounted() {
-    this.$emit("input", this.selected, 0);
+  watch: {
+    tabindex(index) {
+      let option = this.options[index];
+      this.selected = option;
+      this.$emit("input", { option, index });
+      this.setSelected(index);
+    },
   },
   methods: {
     click: function (event, option, index) {
@@ -54,6 +60,13 @@ export default {
       this.selectedIndex = index;
       this.open = false;
       this.$emit("input", { option, index });
+      this.setSelected(index);
+    },
+    setSelected(index) {
+      let toSelect = this.$el.querySelector(`.items > div.option-${index}`);
+      let selected = this.$el.querySelector(`.items > div.selected`);
+      selected.classList.remove("selected");
+      toSelect.classList.add("selected");
     },
   },
 };
@@ -68,56 +81,34 @@ export default {
   line-height: 2.25em;
 }
 
-.custom-select .selected {
+.custom-select > .selected {
   border-radius: 6px;
-  border: 1px solid var(--dark-blue);
-  background-color: var(--distinct-background);
-  color: var(--textPrimary);
   padding-left: 1em;
   cursor: pointer;
   user-select: none;
 }
 
-.custom-select .selected.open {
-  border: 1px solid var(--dark-blue);
-  border-radius: 6px 6px 0 0;
-}
-
-.custom-select .selected:after {
+.custom-select > .selected:after {
   position: absolute;
   content: "";
   top: 1em;
   right: 1em;
   width: 0;
   height: 0;
-  border: 5px solid transparent;
-  border-color: var(--dark-blue) transparent transparent transparent;
 }
 
 .custom-select .items {
-  color: var(--surfaceSecondary);
-  border-radius: 0px 0px 6px 6px;
-  overflow: hidden;
-  border-right: 1px solid var(--dark-blue);
-  border-left: 1px solid var(--dark-blue);
-  border-bottom: 1px solid var(--dark-blue);
   position: absolute;
-  background-color: var(--moon-grey);
+  overflow: hidden;
   left: 0;
   right: 0;
   z-index: 1;
 }
 
 .custom-select .items div {
-  color: var(--textPrimary);
   padding-left: 1em;
   cursor: pointer;
   user-select: none;
-}
-
-.custom-select .items div:hover {
-  background-color: var(--distinct-hover);
-  color: var(--dark-blue);
 }
 
 .selectHide {
