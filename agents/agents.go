@@ -1,7 +1,7 @@
 package agents
 
 import (
-	"github.com/filebrowser/filebrowser/v2/errors"
+	"github.com/marekful/webscp/errors"
 )
 
 // ViewMode describes a view mode.

@@ -12,10 +12,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/filebrowser/filebrowser/v2/auth"
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/storage"
-	"github.com/filebrowser/filebrowser/v2/version"
+	"github.com/marekful/webscp/auth"
+	"github.com/marekful/webscp/settings"
+	"github.com/marekful/webscp/storage"
+	"github.com/marekful/webscp/version"
 )
 
 func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys fs.FS, file, contentType string) (int, error) {

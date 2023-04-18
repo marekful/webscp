@@ -7,9 +7,9 @@ import (
 	"github.com/asdine/storm/v3"
 	"github.com/asdine/storm/v3/q"
 
-	"github.com/filebrowser/filebrowser/v2/agents"
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/storage"
+	"github.com/marekful/webscp/agents"
+	"github.com/marekful/webscp/errors"
+	"github.com/marekful/webscp/storage"
 )
 
 type agentsBackend struct {

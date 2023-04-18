@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/filebrowser/filebrowser/v2/agents"
+	"github.com/marekful/webscp/agents"
 
 	"github.com/gorilla/mux"
 )

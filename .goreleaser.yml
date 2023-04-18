@@ -1,4 +1,4 @@
-project_name: filebrowser
+project_name: webscp
 
 env:
   - GO111MODULE=on
@@ -7,9 +7,9 @@ build:
   env:
     - CGO_ENABLED=0
   ldflags:
-    - -s -w -X github.com/filebrowser/filebrowser/v2/version.Version={{ .Version }} -X github.com/filebrowser/filebrowser/v2/version.CommitSHA={{ .ShortCommit }}
+    - -s -w -X github.com/marekful/webscp/version.Version={{ .Version }} -X github.com/marekful/webscp/version.CommitSHA={{ .ShortCommit }}
   main: main.go
-  binary: filebrowser
+  binary: webscp
   goos:
     - darwin
     - linux
@@ -53,8 +53,8 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-amd64"
-      - "filebrowser/filebrowser:v{{ .Major }}-amd64"
+      - "marekful/webscp:{{ .Tag }}-amd64"
+      - "marekful/webscp:v{{ .Major }}-amd64"
     extra_files:
       - docker_config.json
   -
@@ -71,8 +71,8 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-arm64"
-      - "filebrowser/filebrowser:v{{ .Major }}-arm64"
+      - "marekful/webscp:{{ .Tag }}-arm64"
+      - "marekful/webscp:v{{ .Major }}-arm64"
     extra_files:
       - docker_config.json
   -
@@ -90,8 +90,8 @@ dockers:
     goarch: arm
     goarm: '6'
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-armv6"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv6"
+      - "marekful/webscp:{{ .Tag }}-armv6"
+      - "marekful/webscp:v{{ .Major }}-armv6"
     extra_files:
       - docker_config.json
   -
@@ -109,8 +109,8 @@ dockers:
     goarch: arm
     goarm: '7'
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-armv7"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv7"
+      - "marekful/webscp:{{ .Tag }}-armv7"
+      - "marekful/webscp:v{{ .Major }}-armv7"
     extra_files:
       - docker_config.json
 ## s6 based docker images
@@ -128,8 +128,8 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-amd64-s6"
-      - "filebrowser/filebrowser:v{{ .Major }}-amd64-s6"
+      - "marekful/webscp:{{ .Tag }}-amd64-s6"
+      - "marekful/webscp:v{{ .Major }}-amd64-s6"
     extra_files:
       - docker/root
   -
@@ -146,8 +146,8 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-arm64-s6"
-      - "filebrowser/filebrowser:v{{ .Major }}-arm64-s6"
+      - "marekful/webscp:{{ .Tag }}-arm64-s6"
+      - "marekful/webscp:v{{ .Major }}-arm64-s6"
     extra_files:
       - docker/root
   -
@@ -165,8 +165,8 @@ dockers:
     goarch: arm
     goarm: '6'
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-armv6-s6"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv6-s6"
+      - "marekful/webscp:{{ .Tag }}-armv6-s6"
+      - "marekful/webscp:v{{ .Major }}-armv6-s6"
     extra_files:
       - docker/root
   -
@@ -184,57 +184,57 @@ dockers:
     goarch: arm
     goarm: '7'
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-armv7-s6"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv7-s6"
+      - "marekful/webscp:{{ .Tag }}-armv7-s6"
+      - "marekful/webscp:v{{ .Major }}-armv7-s6"
     extra_files:
       - docker/root
 docker_manifests:
-  - name_template: "filebrowser/filebrowser:latest"
+  - name_template: "marekful/webscp:latest"
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-amd64"
-      - "filebrowser/filebrowser:{{ .Tag }}-arm64"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv6"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv7"
-  - name_template: "filebrowser/filebrowser:{{ .Tag }}"
+      - "marekful/webscp:{{ .Tag }}-amd64"
+      - "marekful/webscp:{{ .Tag }}-arm64"
+      - "marekful/webscp:{{ .Tag }}-armv6"
+      - "marekful/webscp:{{ .Tag }}-armv7"
+  - name_template: "marekful/webscp:{{ .Tag }}"
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-amd64"
-      - "filebrowser/filebrowser:{{ .Tag }}-arm64"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv6"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv7"
-  - name_template: "filebrowser/filebrowser:v{{ .Major }}"
+      - "marekful/webscp:{{ .Tag }}-amd64"
+      - "marekful/webscp:{{ .Tag }}-arm64"
+      - "marekful/webscp:{{ .Tag }}-armv6"
+      - "marekful/webscp:{{ .Tag }}-armv7"
+  - name_template: "marekful/webscp:v{{ .Major }}"
     image_templates:
-      - "filebrowser/filebrowser:v{{ .Major }}-amd64"
-      - "filebrowser/filebrowser:v{{ .Major }}-arm64"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv6"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv7"
+      - "marekful/webscp:v{{ .Major }}-amd64"
+      - "marekful/webscp:v{{ .Major }}-arm64"
+      - "marekful/webscp:v{{ .Major }}-armv6"
+      - "marekful/webscp:v{{ .Major }}-armv7"
 ## s6 image manifests
-  - name_template: "filebrowser/filebrowser:s6"
+  - name_template: "marekful/webscp:s6"
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-amd64-s6"
-      - "filebrowser/filebrowser:{{ .Tag }}-arm64-s6"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv6-s6"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv7-s6"
-  - name_template: "filebrowser/filebrowser:{{ .Tag }}-s6"
+      - "marekful/webscp:{{ .Tag }}-amd64-s6"
+      - "marekful/webscp:{{ .Tag }}-arm64-s6"
+      - "marekful/webscp:{{ .Tag }}-armv6-s6"
+      - "marekful/webscp:{{ .Tag }}-armv7-s6"
+  - name_template: "marekful/webscp:{{ .Tag }}-s6"
     image_templates:
-      - "filebrowser/filebrowser:{{ .Tag }}-amd64-s6"
-      - "filebrowser/filebrowser:{{ .Tag }}-arm64-s6"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv6-s6"
-      - "filebrowser/filebrowser:{{ .Tag }}-armv7-s6"
-  - name_template: "filebrowser/filebrowser:v{{ .Major }}-s6"
+      - "marekful/webscp:{{ .Tag }}-amd64-s6"
+      - "marekful/webscp:{{ .Tag }}-arm64-s6"
+      - "marekful/webscp:{{ .Tag }}-armv6-s6"
+      - "marekful/webscp:{{ .Tag }}-armv7-s6"
+  - name_template: "marekful/webscp:v{{ .Major }}-s6"
     image_templates:
-      - "filebrowser/filebrowser:v{{ .Major }}-amd64-s6"
-      - "filebrowser/filebrowser:v{{ .Major }}-arm64-s6"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv6-s6"
-      - "filebrowser/filebrowser:v{{ .Major }}-armv7-s6"
+      - "marekful/webscp:v{{ .Major }}-amd64-s6"
+      - "marekful/webscp:v{{ .Major }}-arm64-s6"
+      - "marekful/webscp:v{{ .Major }}-armv6-s6"
+      - "marekful/webscp:v{{ .Major }}-armv7-s6"
 brews:
-  - name: filebrowser
+  - name: webscp
     tap:
-      owner: filebrowser
+      owner: marekful
       name: homebrew-tap
     folder: Formula
-    homepage: https://filebrowser.org
+    homepage: https://github.com/marekful/webscp
     commit_author:
-      name: FileBrowser Robot
+      name: WebSCP Robot
       email: robot@filebrowser.org
-    description: File Browser is a create-your-own-cloud-kind of software where you can install it on a server, direct it to a path and then access your files through a nice web interface
+    description: WebSCP is a create-your-own-cloud-kind of software that you can install on a server, direct it to a path and then access your files through a nice web interface
     license: "MIT"

@@ -1,4 +1,4 @@
-module github.com/filebrowser/filebrowser/v2
+module github.com/marekful/webscp
 
 go 1.18
 

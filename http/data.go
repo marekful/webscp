@@ -7,12 +7,12 @@ import (
 
 	"github.com/tomasen/realip"
 
-	"github.com/filebrowser/filebrowser/v2/agents"
-	"github.com/filebrowser/filebrowser/v2/rules"
-	"github.com/filebrowser/filebrowser/v2/runner"
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/storage"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/agents"
+	"github.com/marekful/webscp/rules"
+	"github.com/marekful/webscp/runner"
+	"github.com/marekful/webscp/settings"
+	"github.com/marekful/webscp/storage"
+	"github.com/marekful/webscp/users"
 )
 
 type handleFunc func(w http.ResponseWriter, r *http.Request, d *data) (int, error)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/users"
 )
 
 func init() {

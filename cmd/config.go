@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/filebrowser/filebrowser/v2/auth"
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/settings"
+	"github.com/marekful/webscp/auth"
+	"github.com/marekful/webscp/errors"
+	"github.com/marekful/webscp/settings"
 )
 
 func init() {
@@ -47,7 +47,7 @@ func addConfigFlags(flags *pflag.FlagSet) {
 	flags.String("oidc.redirectURL", "", "Open ID Connect Redirect URL for auth.method=oidc")
 	flags.Bool("oidc.redirectURLAppendQuery", false, "Whether to append '?redirect=...' to the redirectURL")
 
-	flags.String("branding.name", "", "replace 'File Browser' by this name")
+	flags.String("branding.name", "", "replace 'WebSCP' by this name")
 	flags.String("branding.color", "", "set the theme color")
 	flags.String("branding.files", "", "path to directory with images and custom styles")
 	flags.Bool("branding.disableExternal", false, "disable external links such as GitHub links")

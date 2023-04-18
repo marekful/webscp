@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/settings"
+	"github.com/marekful/webscp/users"
 )
 
 // Auther is the authentication interface.

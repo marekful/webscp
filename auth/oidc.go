@@ -15,8 +15,8 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/settings"
+	"github.com/marekful/webscp/users"
 )
 
 // MethodOIDCAuth is used to identify oidc auth.

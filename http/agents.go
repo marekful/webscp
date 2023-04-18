@@ -11,9 +11,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/filebrowser/filebrowser/v2/agents"
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/agents"
+	"github.com/marekful/webscp/errors"
+	"github.com/marekful/webscp/users"
 )
 
 type modifyAgentRequest struct {
