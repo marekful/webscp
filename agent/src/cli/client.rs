@@ -83,8 +83,8 @@ impl Client<'_> {
         0
     }
 
-    pub fn get_remote_user(&self, user_name: &str, password: &str, secret: &str) -> i32 {
-        let sess = self.create_session(Some(secret)).unwrap();
+    pub fn get_remote_user(&self, user_name: &str, password: &str, secret: Option<&str>) -> i32 {
+        let sess = self.create_session(secret).unwrap();
         match Client::remote_get_user(&sess, user_name, password) {
             Ok(resources_result) => {
                 print!("{resources_result}");
@@ -97,9 +97,9 @@ impl Client<'_> {
         0
     }
 
-    pub fn get_remote_resource(&self, user_id: u32, path: &str) -> i32 {
+    pub fn get_remote_resource(&self, user_id: u32, token: &str, path: &str) -> i32 {
         let sess = self.create_session(None).unwrap();
-        match Client::remote_get_resource(&sess, user_id, &path) {
+        match Client::remote_get_resource(&sess, user_id, &token, &path) {
             Ok(resources_result) => {
                 print!("{resources_result}");
             }
@@ -120,13 +120,12 @@ impl Client<'_> {
         0
     }
 
-    pub fn remote_before_copy(&self, user_id: u32, items: &String) -> i32 {
+    pub fn remote_before_copy(&self, user_id: u32, token: &str, items: &String) -> i32 {
         let sess = self.create_session(None).unwrap();
-        match Client::_remote_before_copy(&sess, user_id, &items) {
+        match Client::_remote_before_copy(&sess, user_id, &token, &items) {
             Ok(result) => print!("{}", result),
             Err(e) => {
-                eprint!("{}", e.message);
-                return e.code;
+                Client::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -440,11 +439,12 @@ impl Client<'_> {
     fn remote_get_resource(
         sess: &Session,
         user_id: u32,
+        token: &str,
         path: &str,
     ) -> Result<String, ClientError> {
         let mut ch = sess.channel_session().unwrap();
         let command = &*format!(
-            "{} {user_id} {path}",
+            "{} {user_id} {token} {path}",
             Client::command(COMMAND_GET_LOCAL_RESOURCE)
         );
         ch.exec(command).unwrap();
@@ -498,13 +498,15 @@ impl Client<'_> {
     fn _remote_before_copy(
         sess: &Session,
         user_id: u32,
+        token: &str,
         items: &str,
     ) -> Result<String, ClientError> {
         let mut ch = sess.channel_session().unwrap();
         ch.exec(&*format!(
-            "{} {} {}",
+            "{} {} {} {}",
             Client::command(COMMAND_LOCAL_BEFORE_COPY),
             user_id,
+            token,
             items
         ))
         .unwrap();

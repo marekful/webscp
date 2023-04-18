@@ -32,7 +32,7 @@ pub async fn version(
     // verify that the requester has a valid session in Files and owns the referred agent
     let (agent, _) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
         Ok(a) => a,
-        Err(e) => {
+        Err(_) => {
             return Json(VersionResponse {
                 version: None,
                 latency: None,
@@ -88,7 +88,7 @@ pub async fn ping(
     // verify that the requester has a valid session in Files and owns the referred agent
     let (agent, _) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
         Ok(a) => a,
-        Err(e) => {
+        Err(_) => {
             return Json(PingResponse {
                 latency: None,
                 error: Some("403 Forbidden".to_string()),

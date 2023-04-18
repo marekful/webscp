@@ -1,7 +1,7 @@
 use rocket::{
     http::{CookieJar, Status},
     serde::{
-        json::{serde_json, Json, Value},
+        json::{serde_json, Json},
         Deserialize, Serialize,
     },
     State,
@@ -21,7 +21,15 @@ pub struct GetRemoteUserResponse {
     code: i32,
     id: Option<u32>,
     root: Option<String>,
+    token: Option<String>,
     error: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct RemoteUser {
+    id: u32,
+    token: String,
+    root: String,
 }
 
 #[post("/users/<user_id>/connections/<host>/<port>/login", data = "<request>")]
@@ -45,6 +53,7 @@ pub async fn get_remote_user(
             Json(GetRemoteUserResponse {
                 code: err.code,
                 id: None,
+                token: None,
                 root: None,
                 error: Some(err.message),
             }),
@@ -57,7 +66,9 @@ pub async fn get_remote_user(
     get_user_args.push(port);
     get_user_args.push(request.name);
     get_user_args.push(request.password);
-    get_user_args.push(request.access_token);
+    if request.access_token.len() > 0 {
+        get_user_args.push(request.access_token);
+    }
 
     // execute command
     let result = run_command_async(274, true, false, COMMAND_GET_REMOTE_USER, get_user_args).await;
@@ -71,37 +82,39 @@ pub async fn get_remote_user(
                 code: err.code,
                 id: None,
                 root: None,
+                token: None,
                 error: Some(err.message),
             }),
         );
     }
 
-    // attempt to parse remote user's ID from response
+    // attempt to parse remote user from response
     let result_str = result.unwrap_or("".to_string());
-    let p: Value = serde_json::from_str(&result_str).unwrap();
-    let user_id = p["id"].as_u64().unwrap_or(0);
-    let user_root = p["root"].as_str().unwrap_or("");
+    let deserialized_result = serde_json::from_str(&result_str);
 
-    // return error response if no ID could be parsed
-    if user_id == 0 {
+    // return error response if no remote user could be parsed
+    if deserialized_result.is_err() {
         return (
             Status::InternalServerError,
             Json(GetRemoteUserResponse {
-                code: 327,
+                code: 325,
                 id: None,
                 root: None,
+                token: None,
                 error: None,
             }),
         );
     }
+    let remote_user: RemoteUser = deserialized_result.unwrap();
 
     // return success response
     (
         Status::Ok,
         Json(GetRemoteUserResponse {
             code: 0,
-            id: Some(user_id as u32),
-            root: Some(user_root.to_string()),
+            id: Some(remote_user.id),
+            root: Some(remote_user.root),
+            token: Some(remote_user.token),
             error: None,
         }),
     )

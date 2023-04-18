@@ -21,6 +21,7 @@ pub struct Agent {
 #[derive(Deserialize, Debug)]
 pub struct RemoteUser {
     pub id: u32,
+    pub token: String,
     pub name: String,
     pub root: String,
 }
@@ -95,7 +96,7 @@ impl FilesApi {
         // retrieve agent from files backend api
         let uri = format!("/api/agents/{agent_id}");
         let result: Result<AsyncResponse, RequestError> = self
-            .make_async_request("GET", &uri, None, Some(auth_token.to_string()))
+            .make_async_request("GET", &uri, None, Some(auth_token.to_string()), None)
             .await;
 
         // fail if couldn't send request
@@ -150,7 +151,7 @@ impl FilesApi {
         // retrieve user from Files backend api
         let uri = format!("/api/users/{user_id}");
         let result: Result<AsyncResponse, RequestError> = self
-            .make_async_request("GET", &uri, None, Some(auth_token.to_string()))
+            .make_async_request("GET", &uri, None, Some(auth_token.to_string()), None)
             .await;
 
         // fail if couldn't send request
@@ -181,8 +182,10 @@ impl FilesApi {
             transfer.agent_id, transfer.transfer_id
         );
 
-        let auth = Some(transfer.rc_auth.to_string());
-        let _ = self.make_async_request("PATCH", &uri, None, auth).await;
+        /*let auth = Some(transfer.rc_auth.to_string());*/
+        let _ = self
+            .make_async_request("PATCH", &uri, None, None, None)
+            .await;
 
         ()
     }
@@ -193,22 +196,28 @@ impl FilesApi {
             transfer.agent_id, transfer.transfer_id
         );
 
-        let auth = Some(transfer.rc_auth.to_string());
-        let _ = self.make_request("PATCH", &uri, None, auth);
+        /*let auth = Some(transfer.rc_auth.to_string());*/
+        let _ = self.make_request("PATCH", &uri, None, None, None);
 
         ()
     }
 
-    pub fn get_local_resource(&self, user_id: u32, path: &str) -> Result<String, ClientError> {
+    pub fn get_local_resource(
+        &self,
+        user_id: u32,
+        token: &str,
+        path: &str,
+    ) -> Result<String, ClientError> {
         let uri = format!("/api/agent/{user_id}/resources/{path}");
 
-        let mut response = match self.make_request("GET", &uri, None, None) {
+        let mut response = match self.make_request("GET", &uri, None, None, Some(token.to_string()))
+        {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
                     code: 187,
                     message: e.message,
-                    http_code: Some(500),
+                    http_code: Some(e.http_code.unwrap() as i32),
                 });
             }
         };
@@ -228,6 +237,7 @@ impl FilesApi {
             return Err(ClientError {
                 code: 189,
                 message: response.status().to_string(),
+                //message: format!("404 {uri}"),
                 http_code: Some(response.status().as_u16() as i32),
             });
         }
@@ -242,10 +252,15 @@ impl FilesApi {
         }
     }
 
-    pub fn local_before_copy(&self, user_id: u32, items: String) -> Result<String, ClientError> {
+    pub fn local_before_copy(
+        &self,
+        user_id: u32,
+        token: String,
+        items: String,
+    ) -> Result<String, ClientError> {
         let uri = format!("/api/agent/{user_id}/copy?action=remote-copy");
 
-        let mut response = match self.make_request("POST", &uri, Some(items), None) {
+        let mut response = match self.make_request("POST", &uri, Some(items), None, Some(token)) {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
@@ -292,7 +307,7 @@ impl FilesApi {
             user_name, password
         );
 
-        let mut response = match self.make_request("POST", uri, Some(request), None) {
+        let mut response = match self.make_request("POST", uri, Some(request), None, None) {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
@@ -333,7 +348,7 @@ impl FilesApi {
     }
 
     pub fn get_version(&self) -> String {
-        let mut response = match self.make_request("GET", "/api/version", None, None) {
+        let mut response = match self.make_request("GET", "/api/version", None, None, None) {
             Ok(r) => r,
             Err(_e) => return "unknown".to_string(),
         };
@@ -345,14 +360,30 @@ impl FilesApi {
         };
     }
 
+    /*fn renew_token(&self, token: String) -> Result<String, RequestError> {
+        let uri = format!("/api/renew");
+        return match self.make_request("POST", &uri, None, None, Some(token), true) {
+            Ok(r) => {
+                Ok(r.text().unwrap())
+            }
+            Err(e) => Err(e)
+        }
+    }*/
+
     fn make_request(
         &self,
         method: &str,
         uri: &str,
         body: Option<String>,
-        auth_token: Option<String>,
+        local_token: Option<String>,
+        remote_token: Option<String>,
     ) -> Result<Response, RequestError> {
         let request_url = self.request_url(uri);
+
+        assert!(
+            !(local_token.is_some() && remote_token.is_some()),
+            "Cannot have local and remote token at the same time"
+        );
 
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(10))
@@ -379,16 +410,28 @@ impl FilesApi {
                 .body(body.unwrap());
         }
 
-        if auth_token.is_some() {
+        let have_remote_token = remote_token.is_some();
+        let token = local_token.unwrap_or(remote_token.unwrap_or("".to_string()));
+        if token.len() > 0 {
             if method == "GET" {
-                req = req.header("Cookie", format!("auth={}", auth_token.unwrap()));
+                req = req.header("Cookie", format!("auth={}", token));
             } else {
-                req = req.header("X-Auth", format!("{}", auth_token.unwrap()));
+                req = req.header("X-Auth", format!("{}", token));
             }
         }
 
         match req.send() {
-            Ok(r) => Ok(r),
+            Ok(r) => {
+                if r.status().as_u16() == 401 && have_remote_token {
+                    return Err(RequestError {
+                        code: 110,
+                        message: "Invalid token".to_string(),
+                        http_code: Some(511),
+                    });
+                }
+
+                Ok(r)
+            }
             Err(e) => Err(RequestError {
                 code: 349,
                 message: e.to_string(),
@@ -402,7 +445,8 @@ impl FilesApi {
         method: &str,
         uri: &str,
         body: Option<String>,
-        auth_token: Option<String>,
+        local_token: Option<String>,
+        remote_token: Option<String>,
     ) -> Result<AsyncResponse, RequestError> {
         let request_url = self.request_url(uri);
 
@@ -431,16 +475,28 @@ impl FilesApi {
                 .body(body.unwrap());
         }
 
-        if auth_token.is_some() {
+        let have_remote_token = remote_token.is_some();
+        let token = local_token.unwrap_or(remote_token.unwrap_or("".to_string()));
+        if token.len() > 0 {
             if method == "GET" {
-                req = req.header("Cookie", format!("auth={}", auth_token.unwrap()));
+                req = req.header("Cookie", format!("auth={}", token));
             } else {
-                req = req.header("X-Auth", format!("{}", auth_token.unwrap()));
+                req = req.header("X-Auth", format!("{}", token));
             }
         }
 
         match req.send().await {
-            Ok(r) => Ok(r),
+            Ok(r) => {
+                if r.status().as_u16() == 401 && have_remote_token {
+                    return Err(RequestError {
+                        code: 111,
+                        message: "Invalid token".to_string(),
+                        http_code: Some(511),
+                    });
+                }
+
+                Ok(r)
+            }
             Err(e) => Err(RequestError {
                 code: 349,
                 message: e.to_string(),
