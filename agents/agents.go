@@ -22,6 +22,7 @@ type RemoteUser struct {
 	Name     string `json:"name"`
 	Password string `json:"password,omitempty"`
 	Root     string `json:"root"`
+	Token    string `json:"token"`
 }
 
 var checkableFields = []string{

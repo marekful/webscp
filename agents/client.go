@@ -33,6 +33,7 @@ type ExchangeKeysResponse struct {
 type GetRemoteUserResponse struct {
 	Code  int32  `json:"code"`
 	ID    uint   `json:"id"`
+	Token string `json:"token"`
 	Root  string `json:"root"`
 	Error string `json:"error,omitempty"`
 }
@@ -158,6 +159,7 @@ func (c *AgentClient) GetRemoteUser(userID uint, user *RemoteUser, accessToken, 
 
 	user.ID = resp.ID
 	user.Root = resp.Root
+	user.Token = resp.Token
 
 	return 0, nil
 }

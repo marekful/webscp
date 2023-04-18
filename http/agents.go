@@ -27,8 +27,9 @@ type getUserRequest struct {
 }
 
 type getUserResponse struct {
-	ID   uint   `json:"id"`
-	Root string `json:"root"`
+	ID    uint   `json:"id"`
+	Token string `json:"token"`
+	Root  string `json:"root"`
 }
 
 func getAgentID(r *http.Request) (uint, error) {
@@ -66,7 +67,9 @@ func injectAgent(r *http.Request, d *data) {
 			d.agent = agent
 		}
 	}
+}
 
+func injectPath(r *http.Request, d *data) {
 	vars := mux.Vars(r)
 	if len(vars["url"]) > 0 {
 		decodedURL, err := url.QueryUnescape(vars["url"])
@@ -76,35 +79,43 @@ func injectAgent(r *http.Request, d *data) {
 	}
 }
 
+func checkHost(r *http.Request) error {
+	internalHost := os.Getenv("INTERNAL_ADDRESS")
+	requestHost := "http://" + r.Host
+	if requestHost != internalHost {
+		return fmt.Errorf("error: %s does not match %s", internalHost, requestHost)
+	}
+
+	return nil
+}
+
+// The withAgent middleware enforces
 func withAgent(fn handleFunc) handleFunc {
 	return func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		// Deny access to requests whose 'Host' header doesn't match the internal docker address (e.g. http://filebrowser:80).
-		internalHost := os.Getenv("INTERNAL_ADDRESS")
-		requestHost := "http://" + r.Host
-		if requestHost != internalHost {
-			return http.StatusUnauthorized, fmt.Errorf("error: %s does not match %s", internalHost, requestHost)
+		err := checkHost(r)
+		if err != nil {
+			return http.StatusUnauthorized, err
 		}
 
 		injectAgent(r, d)
+		injectPath(r, d)
 
 		return fn(w, r, d)
 	}
 }
 
-func withAgentAdmin(fn handleFunc) handleFunc {
-	return withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		user, err := d.store.Users.Get(d.server.Root, uint(1))
-		if err != nil {
-			return http.StatusInternalServerError, nil
-		}
-		d.user = user
-
-		return fn(w, r, d)
-	})
-}
-
+// The withAgentUser middleware is used for remote operations
+// on the remote side to enforce valid user session.
 func withAgentUser(fn handleFunc) handleFunc {
-	return withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+		// Deny access to requests whose 'Host' header doesn't match the internal docker address (e.g. http://filebrowser:80).
+		err := checkHost(r)
+		if err != nil {
+			return http.StatusUnauthorized, err
+		}
+
+		// Fetch the user referred to in query params
 		vars := mux.Vars(r)
 		userID := vars["user_id"]
 		id64, err := strconv.ParseUint(userID, 10, 64)
@@ -117,15 +128,23 @@ func withAgentUser(fn handleFunc) handleFunc {
 			return http.StatusUnauthorized, nil
 		}
 
-		d.user = user
+		// Enforce that the referred user is the same as the one extracted from the token
+		if user.ID != d.user.ID {
+			return http.StatusUnauthorized, nil
+		}
+
+		injectPath(r, d)
 
 		return fn(w, r, d)
 	})
 }
 
+// The injectAgentWithUser middleware is used for remote operations
+// on the local side to enforce valid user session.
 func injectAgentWithUser(fn handleFunc) handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		injectAgent(r, d)
+		injectPath(r, d)
 
 		if d.agent.UserID != d.user.ID {
 			return http.StatusForbidden, nil
@@ -256,7 +275,41 @@ var agentTemporaryAccessTokenGetHandler = withUser(func(w http.ResponseWriter, r
 	return renderJSON(w, r, accessTokenResponse)
 })
 
-var agentVerifyUserCredentialsPostHandler = withAgentAdmin(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var remoteVerifyUserCredentialsPostHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	req := &getUserRequest{}
+	err := json.NewDecoder(r.Body).Decode(req)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	user := agents.RemoteUser{Name: req.Name, Password: req.Password}
+
+	client := agents.AgentClient{
+		Agent: d.agent,
+	}
+
+	authCookie, _ := r.Cookie("auth")
+
+	userStatus, err := client.GetRemoteUser(d.user.ID, &user, "", authCookie.Value)
+	if err != nil {
+		if userStatus == http.StatusUnauthorized {
+			userStatus = http.StatusForbidden
+		}
+		return userStatus, err
+	}
+
+	user.Password = ""
+	d.agent.RemoteUser = user
+
+	err = d.store.Agents.Save(d.agent)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return 0, nil
+})
+
+var agentVerifyUserCredentialsPostHandler = withAgent(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	req := &getUserRequest{}
 	err := json.NewDecoder(r.Body).Decode(req)
 	if err != nil {
@@ -268,12 +321,18 @@ var agentVerifyUserCredentialsPostHandler = withAgentAdmin(func(w http.ResponseW
 		return http.StatusUnauthorized, os.ErrPermission
 	}
 
-	scope := u.Scope
-	if scope == "." {
-		scope = "/"
+	token, err := getToken(r, d, u)
+	if err != nil {
+		return http.StatusInternalServerError, err
 	}
 
-	return renderJSON(w, r, getUserResponse{ID: u.ID, Root: d.server.Root + scope})
+	root := u.Scope
+	if root == "." {
+		root = "/"
+	}
+	root = d.server.Root + root
+
+	return renderJSON(w, r, getUserResponse{ID: u.ID, Token: token, Root: root})
 })
 
 var agentGetVersionHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
