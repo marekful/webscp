@@ -21,6 +21,7 @@ import Share from "./Share";
 import Upload from "./Upload";
 import ShareDelete from "./ShareDelete";
 import Transfers from "./Transfers.vue";
+import AgentLogin from "./AgentLogin.vue";
 import { mapState } from "vuex";
 import buttons from "@/utils/buttons";
 
@@ -42,6 +43,7 @@ export default {
     Upload,
     ShareDelete,
     Transfers,
+    AgentLogin,
   },
   data: function () {
     return {
@@ -103,13 +105,17 @@ export default {
           "upload",
           "share-delete",
           "transfers",
+          "agent-login",
         ].indexOf(this.show) >= 0;
 
       return (matched && this.show) || null;
     },
     showOverlay: function () {
       return (
-        this.show !== null && this.show !== "search" && this.show !== "more" && this.show !== "transfers"
+        this.show !== null &&
+        this.show !== "search" &&
+        this.show !== "more" &&
+        this.show !== "transfers"
       );
     },
   },

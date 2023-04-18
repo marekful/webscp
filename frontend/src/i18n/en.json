@@ -124,6 +124,11 @@
   },
   "permanent": "Permanent",
   "prompts": {
+    "agent": {
+      "loginTitle": "Agent Login",
+      "loginText": "Please enter the password for {user} @ {address}",
+      "login": "Login"
+    },
     "copy": "Copy",
     "copyMessage": "Choose the place to copy your files:",
     "currentlyNavigating": "Currently navigating on:",
@@ -180,7 +185,7 @@
       "agentStatus": "Agent status",
       "agentVersion": "Version",
       "agentVersionHint": "Agent / File Browser",
-      "connectionDelete": "Remote Agent Connection deleted",
+      "connectionDeleted": "Remote Agent Connection deleted",
       "connectionCreated": "Remote Agent Connection created",
       "generateAccessToken": "Generate Access Token",
       "host": "Host",

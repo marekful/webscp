@@ -121,7 +121,7 @@ export default {
             this.resetItems();
             this.fillOptions(res);
           })
-          .catch(this.$showError)
+          .catch(this.remoteError)
           .finally(() => (this.remoteLoading = false));
       }
     },
@@ -133,8 +133,19 @@ export default {
           this.resetItems();
           this.fillOptions(res);
         })
-        .catch(this.$showError)
+        .catch(this.remoteError)
         .finally(() => (this.remoteLoading = false));
+    },
+    remoteError(error) {
+      if (error.status === 511) {
+        this.$store.commit("setLoginAgent", {
+          id: this.agentId,
+          component: typeof this.$parent.copy === "function" ? "copy" : "move",
+        });
+        this.$store.commit("showHover", "agent-login");
+        return;
+      }
+      this.$showError(error);
     },
     resetItems() {
       this.items = [];
@@ -192,8 +203,14 @@ export default {
 .remote-loading {
   position: absolute;
   z-index: 9999;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.33);
   width: 100%;
   height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.remote-loading .message {
+  margin: 20vh auto;
 }
 </style>
