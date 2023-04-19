@@ -25,6 +25,12 @@ type RemoteUser struct {
 	Token    string `json:"token"`
 }
 
+type TokenUser struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+	Root string `json:"root"`
+}
+
 var checkableFields = []string{
 	"Host",
 	"Port",

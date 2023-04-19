@@ -232,7 +232,17 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 
 	authCookie, _ := r.Cookie("auth")
 
-	userStatus, err := client.GetRemoteUser(d.user.ID, &req.Data.RemoteUser, req.Data.Secret, authCookie.Value)
+	/*userStatus, err := client.GetRemoteUser(d.user.ID, &req.Data.RemoteUser, req.Data.Secret, authCookie.Value)
+	if err != nil {
+		if userStatus == http.StatusUnauthorized {
+			userStatus = http.StatusForbidden
+		}
+		return userStatus, err
+	}*/
+
+	user := agents.TokenUser{}
+
+	userStatus, err := client.GetTokenUser(d.user.ID, &user, req.Data.Secret, authCookie.Value)
 	if err != nil {
 		if userStatus == http.StatusUnauthorized {
 			userStatus = http.StatusForbidden
@@ -248,9 +258,18 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 		return kexStatus, err
 	}
 
+	root := user.Root
+	if root == "." {
+		root = "/"
+	}
+
 	req.Data.Secret = ""
-	req.Data.RemoteUser.Password = ""
+	// req.Data.RemoteUser.Password = ""
 	req.Data.UserID = d.user.ID
+	req.Data.RemoteUser.ID = user.ID
+	req.Data.RemoteUser.Root = d.server.Root + root
+	req.Data.RemoteUser.Name = user.Name
+	req.Data.RemoteUser.Token = "x.0"
 
 	err = d.store.Agents.Save(req.Data)
 	if err != nil {
@@ -290,7 +309,7 @@ var remoteVerifyUserCredentialsPostHandler = injectAgentWithUser(func(w http.Res
 
 	authCookie, _ := r.Cookie("auth")
 
-	userStatus, err := client.GetRemoteUser(d.user.ID, &user, "", authCookie.Value)
+	userStatus, err := client.GetRemoteUser(d.user.ID, &user, authCookie.Value)
 	if err != nil {
 		if userStatus == http.StatusUnauthorized {
 			userStatus = http.StatusForbidden
