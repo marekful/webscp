@@ -13,7 +13,13 @@ use std::{
 };
 use tokio::{task, time::Instant};
 
-use crate::{client::Client, command_runner::run_command_async, constants::DEFAULTS, Files};
+use crate::{
+    client::Client,
+    command_runner::run_command_async,
+    constants::DEFAULTS,
+    files_api::{FilesUser, RequestError},
+    Files,
+};
 
 #[derive(Serialize, Debug)]
 pub struct TemporaryAccessTokenResponse {
@@ -30,27 +36,34 @@ pub async fn get_temporary_access_token(
     cookies: &CookieJar<'_>,
 ) -> (Status, Json<TemporaryAccessTokenResponse>) {
     // check user session
-    let res = files
+    let user = match files
         .api
-        .check_user_auth(user_id, cookies.get("rc_auth"))
-        .await;
-    if res.is_err() {
-        return (
-            Status::Unauthorized,
-            Json(TemporaryAccessTokenResponse {
-                code: 922,
-                token: None,
-                valid_until: None,
-                error: None,
-            }),
-        );
-    }
+        .get_auth_user(user_id, cookies.get("rc_auth"))
+        .await
+    {
+        Ok(u) => u,
+        Err(_) => {
+            return (
+                Status::Unauthorized,
+                Json(TemporaryAccessTokenResponse {
+                    code: 922,
+                    token: None,
+                    valid_until: None,
+                    error: None,
+                }),
+            );
+        }
+    };
 
     // create arguments for the generate temporary access token command
     let key_id = Client::random_hex();
+    let user_id = user.id.to_string();
     let mut args: Vec<&str> = Vec::new();
     args.push(DEFAULTS.generate_key_pair_script_path);
     args.push(&key_id);
+    args.push(&user_id);
+    args.push(&user.username);
+    args.push(&user.scope);
 
     // execute command
     let token = match run_command_async(280, false, false, "bash", args).await {

@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{borrow::Cow::Borrowed, process::exit};
 
 use crate::{client::*, constants::*};
 
@@ -59,23 +59,15 @@ pub fn command_get_remote_user(client: Client, args: Option<Vec<String>>) {
     let args = args.unwrap();
     if args.len() < 6 {
         eprintln!(
-            "Usage: cli {} <host> <port> <username> <password> [<access_token>]",
+            "Usage: cli {} <host> <port> <username> <password>",
             COMMAND_GET_REMOTE_USER
         );
         exit(140);
     }
     let user_name = &args[4];
     let password = &args[5];
-    let token = match args.len() {
-        7 => Some(args[6].as_str()),
-        6 => None,
-        _ => None,
-    };
-    let exit_code = client.get_remote_user(user_name, password, token);
 
-    if exit_code != 0 {
-        exit(exit_code);
-    }
+    client.get_remote_user(user_name, password);
 }
 
 pub fn command_get_local_user(client: Client, args: Option<Vec<String>>) {
@@ -98,6 +90,24 @@ pub fn command_get_local_user(client: Client, args: Option<Vec<String>>) {
             eprint!("{}", e.message);
             exit(e.code);
         }
+    }
+}
+
+pub fn command_get_token_user(client: Client, args: Option<Vec<String>>) {
+    let args = args.unwrap();
+    if args.len() < 5 {
+        eprintln!(
+            "Usage: cli {} <host> <port> <access_token>",
+            COMMAND_GET_TOKEN_USER
+        );
+        exit(149);
+    }
+    let access_token = &args[4];
+
+    let exit_code = client.get_token_user(access_token);
+
+    if exit_code != 0 {
+        exit(exit_code);
     }
 }
 
