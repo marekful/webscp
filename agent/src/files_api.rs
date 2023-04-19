@@ -26,6 +26,13 @@ pub struct RemoteUser {
     pub root: String,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct FilesUser {
+    pub id: u32,
+    pub username: String,
+    pub scope: String,
+}
+
 #[derive(Debug)]
 pub struct RequestError {
     pub code: i32,
@@ -174,6 +181,61 @@ impl FilesApi {
         }
 
         Ok(())
+    }
+
+    pub async fn get_auth_user(
+        &self,
+        user_id: u32,
+        auth_cookie: Option<&Cookie<'_>>,
+    ) -> Result<FilesUser, RequestError> {
+        // fail if cannot unwrap cookie value
+        if auth_cookie.is_none() {
+            return Err(RequestError {
+                code: 524,
+                message: "".to_string(),
+                http_code: Some(401),
+            });
+        }
+        let auth_token = auth_cookie.unwrap().value();
+
+        // retrieve user from Files backend api
+        let uri = format!("/api/users/{user_id}");
+        let result: Result<AsyncResponse, RequestError> = self
+            .make_async_request("GET", &uri, None, Some(auth_token.to_string()), None)
+            .await;
+
+        // fail if couldn't send request
+        if result.is_err() {
+            return Err(RequestError {
+                code: 525,
+                message: result.unwrap_err().message,
+                http_code: Some(500),
+            });
+        }
+        let response = result.unwrap();
+
+        // fail if response is not 2xx
+        if !response.status().is_success() {
+            return Err(RequestError {
+                code: 526,
+                message: response.status().to_string(),
+                http_code: Some(response.status().as_u16()),
+            });
+        }
+        let result_str = response.text().await.unwrap();
+
+        // deserialize user
+        let deserialize_result = serde_json::from_str(&result_str);
+        if deserialize_result.is_err() {
+            return Err(RequestError {
+                code: 517,
+                message: deserialize_result.unwrap_err().to_string(),
+                http_code: Some(500),
+            });
+        }
+        let user: FilesUser = deserialize_result.unwrap();
+
+        Ok(user)
     }
 
     pub async fn send_upload_status_update_async(&self, transfer: &Transfer, message: &str) {
@@ -449,6 +511,11 @@ impl FilesApi {
         remote_token: Option<String>,
     ) -> Result<AsyncResponse, RequestError> {
         let request_url = self.request_url(uri);
+
+        assert!(
+            !(local_token.is_some() && remote_token.is_some()),
+            "Cannot have local and remote token at the same time"
+        );
 
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(10))

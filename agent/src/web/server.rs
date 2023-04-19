@@ -1,4 +1,4 @@
-#![allow(unused)]  // FIXME
+#![allow(unused)] // FIXME
 
 #[path = "../cli/archive.rs"]
 mod archive;
@@ -41,6 +41,7 @@ async fn main() -> Result<(), rocket::Error> {
         .manage(Files { api: files })
         .mount(api, routes![get_temporary_access_token])
         .mount(api, routes![register_public_key])
+        .mount(api, routes![get_token_user])
         .mount(api, routes![get_remote_user])
         .mount(api, routes![ping])
         .mount(api, routes![resources])

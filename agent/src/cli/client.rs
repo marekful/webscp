@@ -19,6 +19,8 @@ use std::process::Stdio;
 
 use sha256::digest;
 
+use regex::Regex;
+
 use crate::{
     command_runner::{run_command, run_command_async},
     constants::{
@@ -83,9 +85,23 @@ impl Client<'_> {
         0
     }
 
-    pub fn get_remote_user(&self, user_name: &str, password: &str, secret: Option<&str>) -> i32 {
-        let sess = self.create_session(secret).unwrap();
+    pub fn get_remote_user(&self, user_name: &str, password: &str) -> i32 {
+        let sess = self.create_session(None).unwrap();
         match Client::remote_get_user(&sess, user_name, password) {
+            Ok(resources_result) => {
+                print!("{resources_result}");
+            }
+            Err(e) => {
+                Client::print_error_and_exit(e.code, e.message);
+            }
+        }
+
+        0
+    }
+
+    pub fn get_token_user(&self, secret: &str) -> i32 {
+        let sess = self.create_session(Some(secret)).unwrap();
+        match Client::remote_token_user(&sess, secret) {
             Ok(resources_result) => {
                 print!("{resources_result}");
             }
@@ -443,8 +459,10 @@ impl Client<'_> {
         path: &str,
     ) -> Result<String, ClientError> {
         let mut ch = sess.channel_session().unwrap();
+        let re = Regex::new(r"([()|$;\\])").unwrap();
+        let path_escaped = re.replace_all(path, "\\$1");
         let command = &*format!(
-            "{} {user_id} {token} {path}",
+            "{} {user_id} {token} {path_escaped}",
             Client::command(COMMAND_GET_LOCAL_RESOURCE)
         );
         ch.exec(command).unwrap();
@@ -476,6 +494,29 @@ impl Client<'_> {
             "{} {user_name} {password}",
             Client::command(COMMAND_GET_LOCAL_USER)
         );
+        ch.exec(command).unwrap();
+        let mut output = String::new();
+        let mut stderr = String::new();
+        ch.read_to_string(&mut output).unwrap();
+        ch.stderr().read_to_string(&mut stderr).unwrap();
+
+        let result = ch.exit_status().unwrap();
+
+        if result == 0 {
+            return Ok(output);
+        }
+
+        Err(ClientError {
+            message: stderr,
+            code: result,
+            http_code: None,
+        })
+    }
+
+    fn remote_token_user(sess: &Session, access_token: &str) -> Result<String, ClientError> {
+        let token_hash = digest(access_token);
+        let mut ch = sess.channel_session().unwrap();
+        let command = &*format!("cat {}/{}", DEFAULTS.ssh_dir_path, token_hash);
         ch.exec(command).unwrap();
         let mut output = String::new();
         let mut stderr = String::new();

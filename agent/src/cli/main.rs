@@ -1,4 +1,4 @@
-#![allow(unused)]  // FIXME
+#![allow(unused)] // FIXME
 
 mod archive;
 mod client;
@@ -59,6 +59,7 @@ fn main() {
         COMMAND_REMOTE_BEFORE_COPY => exec = Some(command_remote_before_copy),
         /*COMMAND_REMOTE_DO_COPY => exec = Some(command_remote_do_copy),*/
         COMMAND_GET_REMOTE_USER => exec = Some(command_get_remote_user),
+        COMMAND_GET_TOKEN_USER => exec = Some(command_get_token_user),
         COMMAND_PING => exec = Some(command_ping),
         _ => {
             eprintln!("Invalid command {}", command);
