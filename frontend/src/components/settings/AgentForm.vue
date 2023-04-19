@@ -42,19 +42,9 @@
       />
     </p>
 
-    <p>
-      <label for="remote-user-name">
-        {{ $t("settings.agent.remoteUserName") }}
-      </label>
-      <input
-        v-if="isNew"
-        class="input input--block"
-        type="text"
-        id="remote-user-name"
-        v-model="agent.remote_user.name"
-        required="required"
-      />
-      <code v-else>
+    <p v-if="!isNew">
+      <label>{{ $t("settings.agent.remoteUserName") }}</label>
+      <code>
         {{ agent.remote_user.name }} ({{ agent.remote_user.id }})
       </code>
     </p>
@@ -64,19 +54,6 @@
       <code>
         {{ agent.remote_user.root }}
       </code>
-    </p>
-
-    <p v-if="isNew">
-      <label for="remote-user-password">
-        {{ $t("settings.agent.remoteUserPassword") }}
-      </label>
-      <input
-        class="input input--block"
-        type="password"
-        id="remote-user-password"
-        v-model="agent.remote_user.password"
-        required="required"
-      />
     </p>
   </div>
 </template>

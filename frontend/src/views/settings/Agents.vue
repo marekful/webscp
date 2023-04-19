@@ -43,7 +43,7 @@
     </div>
 
     <div class="column column-w">
-      <form class="card" @submit.prevent="save">
+      <form class="card">
         <div class="card-title">
           <h2>{{ $t("settings.agent.remoteAgents") }}</h2>
           <router-link to="/settings/agents/new"

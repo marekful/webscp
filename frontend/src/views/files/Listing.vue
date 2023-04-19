@@ -10,6 +10,7 @@
       />
 
       <action
+        v-show="headerButtons.transfers"
         id="transfers-button"
         icon="sync"
         :label="$t('buttons.transfers')"
@@ -316,7 +317,7 @@ export default {
       "loading",
       "transfers",
     ]),
-    ...mapGetters(["selectedCount", "transfersInProgress"]),
+    ...mapGetters(["selectedCount", "transfersInProgress", "transfersTotal"]),
     nameSorted() {
       return this.req.sorting.by === "name";
     },
@@ -392,7 +393,7 @@ export default {
         share: this.selectedCount === 1 && this.user.perm.share,
         move: this.selectedCount > 0 && this.user.perm.rename,
         copy: this.selectedCount > 0 && this.user.perm.create,
-        transfers: this.transfersInProgress > 0,
+        transfers: this.transfersTotal > 0,
       };
     },
     isMobile() {

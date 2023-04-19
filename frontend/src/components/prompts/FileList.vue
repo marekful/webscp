@@ -211,6 +211,6 @@ export default {
 }
 
 .remote-loading .message {
-  margin: 20vh auto;
+  height: 100%;
 }
 </style>

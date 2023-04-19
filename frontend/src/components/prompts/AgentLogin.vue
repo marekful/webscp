@@ -28,6 +28,9 @@
       </p>
     </div>
     <div class="card-action">
+      <button class="button button--flat button--grey" @click.prevent="cancel">
+        {{ $t("prompts.agent.cancel") }}
+      </button>
       <input
         type="submit"
         class="button button--flat"
@@ -60,12 +63,15 @@ export default {
     this.intervalID = setInterval(() => {
       if (this.show === null) {
         this.$store.commit("resetLoginAgent");
-        clearInterval(this.intervalID);
-        this.intervalID = null;
+        this.clearInterval();
       }
     }, 300);
   },
   methods: {
+    clearInterval() {
+      clearInterval(this.intervalID);
+      this.intervalID = null;
+    },
     login(event) {
       let name = this.loginAgent.remote_user.name;
       let target =
@@ -78,12 +84,17 @@ export default {
         .remoteUserLogin(this.loginAgent.id, name, password)
         .then(() => {
           this.$store.commit("showHover", this.loginAgent.component);
-          clearInterval(this.intervalID);
-          this.intervalID = null;
+          this.clearInterval();
         })
         .catch((err) => {
           console.log("login() error ", err);
         });
+    },
+    cancel() {
+      let show = this.loginAgent.component;
+      this.$store.commit("resetLoginAgent");
+      this.clearInterval();
+      this.$store.commit("showHover", show);
     },
   },
 };
