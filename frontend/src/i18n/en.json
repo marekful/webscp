@@ -125,6 +125,7 @@
   "permanent": "Permanent",
   "prompts": {
     "agent": {
+      "cancel": "Cancel",
       "loginTitle": "Agent Login",
       "loginText": "Please enter the password for {user} @ {address}",
       "login": "Login"

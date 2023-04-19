@@ -1,5 +1,5 @@
 <template>
-  <div class="server-select">
+  <div v-if="serverList.length > 1" class="server-select">
     <div class="section-title">{{ $t("prompts.selectServer") }}</div>
     <custom-select
       :options="serverList"
@@ -57,7 +57,7 @@ export default {
       this.$emit("update:selected", agent);
     },
     async fillOptions() {
-      let servers = await agents.getAll();
+      let servers = (await agents.getAll()) || [];
       this.serverList = ["Local"];
 
       for (let index = 0; index < servers.length; index++) {

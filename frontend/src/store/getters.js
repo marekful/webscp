@@ -6,11 +6,20 @@ const getters = {
   transfersInProgress: (state) => {
     let inProgress = 0;
     for (let tr of state.transfers) {
+      if (state.user.id !== tr.agent.user.id) continue;
       if (tr.pending) {
         inProgress += 1;
       }
     }
     return inProgress;
+  },
+  transfersTotal: (state) => {
+    let total = 0;
+    for (let tr of state.transfers) {
+      if (state.user.id !== tr.agent.user.id) continue;
+      total += 1;
+    }
+    return total;
   },
   progress: (state) => {
     if (state.upload.progress.length == 0) {
