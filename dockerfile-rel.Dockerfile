@@ -38,7 +38,8 @@ RUN apk --update add ca-certificates \
                      curl \
                      libcap \
                      bash \
-                     uuidgen
+                     uuidgen \
+                     figlet
 
 RUN adduser -D -H -s /bin/ash webscp
 
