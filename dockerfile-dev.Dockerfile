@@ -1,4 +1,6 @@
+####################################################
 ################## Frontend build ##################
+####################################################
 FROM docker.io/node:18 as vue-builder
 
 WORKDIR /work
@@ -15,7 +17,9 @@ COPY  ./frontend /work/
 
 RUN npm run build
 
-################## Backend build ##################
+####################################################
+################## Backend build ###################
+####################################################
 FROM docker.io/golang:1.20.1-alpine AS go-builder
 
 RUN apk add bash make git ncurses yarn npm
@@ -38,7 +42,9 @@ COPY --from=vue-builder /work/dist/ /work/frontend/dist/
 
 RUN make build-backend
 
-################## Run ##################
+####################################################
+#################### Dev image #####################
+####################################################
 FROM docker.io/golang:1.20.1-alpine
 RUN apk --update add ca-certificates \
                      mailcap \
@@ -46,7 +52,8 @@ RUN apk --update add ca-certificates \
                      libcap \
                      bash \
                      npm \
-                     uuidgen
+                     uuidgen \
+                     figlet
 
 RUN adduser -D -H -s /bin/ash filebrowser
 
