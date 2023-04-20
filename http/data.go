@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/tomasen/realip"
 
@@ -72,6 +73,15 @@ func handle(fn handleFunc, prefix string, store *storage.Storage, server *settin
 		}
 
 		if status != 0 {
+			if strings.HasPrefix(r.RequestURI, "/api/agent/") {
+				txt := http.StatusText(status)
+				if err != nil {
+					txt = err.Error()
+				}
+				http.Error(w, txt, status)
+				return
+			}
+
 			txt := http.StatusText(status)
 			if err != nil {
 				txt += ": " + err.Error()

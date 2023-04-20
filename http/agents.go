@@ -232,14 +232,6 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 
 	authCookie, _ := r.Cookie("auth")
 
-	/*userStatus, err := client.GetRemoteUser(d.user.ID, &req.Data.RemoteUser, req.Data.Secret, authCookie.Value)
-	if err != nil {
-		if userStatus == http.StatusUnauthorized {
-			userStatus = http.StatusForbidden
-		}
-		return userStatus, err
-	}*/
-
 	user := agents.TokenUser{}
 
 	userStatus, err := client.GetTokenUser(d.user.ID, &user, req.Data.Secret, authCookie.Value)
