@@ -1,5 +1,7 @@
 use std::{borrow::Cow::Borrowed, process::exit};
 
+use urlencoding::encode;
+
 use crate::{client::*, constants::*};
 
 pub fn command_exchange_keys(client: Client, args: Option<Vec<String>>) {
@@ -43,13 +45,25 @@ pub fn command_get_local_resource(client: Client, args: Option<Vec<String>>) {
     let user_id: u32 = args[2].parse().unwrap_or(0);
     let token = &args[3];
     let path = &args[4];
+    let path_encoded = encode(path);
 
-    match client.files_api.get_local_resource(user_id, token, path) {
+    match client
+        .files_api
+        .get_local_resource(user_id, token, &path_encoded)
+    {
         Ok(resources_result) => {
             print!("{resources_result}");
         }
         Err(e) => {
-            eprint!("{} {}", e.http_code.unwrap_or(500), e.message);
+            let mut msg = e.message;
+            let http_code = match e.http_code {
+                None => String::new(),
+                Some(code) => {
+                    msg = msg.replacen(&format!("{} ", code), "", 1);
+                    format!("{} ", code)
+                }
+            };
+            eprint!("{}{}", http_code, msg);
             exit(e.code);
         }
     }
@@ -162,7 +176,15 @@ pub fn command_local_before_copy(client: Client<'_>, args: Option<Vec<String>>) 
             print!("{}", response.trim().to_string());
         }
         Err(e) => {
-            eprintln!("{}", e.message.trim());
+            let mut msg = e.message;
+            let http_code = match e.http_code {
+                None => String::new(),
+                Some(code) => {
+                    msg = msg.replacen(&format!("{} ", code), "", 1);
+                    format!("{} ", code)
+                }
+            };
+            eprint!("{}{}", http_code, msg);
             exit(e.code);
         }
     }

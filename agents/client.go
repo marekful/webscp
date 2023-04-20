@@ -264,7 +264,7 @@ func (c *AgentClient) GetVersion(token string) GetVersionResponse {
 }
 
 func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *GetResourceResponse, status int, err error) {
-	url = neturl.QueryEscape(url)
+	url = neturl.PathEscape(url)
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/agents/%d/resources/%s", agentAddress, agent.ID, url)
 

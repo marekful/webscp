@@ -19,8 +19,6 @@ use std::process::Stdio;
 
 use sha256::digest;
 
-use regex::Regex;
-
 use crate::{
     command_runner::{run_command, run_command_async},
     constants::{
@@ -147,17 +145,6 @@ impl Client<'_> {
 
         0
     }
-
-    /*pub fn remote_do_copy(&self, archive_name: &String) -> i32 {
-        /*let sess = self.create_session(None).unwrap();*/
-
-        if let Err(e) = self._remote_do_copy(/*sess, */ &archive_name) {
-            eprint!("{}{}", get_http_code_from_error(&e), e.message);
-            return e.code;
-        }
-
-        0
-    }*/
 
     pub fn ping(&self) -> i32 {
         // start duration measure
@@ -459,10 +446,8 @@ impl Client<'_> {
         path: &str,
     ) -> Result<String, ClientError> {
         let mut ch = sess.channel_session().unwrap();
-        let re = Regex::new(r"([()|$;\\])").unwrap();
-        let path_escaped = re.replace_all(path, "\\$1");
         let command = &*format!(
-            "{} {user_id} {token} {path_escaped}",
+            "{} {user_id} {token} {path}",
             Client::command(COMMAND_GET_LOCAL_RESOURCE)
         );
         ch.exec(command).unwrap();
