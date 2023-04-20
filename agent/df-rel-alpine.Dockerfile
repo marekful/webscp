@@ -3,8 +3,8 @@ FROM rust:1.68-alpine AS builder
 ENV PTHREAD_STACK_MIN 8388608
 
 ##
-COPY Cargo.toml /app/Cargo.toml
-COPY Cargo.lock /app/Cargo.lock
+COPY Cargo-alpine.toml /app/Cargo.toml
+COPY Cargo-alpine.lock /app/Cargo.lock
 
 WORKDIR /app
 

@@ -13,6 +13,7 @@ if grep agent /etc/passwd >/dev/null; then
 else
   echo "Adding user 'agent'"
   useradd -m -s /bin/bash agent
+  sed -i s/agent:\!/"agent:*"/g /etc/shadow
 fi
 
 mkdir -p /home/agent/.tmp-data
