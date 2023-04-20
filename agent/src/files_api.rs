@@ -1,5 +1,8 @@
 use reqwest::{blocking::Response, Response as AsyncResponse, StatusCode};
-use rocket::{http::Cookie, serde::json::serde_json};
+use rocket::{
+    http::{Cookie, Status},
+    serde::json::serde_json,
+};
 use std::{env, io::Read, time::Duration};
 
 use serde::Deserialize;
@@ -279,6 +282,7 @@ impl FilesApi {
                 return Err(ClientError {
                     code: 187,
                     message: e.message,
+                    //message: format!("404 {uri}"),
                     http_code: Some(e.http_code.unwrap() as i32),
                 });
             }
@@ -298,8 +302,8 @@ impl FilesApi {
         if response.status() != StatusCode::OK {
             return Err(ClientError {
                 code: 189,
-                message: response.status().to_string(),
-                //message: format!("404 {uri}"),
+                message: output,
+                //message: format!("404 {path}"),
                 http_code: Some(response.status().as_u16() as i32),
             });
         }
@@ -347,7 +351,7 @@ impl FilesApi {
         if response.status() != StatusCode::OK {
             return Err(ClientError {
                 code: 193,
-                message: format!("{output}"),
+                message: output,
                 http_code: Some(response.status().as_u16() as i32),
             });
         }
@@ -422,16 +426,6 @@ impl FilesApi {
         };
     }
 
-    /*fn renew_token(&self, token: String) -> Result<String, RequestError> {
-        let uri = format!("/api/renew");
-        return match self.make_request("POST", &uri, None, None, Some(token), true) {
-            Ok(r) => {
-                Ok(r.text().unwrap())
-            }
-            Err(e) => Err(e)
-        }
-    }*/
-
     fn make_request(
         &self,
         method: &str,
@@ -461,7 +455,7 @@ impl FilesApi {
                 return Err(RequestError {
                     code: 338,
                     message: format!("Invalid request method: {method}"),
-                    http_code: Some(500),
+                    http_code: Some(400),
                 })
             }
         };
@@ -484,7 +478,7 @@ impl FilesApi {
 
         match req.send() {
             Ok(r) => {
-                if r.status().as_u16() == 401 && have_remote_token {
+                if r.status() == StatusCode::UNAUTHORIZED && have_remote_token {
                     return Err(RequestError {
                         code: 110,
                         message: "Invalid token".to_string(),
@@ -531,7 +525,7 @@ impl FilesApi {
                 return Err(RequestError {
                     code: 348,
                     message: format!("Invalid request method: {method}"),
-                    http_code: Some(500),
+                    http_code: Some(400),
                 })
             }
         };
@@ -554,7 +548,7 @@ impl FilesApi {
 
         match req.send().await {
             Ok(r) => {
-                if r.status().as_u16() == 401 && have_remote_token {
+                if r.status() == StatusCode::UNAUTHORIZED && have_remote_token {
                     return Err(RequestError {
                         code: 111,
                         message: "Invalid token".to_string(),
@@ -580,15 +574,5 @@ impl FilesApi {
         let default_fb_api_address = DEFAULTS.default_fb_api_address;
         let fb_api_address_result = env::var(DEFAULTS.env_name_fb_api_address);
         return fb_api_address_result.unwrap_or(default_fb_api_address.to_string());
-    }
-
-    fn get_http_code_from_error(e: &ClientError) -> String {
-        let http_code = e.http_code.unwrap_or(0);
-        let mut http_code_str = String::new();
-        if http_code > 0 {
-            http_code_str = http_code.to_string() + " ";
-        }
-
-        http_code_str
     }
 }

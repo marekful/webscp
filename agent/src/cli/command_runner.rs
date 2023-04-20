@@ -118,10 +118,11 @@ fn get_command_args<'a>(
 fn get_error(code: i32, message: String, stderr: String) -> CommandError {
     let s: String = stderr.chars().take(3).collect();
     let http_code: u16 = s.parse().unwrap_or(400);
+    let msg = message.replacen(&format!("{} ", http_code), "", 1);
 
     CommandError {
         code,
-        message: message + " code:(" + code.to_string().as_str() + ")",
+        message: msg + " (code:" + code.to_string().as_str() + ")",
         status: Status::new(http_code),
     }
 }

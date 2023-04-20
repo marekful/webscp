@@ -5,6 +5,7 @@ use rocket::{
     State,
 };
 use std::{future::Future, time::Duration};
+use urlencoding::encode;
 
 use crate::client::Client;
 
@@ -69,11 +70,12 @@ pub async fn resources(
 
     let mut args: Vec<&str> = Vec::new();
     let remote_user_id = agent.remote_user.id.clone().to_string();
+    let path_encoded = encode(path);
     args.push(&agent.host);
     args.push(&agent.port);
     args.push(&remote_user_id);
     args.push(&agent.remote_user.token);
-    args.push(path);
+    args.push(&path_encoded);
 
     return match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
         Ok(output) => (
@@ -253,7 +255,7 @@ fn finish_upload_in_background(
         task::yield_now().await;
 
         if let Err(e) = archive_writer.crate_archive(items).await {
-            let err_msg = format!("{} code:({})", e.message, e.code);
+            let err_msg = format!("{} (code:{})", e.message, e.code);
             files_api
                 .send_upload_status_update_async(&transfer, &err_msg)
                 .await;
