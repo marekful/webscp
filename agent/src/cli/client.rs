@@ -68,6 +68,18 @@ impl Client<'_> {
         )
     }
 
+    pub fn print_error_and_exit(code: i32, message: String) {
+        eprint!("{message}");
+        exit(code);
+    }
+
+    pub fn random_hex() -> String {
+        let key_id: u64 = rand::random::<u64>();
+        let key_id_hex = format!("{:x}", key_id);
+
+        String::from(key_id_hex)
+    }
+
     pub fn exchange_keys(&self, secret: &str) -> i32 {
         let sess = self.create_session(Some(secret)).unwrap();
         let send_result = self.send_public_key(&sess);
@@ -193,6 +205,10 @@ impl Client<'_> {
         let mut child = cmd.spawn().expect("spawn failed");
         let stdout = child.stdout.take().expect("stdout failed");
 
+        files_api
+            .send_upload_status_update_async(transfer, "uploading")
+            .await;
+
         // attach reader to command's stdout
         let mut reader = BufReader::new(stdout).lines();
 
@@ -236,8 +252,9 @@ impl Client<'_> {
             Ok(())
         });
 
+        let msg = &format!("progress::stats::0/{}", transfer.size);
         files_api
-            .send_upload_status_update_async(transfer, "starting upload")
+            .send_upload_status_update_async(transfer, msg)
             .await;
 
         // read lines from script output as they are written to its stdout
@@ -267,7 +284,8 @@ impl Client<'_> {
         // extract uploaded archive on remote
         let port: i16 = transfer.port.to_string().parse::<i16>().unwrap();
         let client = Client::new(&transfer.host, port);
-        match client.remote_extract_archive(&archive_name, &transfer.remote_path) {
+        match client.remote_extract_archive(&archive_name, &transfer.remote_path, transfer.compress)
+        {
             Ok(_) => Ok(()),
             Err(e) => {
                 let err_msg = e.message.as_str();
@@ -283,13 +301,18 @@ impl Client<'_> {
         &self,
         archive_name: &str,
         remote_path: &str,
+        is_compressed: bool,
     ) -> Result<(), ClientError> {
         let sess = self.create_session(None).unwrap();
         let mut ch = sess.channel_session().unwrap();
         let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
+        let gzip_flag = match is_compressed {
+            true => "z",
+            false => "",
+        };
         let command = &*format!(
-            "tar -xf {} -C {} && rm -rf {}",
-            archive_path, remote_path, archive_path,
+            "tar -x{}f {} -C {} && rm -rf {}",
+            gzip_flag, archive_path, remote_path, archive_path,
         );
         ch.exec(command).unwrap();
         let mut output = String::new();
@@ -307,18 +330,6 @@ impl Client<'_> {
         }
 
         Ok(())
-    }
-
-    pub fn print_error_and_exit(code: i32, message: String) {
-        eprint!("{message}");
-        exit(code);
-    }
-
-    pub fn random_hex() -> String {
-        let key_id: u64 = rand::random::<u64>();
-        let key_id_hex = format!("{:x}", key_id);
-
-        String::from(key_id_hex)
     }
 
     fn create_session(&self, secret: Option<&str>) -> Option<Session> {
@@ -376,6 +387,97 @@ impl Client<'_> {
         }
 
         Some(sess)
+    }
+
+    fn send_public_key(&self, sess: &Session) -> i32 {
+        // read our public key
+        let key = &fs::read_to_string(DEFAULTS.public_key_file).unwrap();
+
+        // upload our public key
+        let mut upload = sess.channel_session().unwrap();
+        upload
+            .exec(&*format!(
+                "echo -n \"{key}\" >> {}",
+                DEFAULTS.authorized_keys_file
+            ))
+            .unwrap();
+
+        // exit if we couldn't upload the key
+        let upload_result = upload.exit_status().unwrap();
+        if upload_result != 0 {
+            return upload_result;
+        }
+
+        0
+    }
+
+    fn receive_host_key(&self, sess: &Session, secret: &str) -> i32 {
+        // download their public key
+        /*let mut download = sess.channel_session().unwrap();
+        download
+            .exec(&*format!("cat {}", DEFAULTS.public_key_file))
+            .unwrap();
+        let mut key = String::new();
+        download.read_to_string(&mut key).unwrap();
+
+        // exit if we couldn't download the key
+        let download_result = download.exit_status().unwrap();
+        if download_result != 0 {
+            return download_result;
+        }
+
+        // add their public key
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .append(true)
+            .open(DEFAULTS.authorized_keys_file)
+            .unwrap();
+
+        if let Err(e) = writeln!(file, "{}", &key.trim()) {
+            eprintln!("Couldn't write to file: {}", e);
+        }*/
+
+        // retrieve their host key
+        let mut args: Vec<&str> = Vec::new();
+        let port_str = self.port.to_string();
+        args.push("-H");
+        args.push("-p");
+        args.push(&port_str);
+        args.push("-t");
+        args.push("ecdsa");
+        args.push(self.host);
+        let host_key = match run_command(318, false, true, "ssh-keyscan", args) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("Couldn't retrieve host key: ({}) {}", e.code, e.message);
+                return e.code;
+            }
+        };
+
+        // add their host key
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .append(true)
+            .open(DEFAULTS.known_hosts_file)
+            .unwrap();
+
+        if let Err(e) = writeln!(file, "{}", &host_key.trim()) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+
+        // remove lock file on remote: this will signal that the temporary key
+        // used for authenticating this key exchange session can be revoked
+        let lock_file = digest(secret);
+        let mut result = sess.channel_session().unwrap();
+        result
+            .exec(&*format!("rm -f {}/{}", DEFAULTS.ssh_dir_path, lock_file))
+            .unwrap();
+        let mut key = String::new();
+        result.read_to_string(&mut key).unwrap();
+
+        0
     }
 
     fn create_key_file_from_access_token(key_id: String, secret: String) {
@@ -552,96 +654,5 @@ impl Client<'_> {
         }
 
         Ok(output)
-    }
-
-    fn send_public_key(&self, sess: &Session) -> i32 {
-        // read our public key
-        let key = &fs::read_to_string(DEFAULTS.public_key_file).unwrap();
-
-        // upload our public key
-        let mut upload = sess.channel_session().unwrap();
-        upload
-            .exec(&*format!(
-                "echo -n \"{key}\" >> {}",
-                DEFAULTS.authorized_keys_file
-            ))
-            .unwrap();
-
-        // exit if we couldn't upload the key
-        let upload_result = upload.exit_status().unwrap();
-        if upload_result != 0 {
-            return upload_result;
-        }
-
-        0
-    }
-
-    fn receive_host_key(&self, sess: &Session, secret: &str) -> i32 {
-        // download their public key
-        /*let mut download = sess.channel_session().unwrap();
-        download
-            .exec(&*format!("cat {}", DEFAULTS.public_key_file))
-            .unwrap();
-        let mut key = String::new();
-        download.read_to_string(&mut key).unwrap();
-
-        // exit if we couldn't download the key
-        let download_result = download.exit_status().unwrap();
-        if download_result != 0 {
-            return download_result;
-        }
-
-        // add their public key
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .append(true)
-            .open(DEFAULTS.authorized_keys_file)
-            .unwrap();
-
-        if let Err(e) = writeln!(file, "{}", &key.trim()) {
-            eprintln!("Couldn't write to file: {}", e);
-        }*/
-
-        // retrieve their host key
-        let mut args: Vec<&str> = Vec::new();
-        let port_str = self.port.to_string();
-        args.push("-H");
-        args.push("-p");
-        args.push(&port_str);
-        args.push("-t");
-        args.push("ecdsa");
-        args.push(self.host);
-        let host_key = match run_command(318, false, true, "ssh-keyscan", args) {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("Couldn't retrieve host key: ({}) {}", e.code, e.message);
-                return e.code;
-            }
-        };
-
-        // add their host key
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .append(true)
-            .open(DEFAULTS.known_hosts_file)
-            .unwrap();
-
-        if let Err(e) = writeln!(file, "{}", &host_key.trim()) {
-            eprintln!("Couldn't write to file: {}", e);
-        }
-
-        // remove lock file on remote: this will signal that the temporary key
-        // used for authenticating this key exchange session can be revoked
-        let lock_file = digest(secret);
-        let mut result = sess.channel_session().unwrap();
-        result
-            .exec(&*format!("rm -f {}/{}", DEFAULTS.ssh_dir_path, lock_file))
-            .unwrap();
-        let mut key = String::new();
-        result.read_to_string(&mut key).unwrap();
-
-        0
     }
 }
