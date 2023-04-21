@@ -4,7 +4,7 @@ use rocket::{
     tokio::{task, time},
     State,
 };
-use std::{future::Future, time::Duration};
+use std::{fs, future::Future, time::Duration};
 use urlencoding::encode;
 
 use crate::client::Client;
@@ -30,6 +30,7 @@ pub struct ResourceItem {
 #[serde(crate = "rocket::serde")]
 pub struct CopyRequest {
     items: Vec<ResourceItem>,
+    compress: bool,
     source_root: String,
     destination_root: String,
 }
@@ -140,6 +141,7 @@ pub async fn copy(
     {
         Ok(_) => {}
         Err(err) => {
+            // abort with error if copy pre-checks failed
             return (
                 err.status,
                 Json(CopyResponse {
@@ -157,6 +159,8 @@ pub async fn copy(
         transfer_id: archive_name.to_string(),
         local_path: String::from(&request.source_root),
         remote_path: String::from(&request.destination_root),
+        compress: request.compress,
+        size: 0,
         rc_auth: auth_token.to_string(),
     };
 
@@ -211,17 +215,21 @@ pub struct FutureError {
 }
 
 fn finish_upload_in_background(
-    transfer: Transfer,
+    mut transfer: Transfer,
     req_items: Vec<ResourceItem>,
 ) -> impl Future<Output = Result<(), FutureError>> + 'static {
     async move {
         // allow some time for the upload state poll to initialize
         let _ = time::sleep(Duration::from_millis(50)).await;
 
+        // send progress update
         let files_api = FilesApi::new();
-
+        let msg = match transfer.compress {
+            true => "compressing",
+            false => "archiving",
+        };
         files_api
-            .send_upload_status_update_async(&transfer, "archiving")
+            .send_upload_status_update_async(&transfer, msg)
             .await;
 
         // create list of files to archive
@@ -239,22 +247,23 @@ fn finish_upload_in_background(
             "{}{}.agent.tar.gz",
             DEFAULTS.temp_data_dir, transfer.transfer_id
         );
-        let mut archive_writer = match ArchiveWriter::new(archive_path, false, &transfer.local_path)
-        {
-            Ok(w) => w,
-            Err(e) => {
-                files_api
-                    .send_upload_status_update_async(&transfer, &e.message)
-                    .await;
-                return Err(FutureError {
-                    code: e.code,
-                    message: e.message,
-                });
-            }
-        };
+        let mut archive_writer =
+            match ArchiveWriter::new(archive_path, transfer.compress, &transfer.local_path) {
+                Ok(w) => w,
+                Err(e) => {
+                    files_api
+                        .send_upload_status_update_async(&transfer, &e.message)
+                        .await;
+                    return Err(FutureError {
+                        code: e.code,
+                        message: e.message,
+                    });
+                }
+            };
         task::yield_now().await;
 
-        if let Err(e) = archive_writer.crate_archive(items).await {
+        if let Err(e) = archive_writer.crate_archive(items, &transfer).await {
+            // send progress update and abort with error
             let err_msg = format!("{} (code:{})", e.message, e.code);
             files_api
                 .send_upload_status_update_async(&transfer, &err_msg)
@@ -266,32 +275,18 @@ fn finish_upload_in_background(
         };
         task::yield_now().await;
 
+        // ensure the gzip encoder has flushed
+        drop(archive_writer);
+
+        task::yield_now().await;
+
+        transfer.size = fs::metadata(archive_path).unwrap().len();
+
         files_api
-            .send_upload_status_update_async(&transfer, "uploading")
+            .send_upload_status_update_async(&transfer, "starting upload")
             .await;
 
-        // --->ORIG execute command
-        // create arguments for 'remote-do-copy' command
-        /*let mut do_copy_args: Vec<&str> = Vec::new();
-        do_copy_args.push(&host);
-        do_copy_args.push(&port);
-        do_copy_args.push(&archive_name);
-
-        return match run_command(203, true, false, COMMAND_REMOTE_DO_COPY, do_copy_args) {
-            Ok(_) => {
-                files_api.send_upload_status_update_async(&archive_name, "complete").await;
-                Ok(())
-            }
-            Err(e) => {
-                files_api.send_upload_status_update_async(&archive_name, &e.message).await;
-                Err(FutureError {
-                    code: e.code,
-                    message: e.message,
-                })
-            }
-        };*/
-        // <---ORIG
-
+        // execute file upload
         match Client::remote_do_copy_async(&files_api, &transfer).await {
             Ok(_) => {
                 files_api
