@@ -42,6 +42,7 @@ func remoteSourceResourcePostHandler() handleFunc {
 		}
 
 		action := r.URL.Query().Get("action")
+		compress := r.URL.Query().Get("compress") == "true"
 		for idx, item := range req {
 			src := item.Source
 			dst := item.Destination
@@ -71,7 +72,7 @@ func remoteSourceResourcePostHandler() handleFunc {
 		}
 
 		//TODO: consider running hooks
-		status, response, err := remoteResourcePostAction(r, action, req, d)
+		status, response, err := remoteResourcePostAction(r, action, req, d, compress)
 		if status == http.StatusOK {
 			return renderJSON(w, r, response)
 		}
@@ -151,6 +152,7 @@ func remoteResourcePostAction(
 	action string,
 	items []agents.ResourceItem,
 	d *data,
+	compress bool,
 ) (int, *agents.BeforeCopyResponse, error) {
 	switch action {
 	// TODO: use enum
@@ -178,6 +180,7 @@ func remoteResourcePostAction(
 			d.server.Root+srcScope,
 			authCookie.Value,
 			items,
+			compress,
 		)
 		if err != nil {
 			return status, nil, err

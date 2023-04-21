@@ -71,6 +71,7 @@ type ResourceItem struct {
 
 type RemoteResourceAgentRequest struct {
 	Items           []ResourceItem `json:"items"`
+	Compress        bool           `json:"compress"`
 	SourceRoot      string         `json:"source_root"`
 	DestinationRoot string         `json:"destination_root"`
 }
@@ -298,11 +299,17 @@ func (c *AgentClient) RemoteCopy(
 	srcRoot,
 	token string,
 	items []ResourceItem,
+	compress bool,
 ) (response *BeforeCopyResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/agents/%d/resources/%s", agentAddress, c.Agent.ID, strings.Trim(archiveName, "\n"))
 
-	request := RemoteResourceAgentRequest{Items: items, SourceRoot: srcRoot, DestinationRoot: c.Agent.RemoteUser.Root}
+	request := RemoteResourceAgentRequest{
+		Items:           items,
+		Compress:        compress,
+		SourceRoot:      srcRoot,
+		DestinationRoot: c.Agent.RemoteUser.Root,
+	}
 	requestBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error decoding items: %v", err)
