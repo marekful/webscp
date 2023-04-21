@@ -126,9 +126,11 @@
   "prompts": {
     "agent": {
       "cancel": "Cancel",
+      "compress": "Compress files",
       "loginTitle": "Agent Login",
       "loginText": "Please enter the password for {user} @ {address}",
-      "login": "Login"
+      "login": "Login",
+      "selectServer": "Select destination server"
     },
     "copy": "Copy",
     "copyMessage": "Choose the place to copy your files:",
@@ -157,7 +159,6 @@
     "renameMessage": "Insert a new name for",
     "replace": "Replace",
     "replaceMessage": "One of the files you're trying to upload is conflicting because of its name. Do you wish to replace the existing one?\n",
-    "selectServer": "Select destination server",
     "schedule": "Schedule",
     "scheduleMessage": "Pick a date and time to schedule the publication of this post.",
     "show": "Show",
@@ -320,6 +321,7 @@
     "cancel": "Cancel upload",
     "canceled": "Canceled",
     "complete": "Complete",
+    "compressing": "Compressing",
     "continuous": {
       "copy": "Copying",
       "move": "Moving"
@@ -334,12 +336,15 @@
     "hideDetails": "hide details",
     "hidePaths": "hide paths",
     "local": "local",
+    "of": "of",
     "remove": "Remove transfer",
+    "selected": "selected",
     "showDetails": "show details",
     "showPaths": "show paths",
     "source": "source",
     "startingUpload": "Starting upload",
     "to": "to",
+    "totalFiles": "files total",
     "uploading": "Uploading"
   }
 }

@@ -86,9 +86,7 @@ export default {
           this.$store.commit("showHover", this.loginAgent.component);
           this.clearInterval();
         })
-        .catch((err) => {
-          console.log("login() error ", err);
-        });
+        .catch(this.$showError);
     },
     cancel() {
       let show = this.loginAgent.component;

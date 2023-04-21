@@ -48,11 +48,22 @@
                   <span>{{ transfer.stats.progress[0] }}</span>
                   <small class="frac">.{{ transfer.stats.progress[1] }}</small>
                   <small class="unit">{{ transfer.stats.progress[2] }}</small>
-                  <small>of</small>
+                  <small>{{ $t("transfer.of") }}</small>
                 </span>
                 <span>{{ transfer.stats.total[0] }}</span>
                 <small class="frac">.{{ transfer.stats.total[1] }}</small>
                 <small class="unit">{{ transfer.stats.total[2] }}</small>
+              </span>
+              <span
+                v-if="transfer.stats && transfer.stats.archived.length > 1"
+                class="stats archive"
+              >
+                {{ transfer.stats.archived[0] }}/{{
+                  transfer.stats.archived[1]
+                }}
+                <small>{{ $t("transfer.selected") }}</small> -
+                {{ transfer.stats.archived[2] }}
+                <small>{{ $t("transfer.totalFiles") }}</small>
               </span>
             </span>
           </div>
@@ -221,6 +232,10 @@ export default {
           transfers.remove(this.$store, transferID);
           transfers.setButtonActive(this.transfers);
 
+          if (this.transfers.length === 0) {
+            this.$store.commit("closeHovers");
+          }
+
           return;
         }
 
@@ -359,6 +374,10 @@ export default {
   margin: 0 0 0 0.5em;
   font-style: italic;
   font-weight: normal;
+}
+
+.transfer .stats.archive {
+  text-transform: initial;
 }
 
 .transfer .stats span {

@@ -11,14 +11,14 @@ function create(
   items,
   status = "Starting",
   icon = "folder_zip",
-  stats = { progress: [], total: [] },
+  stats = { archived: [], progress: [], total: [] },
   pending = true,
   canceled = false,
   error = false,
   uploading = false
 ) {
   status = status || "starting";
-  stats = stats || { progress: [], total: [] };
+  stats = stats || { archived: [], progress: [], total: [] };
   let cancelable = true;
   let showDetails = false;
   let showItems = false;
@@ -241,6 +241,7 @@ function handleMessage($store) {
     messageTr = message;
     switch (message) {
       case "archiving":
+      case "compressing":
         icon = "folder_zip";
         cancelable = false;
         break;
@@ -262,12 +263,24 @@ function handleMessage($store) {
         pending = false;
         break;
       case "progress":
-        icon = "drive_folder_upload";
-        uploading = true;
-        messageTr = "uploading";
         if (data === "stats") {
+          uploading = true;
+          icon = "drive_folder_upload";
           message = "uploading";
+          messageTr = "uploading";
           stats = getStats(extra);
+        }
+        if (data === "archived") {
+          icon = "folder_zip";
+          message = "archiving";
+          messageTr = "archiving";
+          stats = getArchiveStats(extra);
+        }
+        if (data === "compressed") {
+          icon = "folder_zip";
+          message = "compressing";
+          messageTr = "compressing";
+          stats = getArchiveStats(extra);
         }
         break;
       case "signal":
@@ -320,11 +333,30 @@ function handleMessage($store) {
   };
 }
 
+function getArchiveStats(data) {
+  if (data.indexOf("/") === -1) return;
+  let result = { archived: [0, 0, 0], progress: [], total: [] };
+  let counts = data.split("/");
+
+  if (counts[0] !== "-") {
+    result.archived[0] = parseInt(counts[0]);
+  }
+  if (counts[1] !== "-") {
+    result.archived[1] = parseInt(counts[1]);
+  }
+  if (counts[2]) {
+    result.archived[2] = parseInt(counts[2]);
+  }
+
+  return result;
+}
+
 function getStats(data) {
+  if (data.indexOf("/") === -1) return;
   let bytes = data.split("/");
   let progress = bytes[0];
   let total = bytes[1];
-  let result = {};
+  let result = { archived: [] };
 
   if (progress < 1024 * 1024) {
     result.progress = [...(progress / 1024).toFixed(2).split("."), "KB"];
