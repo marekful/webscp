@@ -227,6 +227,22 @@ body.rtl .card .card-title>*:first-child {
   margin: 0.5em;
 }
 
+.card .card-action .options {
+  float: left;
+  padding: 0.5em;
+  margin: 0 0 0 0.75em;
+}
+
+.card .card-action .options label {
+  margin-left: 0.5em;
+  color: var(--card-text-color);
+  cursor: pointer;
+}
+
+.card .card-action .options input {
+  color: var(--card-text-color);
+}
+
 .card .card-content.full {
   padding-bottom: 0;
   overflow: auto;

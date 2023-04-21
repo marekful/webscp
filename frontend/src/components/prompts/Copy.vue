@@ -16,6 +16,16 @@
     </div>
 
     <div class="card-action">
+      <span v-if="showOptions" class="options">
+        <input
+          type="checkbox"
+          name="compress"
+          id="compress"
+          :checked="compress"
+          @click="setCompress"
+        />
+        <label for="compress">{{ $t("prompts.agent.compress") }}</label>
+      </span>
       <button
         class="button button--flat button--grey"
         @click="$store.commit('closeHovers')"
@@ -55,6 +65,8 @@ export default {
       dest: null,
       agentId: null,
       agent: null,
+      compress: false,
+      showOptions: false,
     };
   },
   computed: mapState(["req", "selected", "transfers"]),
@@ -63,10 +75,15 @@ export default {
       let id = val.id;
       if (id === 0) {
         this.agentId = 0;
+        this.showOptions = false;
       } else {
         this.agentId = id;
         this.agent = val;
+        this.showOptions = true;
       }
+    },
+    setCompress() {
+      this.compress = !this.compress;
     },
     copy: function (event) {
       event.preventDefault();
@@ -84,7 +101,7 @@ export default {
       if (this.agentId === 0) {
         return this.localCopy(items);
       } else {
-        return this.remoteCopy(this.agentId, items);
+        return this.remoteCopy(this.agentId, items, this.compress);
       }
     },
     localCopy: async function (items) {
@@ -141,12 +158,12 @@ export default {
 
       action(overwrite, rename);
     },
-    remoteCopy: async function (agentId, items) {
+    remoteCopy: async function (agentId, items, compress) {
       let action = async (overwrite, rename) => {
         await remote_api
           // execute items source and destination checks,
           // the transfer continues in the background
-          .copyStart(agentId, items, overwrite, rename)
+          .copyStart(agentId, items, overwrite, rename, compress)
           .then((res) => {
             this.$store.commit("closeHovers");
             // subscribe to the transfer's status update stream

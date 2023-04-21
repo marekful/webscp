@@ -40,7 +40,8 @@ function moveCopyStart(
   items,
   copy = false,
   overwrite = false,
-  rename = false
+  rename = false,
+  compress = false
 ) {
   let requestItems = [];
   for (let item of items) {
@@ -49,7 +50,7 @@ function moveCopyStart(
     requestItems.push({ source, destination, overwrite, rename });
   }
   const action = copy ? "remote-copy" : "remote-rename";
-  const query = `?action=${action}`;
+  const query = `?action=${action}&compress=${compress}`;
 
   return remoteResourceAction(
     agentID,
@@ -59,12 +60,24 @@ function moveCopyStart(
   );
 }
 
-export function moveStart(agentID, items, overwrite = false, rename = false) {
-  return moveCopyStart(agentID, items, false, overwrite, rename);
+export function moveStart(
+  agentID,
+  items,
+  overwrite = false,
+  rename = false,
+  compress = false
+) {
+  return moveCopyStart(agentID, items, false, overwrite, rename, compress);
 }
 
-export function copyStart(agentID, items, overwrite = false, rename = false) {
-  return moveCopyStart(agentID, items, true, overwrite, rename);
+export function copyStart(
+  agentID,
+  items,
+  overwrite = false,
+  rename = false,
+  compress = false
+) {
+  return moveCopyStart(agentID, items, true, overwrite, rename, compress);
 }
 
 async function remoteResourceAction(agentID, query, method, content) {
@@ -77,11 +90,9 @@ async function remoteResourceAction(agentID, query, method, content) {
     opts.headers = { "Content-Type": "application/json" };
   }
 
-  return fetchURL(`/api/remote/${agentID}/copy${query}`, opts)
-    .then((res) => res.json())
-    .catch((err) => {
-      throw new Error(err);
-    });
+  return fetchURL(`/api/remote/${agentID}/copy${query}`, opts).then((res) =>
+    res.json()
+  );
 }
 
 export async function cancelTransfer(agentID, transferID) {

@@ -1,6 +1,12 @@
 <template>
   <div v-if="serverList.length > 1" class="server-select">
-    <div class="section-title">{{ $t("prompts.selectServer") }}</div>
+    <div class="section-title">
+      <div v-if="showSettings" class="settings-content"></div>
+      <span class="settings">
+        <i class="material-icons" @click="settings">settings</i>
+      </span>
+      {{ $t("prompts.agent.selectServer") }}
+    </div>
     <custom-select
       :options="serverList"
       :default="'Local'"
@@ -24,6 +30,7 @@ export default {
       servers: {},
       serverList: [],
       selectedIndex: 0,
+      showSettings: false,
     };
   },
   computed: {
@@ -42,6 +49,9 @@ export default {
     }
   },
   methods: {
+    settings() {
+      this.showSettings = !this.showSettings;
+    },
     getServerIndexByID(id) {
       for (let index = 1; index <= this.serverList.length; index++) {
         let server = this.servers[index];
@@ -96,6 +106,37 @@ h1 {
 
 div.section-title {
   margin: 0 0 1em 0;
+}
+
+.section-title .settings {
+  float: right;
+  margin: 0.15em;
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+.section-title .settings:hover {
+  opacity: 0.75;
+}
+
+.section-title .settings i {
+  font-size: initial;
+}
+
+.section-title .settings-content {
+  float: right;
+  position: absolute;
+  right: 2.5em;
+  border: 1px solid var(--card-border);
+  padding: 1em;
+  z-index: 1;
+  background-color: var(--card-title-background);
+  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12),
+    0 3px 1px -2px rgba(0, 0, 0, 0.2);
+}
+
+.section-title .settings-content label {
+  margin-left: 0.5em;
 }
 
 .server-select .custom-select > .selected {
