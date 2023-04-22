@@ -17,7 +17,7 @@ Include /etc/ssh/sshd_config.d/*.conf
 #ListenAddress 0.0.0.0
 #ListenAddress ::
 
-HostKey /etc/ssh/host-keys/ssh_host_ecdsa_key
+HostKey /app/data/host-keys/ssh_host_ecdsa_key
 #HostKey /etc/ssh/host-keys/ssh_host_rsa_key
 #HostKey /etc/ssh/host-keys/ssh_host_ed25519_key
 

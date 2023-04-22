@@ -5,7 +5,7 @@ USER_ID="$2"
 USER_NAME="$3"
 USER_SCOPE="$4"
 
-SSH_DIR="/home/agent/.ssh"
+SSH_DIR="/app/data/client/.ssh"
 KEY_FILE="$SSH_DIR/id_ecdsa-$KEY_ID"
 AUTHORIZED_KEYS_FILE="$SSH_DIR/authorized_keys"
 

@@ -30,7 +30,6 @@ RUN cargo fetch
 ##
 
 COPY src /app/src
-COPY config/Rocket.toml /app/Rocket.toml
 
 RUN cargo build
 RUN ln -s target/debug/cli cli
@@ -40,6 +39,7 @@ RUN ln -s target/debug/webserver webserver
 RUN rustup toolchain install nightly
 RUN rustup component add rustfmt --toolchain nightly-x86_64-unknown-linux-gnu
 ##
+COPY build/config/Rocket.toml /app/Rocket.toml
 
 COPY build/s6 /
 

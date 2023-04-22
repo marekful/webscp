@@ -1,8 +1,8 @@
 #!/bin/bash
 
 KEY_ID="$1"
-KEY_FILE="/home/agent/.ssh/id_ecdsa-$KEY_ID"
-AUTHORIZED_KEYS_FILE="/home/agent/.ssh/authorized_keys"
+KEY_FILE="/app/data/client/.ssh/id_ecdsa-$KEY_ID"
+AUTHORIZED_KEYS_FILE="/app/data/client/.ssh/authorized_keys"
 
 PKEY=$(cat "$KEY_FILE.pub") || exit 1
 
