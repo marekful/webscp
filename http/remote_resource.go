@@ -109,9 +109,9 @@ func remoteDestinationResourcePostHandler() handleFunc {
 			}
 
 			override := item.Overwrite
-			rename := item.Rename
+			keep := item.Keep
 
-			if !override && !rename {
+			if !override && !keep {
 				if _, err = d.user.Fs.Stat(dst); err == nil {
 					return http.StatusConflict, nil
 				}

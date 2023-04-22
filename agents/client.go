@@ -66,7 +66,7 @@ type ResourceItem struct {
 	Source      string `json:"source"`
 	Destination string `json:"destination"`
 	Overwrite   bool   `json:"overwrite"`
-	Rename      bool   `json:"rename"`
+	Keep        bool   `json:"keep"`
 }
 
 type RemoteResourceAgentRequest struct {
