@@ -52,6 +52,7 @@ pub struct Transfer {
     pub local_path: String,
     pub remote_path: String,
     pub compress: bool,
+    pub overwrite: bool,
     pub size: u64,
     pub rc_auth: String,
 }
@@ -66,6 +67,7 @@ impl Clone for Transfer {
             local_path: self.local_path.clone(),
             remote_path: self.remote_path.clone(),
             compress: self.compress.clone(),
+            overwrite: self.overwrite.clone(),
             size: self.size.clone(),
             rc_auth: self.rc_auth.clone(),
         }

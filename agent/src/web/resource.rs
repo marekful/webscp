@@ -23,7 +23,7 @@ pub struct ResourceItem {
     source: String,
     destination: String,
     overwrite: bool,
-    rename: bool,
+    keep: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -160,6 +160,7 @@ pub async fn copy(
         local_path: String::from(&request.source_root),
         remote_path: String::from(&request.destination_root),
         compress: request.compress,
+        overwrite: request.items[0].overwrite,
         size: 0,
         rc_auth: auth_token.to_string(),
     };
@@ -321,8 +322,8 @@ fn get_items_json(items: &Vec<ResourceItem>) -> String {
     json_str.push(String::from("'["));
     items.iter().for_each(|item| {
         let source = format!(
-            "{{\"source\": \"{}\", \"destination\": \"{}\", \"override\": {}, \"rename\": {}}}",
-            item.source, item.destination, item.overwrite, item.rename
+            "{{\"source\": \"{}\", \"destination\": \"{}\", \"overwrite\": {}, \"keep\": {}}}",
+            item.source, item.destination, item.overwrite, item.keep
         );
         if first == true {
             first = false;
