@@ -13,6 +13,7 @@
     "folder": "Folder",
     "hideDotfiles": "Hide dotfiles",
     "info": "Info",
+    "keep": "Keep",
     "more": "More",
     "move": "Move",
     "moveFile": "Move file",
@@ -130,6 +131,8 @@
       "loginTitle": "Agent Login",
       "loginText": "Please enter the password for {user} @ {address}",
       "login": "Login",
+      "replace": "Replace on remote",
+      "replaceMessage": "One or more of the files you're trying to upload is conflicting because of its name. Do you want to keep or replace existing files on the remote server?",
       "selectServer": "Select destination server"
     },
     "copy": "Copy",

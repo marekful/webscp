@@ -17,6 +17,7 @@ import NewFile from "./NewFile";
 import NewDir from "./NewDir";
 import Replace from "./Replace";
 import ReplaceRename from "./ReplaceRename";
+import RemoteReplace from "./RemoteReplace.vue";
 import Share from "./Share";
 import Upload from "./Upload";
 import ShareDelete from "./ShareDelete";
@@ -40,6 +41,7 @@ export default {
     Help,
     Replace,
     ReplaceRename,
+    RemoteReplace,
     Upload,
     ShareDelete,
     Transfers,
@@ -101,6 +103,7 @@ export default {
           "download",
           "replace",
           "replace-rename",
+          "remote-replace",
           "share",
           "upload",
           "share-delete",

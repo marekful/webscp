@@ -36,18 +36,18 @@ export async function fetch(agentId, url) {
 }
 
 function moveCopyStart(
-  agentID,
-  items,
-  copy = false,
-  overwrite = false,
-  rename = false,
-  compress = false
+    agentID,
+    items,
+    copy = false,
+    overwrite,
+    keep = false,
+    compress = false
 ) {
   let requestItems = [];
   for (let item of items) {
     const source = item.from;
     const destination = encodeURIComponent(removePrefix(item.to));
-    requestItems.push({ source, destination, overwrite, rename });
+    requestItems.push({ source, destination, overwrite, keep });
   }
   const action = copy ? "remote-copy" : "remote-rename";
   const query = `?action=${action}&compress=${compress}`;
@@ -74,10 +74,10 @@ export function copyStart(
   agentID,
   items,
   overwrite = false,
-  rename = false,
+  keep = false,
   compress = false
 ) {
-  return moveCopyStart(agentID, items, true, overwrite, rename, compress);
+  return moveCopyStart(agentID, items, true, overwrite, keep, compress);
 }
 
 async function remoteResourceAction(agentID, query, method, content) {
