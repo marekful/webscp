@@ -159,11 +159,11 @@ export default {
       action(overwrite, rename);
     },
     remoteCopy: async function (agentId, items, compress) {
-      let action = async (overwrite, rename) => {
+      let action = async (overwrite, keep) => {
         await remote_api
           // execute items source and destination checks,
           // the transfer continues in the background
-          .copyStart(agentId, items, overwrite, rename, compress)
+          .copyStart(agentId, items, overwrite, keep, compress)
           .then((res) => {
             this.$store.commit("closeHovers");
             // subscribe to the transfer's status update stream
@@ -188,10 +188,34 @@ export default {
           });
       };
 
-      let overwrite = false;
-      let rename = false;
+      let dstItems;
+      try {
+        dstItems = (await remote_api.fetch(this.agentId, this.dest)).items;
+      } catch (e) {
+        dstItems = [];
+      }
+      let conflict = upload.checkConflict(items, dstItems);
 
-      action(overwrite, rename);
+      let overwrite = false;
+      let keep = false;
+
+      if (conflict) {
+        this.$store.commit("showHover", {
+          prompt: "remote-replace",
+          confirm: (event, option) => {
+            overwrite = option == "overwrite";
+            keep = option == "keep";
+
+            event.preventDefault();
+            this.$store.commit("closeHovers");
+            action(overwrite, keep);
+          },
+        });
+
+        return;
+      }
+
+      action(overwrite, keep);
     },
   },
 };
