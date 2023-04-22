@@ -284,8 +284,12 @@ impl Client<'_> {
         // extract uploaded archive on remote
         let port: i16 = transfer.port.to_string().parse::<i16>().unwrap();
         let client = Client::new(&transfer.host, port);
-        match client.remote_extract_archive(&archive_name, &transfer.remote_path, transfer.compress)
-        {
+        match client.remote_extract_archive(
+            &archive_name,
+            &transfer.remote_path,
+            transfer.compress,
+            transfer.overwrite
+        ) {
             Ok(_) => Ok(()),
             Err(e) => {
                 let err_msg = e.message.as_str();
@@ -302,6 +306,7 @@ impl Client<'_> {
         archive_name: &str,
         remote_path: &str,
         is_compressed: bool,
+        overwrite: bool,
     ) -> Result<(), ClientError> {
         let sess = self.create_session(None).unwrap();
         let mut ch = sess.channel_session().unwrap();
@@ -310,9 +315,13 @@ impl Client<'_> {
             true => "z",
             false => "",
         };
+        let skip_old_files_flag = match overwrite {
+            true => "",
+            false => "--skip-old-files"
+        };
         let command = &*format!(
-            "tar -x{}f {} -C {} && rm -rf {}",
-            gzip_flag, archive_path, remote_path, archive_path,
+            "tar {} -x{}f {} -C {} && rm -rf {}",
+            skip_old_files_flag, gzip_flag, archive_path, remote_path, archive_path,
         );
         ch.exec(command).unwrap();
         let mut output = String::new();
