@@ -12,26 +12,27 @@ if grep agent /etc/passwd >/dev/null; then
   echo "User 'agent' exists"
 else
   echo "Adding user 'agent'"
-  adduser -h /home/agent -s /bin/bash -D agent
+  if [ -z "$UUID" ]; then UUID=1000; fi
+  adduser -h /app/data/client -s /bin/bash -D --uid "$UUID" agent
   sed -i s/agent:\!/"agent:*"/g /etc/shadow
 fi
 
-mkdir -p /home/agent/.tmp-data
-chown -R agent:agent /home/agent
+mkdir -p /app/data/temp
+chown -R agent:agent /app/data
 
 chown agent:agent /etc/scripts/uploader.sh /etc/scripts/cancel-transfer.sh \
                   /etc/scripts/generate-key-pair.sh /etc/scripts/revoke-key-pair.sh
 chmod u+x /etc/scripts/uploader.sh /etc/scripts/cancel-transfer.sh \
           /etc/scripts/generate-key-pair.sh /etc/scripts/revoke-key-pair.sh
 
-if [ -f /home/agent/.ssh/id_rsa ];then
+if [ -f /app/data/client/.ssh/id_rsa ];then
   echo "SSH keys exist"
   exit 0
 fi
 
 echo "Generating SSH keys"
-mkdir -p /home/agent/.ssh && \
-    ssh-keygen -q -t rsa -b 4096 -f /home/agent/.ssh/id_rsa -N "" && \
-    chown -R agent:agent /home/agent/.ssh && \
-    mkdir -p /etc/ssh/host-keys && \
-    ssh-keygen -f /etc/ssh/host-keys/ssh_host_ecdsa_key -N '' -t ecdsa
+mkdir -p /app/data/client/.ssh && \
+    ssh-keygen -q -t rsa -b 4096 -f /app/data/client/.ssh/id_rsa -N "" && \
+    chown -R agent:agent /app/data/client/.ssh && \
+    mkdir -p /app/data/host-keys && \
+    ssh-keygen -f /app/data/host-keys/ssh_host_ecdsa_key -N '' -t ecdsa

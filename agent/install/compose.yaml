@@ -1,0 +1,29 @@
+version: "3.5"
+
+services:
+  webscp-files:
+    image: marekful/webscp-files:rc-beta-2
+    volumes:
+      - ./database.db:/database.db
+      - ./settings.json:/app/.filebrowser.json
+      - /:/srv
+    environment:
+      - AGENT_ADDRESS=http://webscp-agent:8000
+      - INTERNAL_ADDRESS=http://webscp-files
+      - UUID=1001
+    ports:
+      - "10.0.0.83:7080:80"
+
+  webscp-agent:
+    image: marekful/webscp-agent:rc-beta-2-alpine
+    volumes:
+      - /:/srv
+      - data:/app/data
+    environment:
+      - FILEBROWSER_ADDRESS=http://webscp-files
+      - UUID=1001
+    ports:
+      - "8022:22"
+
+volumes:
+  data:
