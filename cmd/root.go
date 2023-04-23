@@ -92,7 +92,7 @@ If you don't set "config", it will look for a configuration file called
 
 - ./
 - $HOME/
-- /etc/filebrowser/
+- /app/
 
 The precedence of the configuration values are as follows:
 
@@ -396,8 +396,8 @@ func initConfig() {
 		checkErr(err)
 		v.AddConfigPath(".")
 		v.AddConfigPath(home)
-		v.AddConfigPath("/etc/filebrowser/")
-		v.SetConfigName(".filebrowser")
+		v.AddConfigPath("/app/")
+		v.SetConfigName("settings")
 	} else {
 		v.SetConfigFile(cfgFile)
 	}

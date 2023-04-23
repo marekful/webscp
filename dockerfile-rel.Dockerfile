@@ -1,5 +1,5 @@
 ################## Frontend build ##################
-FROM docker.io/node:18 as vue-builder
+FROM docker.io/node:18 AS frontend-buid
 
 WORKDIR /work
 
@@ -15,7 +15,7 @@ COPY  ./frontend /work/
 RUN npm run build
 
 ################## Backend build ##################
-FROM docker.io/golang:1.20.1-alpine AS go-builder
+FROM docker.io/golang:1.20.1-alpine AS backend-build
 
 RUN apk add bash make git ncurses yarn npm
 
@@ -27,12 +27,12 @@ COPY ./go.sum .
 RUN go mod download
 
 COPY . /work/
-COPY --from=vue-builder /work/dist/ /work/frontend/dist/
+COPY --from=frontend-buid /work/dist/ /work/frontend/dist/
 
 RUN make build-backend
 
 ################## Run ##################
-FROM alpine:latest
+FROM alpine:latest AS release
 RUN apk --update add ca-certificates \
                      mailcap \
                      curl \
@@ -41,17 +41,17 @@ RUN apk --update add ca-certificates \
                      uuidgen \
                      figlet
 
-RUN adduser -D -H -s /bin/ash webscp
+#RUN adduser -D -H -s /bin/ash webscp
 
 HEALTHCHECK --start-period=2s --interval=5s --timeout=3s \
   CMD curl -f http://localhost/health || exit 1
 
 VOLUME /srv
-EXPOSE 80 8080 44000 45000
+EXPOSE 80
 
 WORKDIR /app
 
-COPY --from=go-builder /work/webscp .
+COPY --from=backend-build /work/webscp .
 COPY docker_config.json /.filebrowser.json
 
 ENV NODE_OPTIONS=--openssl-legacy-provider
