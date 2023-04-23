@@ -16,7 +16,7 @@
     </p>
 
     <p>
-      <label for="port">{{ $t("settings.agent.port") }}</label>
+      <label for="port">{{ $t("settings.agent.agentPort") }}</label>
       <input
         v-if="isNew"
         class="input input--block"
@@ -43,17 +43,8 @@
     </p>
 
     <p v-if="!isNew">
-      <label>{{ $t("settings.agent.remoteUserName") }}</label>
-      <code>
-        {{ agent.remote_user.name }} ({{ agent.remote_user.id }})
-      </code>
-    </p>
-
-    <p v-if="!isNew">
-      <label>{{ $t("settings.agent.remotePath") }}</label>
-      <code>
-        {{ agent.remote_user.root }}
-      </code>
+      <label>{{ $t("settings.agent.remoteUser") }}</label>
+      <code>{{ agent.remote_user.name }} ({{ agent.remote_user.id }})</code>
     </p>
   </div>
 </template>

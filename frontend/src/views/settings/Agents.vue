@@ -4,10 +4,10 @@
     <div class="column">
       <div class="card" @submit.prevent="save">
         <div class="card-title">
-          <h2>{{ $t("settings.agent.agentStatus") }}</h2>
+          <h2>{{ $t("settings.agent.accessTokens") }}</h2>
         </div>
-
         <div class="card-content">
+          <div>{{ $t("settings.agent.accessTokenHint") }}</div>
           <div v-if="tokens.length > 0">
             <div class="token" v-for="(token, index) in tokens" :key="index">
               <div class="info">
@@ -45,7 +45,7 @@
     <div class="column column-w">
       <form class="card">
         <div class="card-title">
-          <h2>{{ $t("settings.agent.remoteAgents") }}</h2>
+          <h2>{{ $t("settings.agent.connections") }}</h2>
           <router-link to="/settings/agents/new"
             ><button class="button">
               {{ $t("buttons.new") }}
@@ -57,7 +57,6 @@
           <table>
             <tr>
               <th></th>
-              <th v-if="user.perm.admin">{{ $t("settings.agent.owner") }}</th>
               <th>{{ $t("settings.agent.host") }}</th>
               <th>{{ $t("settings.agent.port") }}</th>
               <th>{{ $t("settings.agent.user") }}</th>
@@ -85,7 +84,6 @@
                   <i v-else class="material-icons">help_outline</i>
                 </div>
               </td>
-              <td v-if="user.perm.admin">{{ agent.userID }}</td>
               <td>{{ agent.host }}</td>
               <td>{{ agent.port }}</td>
               <td>{{ agent.remote_user.name }}</td>
@@ -93,9 +91,7 @@
               <td v-else class="version" :colspan="agent.error ? '2' : ''">
                 <div class="error">{{ agent.error }}</div>
               </td>
-              <td v-if="!agent.error">
-                <small>{{ agent.latency }}</small>
-              </td>
+              <td v-if="!agent.error">{{ agent.latency }}</td>
               <td class="small">
                 <router-link :to="'/settings/agents/' + agent.id"
                   ><i class="material-icons">mode_edit</i></router-link
@@ -206,6 +202,11 @@ td.status {
   font-size: 1.25rem;
   max-width: 1.5em;
   margin-top: 0.1em;
+}
+
+.card .token {
+  border-bottom: 3px solid var(--moon-grey);
+  margin: 1.5em 0;
 }
 
 .card .token textarea {
