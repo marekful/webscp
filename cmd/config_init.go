@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/filebrowser/filebrowser/v2/settings"
+	"github.com/marekful/webscp/settings"
 )
 
 func init() {
@@ -16,7 +16,7 @@ func init() {
 var configInitCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a new database",
-	Long: `Initialize a new database to use with File Browser. All of
+	Long: `Initialize a new database to use with WebSCP. All of
 this options can be changed in the future with the command
 'filebrowser config set'. The user related flags apply
 to the defaults when creating new users and you don't
@@ -61,7 +61,7 @@ override the options.`,
 		checkErr(err)
 
 		fmt.Printf(`
-Congratulations! You've set up your database to use with File Browser.
+Congratulations! You've set up your database to use with WebSCP.
 Now add your first user via 'filebrowser users add' and then you just
 need to call the main command to boot up the server.
 `)

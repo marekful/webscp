@@ -18,6 +18,10 @@ body.rtl .dashboard .row {
   width: 50%;
 }
 
+.dashboard .row .column-w {
+  width: 100%;
+}
+
 .dashboard .row .column .card {
   flex-grow: 1;
 }
@@ -174,7 +178,6 @@ table tr>*:last-child {
   z-index: 99999;
   max-width: 25em;
   width: 90%;
-  max-height: 95%;
   z-index: 99999;
   animation: .1s show forwards;
 }
@@ -190,6 +193,7 @@ table tr>*:last-child {
 .card .card-title {
   padding: 1.5em 1em 1em;
   display: flex;
+  border-bottom: 1px solid #aaa;
 }
 
 .card .card-title>*:first-child {
@@ -219,6 +223,24 @@ body.rtl .card .card-title>*:first-child {
 
 .card .card-action {
   text-align: right;
+  padding: 0;
+  margin: 0.5em;
+}
+
+.card .card-action .options {
+  float: left;
+  padding: 0.5em;
+  margin: 0 0 0 0.75em;
+}
+
+.card .card-action .options label {
+  margin-left: 0.5em;
+  color: var(--card-text-color);
+  cursor: pointer;
+}
+
+.card .card-action .options input {
+  color: var(--card-text-color);
 }
 
 .card .card-content.full {
@@ -328,7 +350,7 @@ body.rtl .card .card-title>*:first-child {
  * * * * * * * * * * * * * * * */
 
 .file-list {
-  max-height: 50vh;
+  max-height: min(50vh, calc(100vh - 20em));
   overflow: auto;
   list-style: none;
   margin: 0;
@@ -355,13 +377,20 @@ body.rtl .card .card-title>*:first-child {
 }
 
 .file-list li:before {
-  content: "folder";
   color: #6f6f6f;
   vertical-align: middle;
   line-height: 1.4;
   font-family: 'Material Icons';
   font-size: 1.75em;
   margin-right: .25em;
+}
+
+.file-list:not(.server-list) li:before {
+  content: "folder";
+}
+
+.file-list.server-list li:before {
+  content: "laptop";
 }
 
 .file-list li[aria-selected=true]:before {

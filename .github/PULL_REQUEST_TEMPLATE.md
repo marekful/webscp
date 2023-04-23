@@ -8,7 +8,7 @@ If the feature changes current behaviour, explain why your solution is better.
 
 - [ ] DO make sure you are requesting to **pull a topic/feature/bugfix branch** (right side). Don't request your master!
 - [ ] DO make sure you are making a pull request against the **master branch** (left side). Also you should start *your branch* off *our master*.
-- [ ] DO make sure that File Browser can be successfully built. See [builds](https://github.com/filebrowser/community/blob/master/builds.md) and [development](https://github.com/filebrowser/community/blob/master/development.md).
+- [ ] DO make sure that WebSCP can be successfully built. See [builds](https://github.com/filebrowser/community/blob/master/builds.md) and [development](https://github.com/filebrowser/community/blob/master/development.md).
 - [ ] DO make sure that related issues are opened in other repositories. I.e., the frontend, caddy plugins or the web page need to be updated accordingly.
 - [ ] AVOID breaking the continuous integration build.
 

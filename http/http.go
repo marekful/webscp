@@ -6,8 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/storage"
+	"github.com/marekful/webscp/settings"
+	"github.com/marekful/webscp/storage"
 )
 
 type modifyRequest struct {
@@ -48,6 +48,8 @@ func NewHandler(
 
 	api := r.PathPrefix("/api").Subrouter()
 
+	api.Handle("/version", monkey(versionHandler, "")).Methods("GET")
+
 	api.Handle("/login", monkey(loginHandler, ""))
 	api.Handle("/signup", monkey(signupHandler, ""))
 	api.Handle("/renew", monkey(renewHandler, ""))
@@ -85,5 +87,39 @@ func NewHandler(
 	public.PathPrefix("/dl").Handler(monkey(publicDlHandler, "/api/public/dl/")).Methods("GET")
 	public.PathPrefix("/share").Handler(monkey(publicShareHandler, "/api/public/share/")).Methods("GET")
 
+	addAgentRoutes(api, monkey)
+
 	return stripPrefix(server.BaseURL, r), nil
+}
+
+func addAgentRoutes(
+	api *mux.Router,
+	monkey func(fn handleFunc, prefix string) http.Handler,
+) {
+	agents := api.PathPrefix("/agents").Subrouter()
+	agents.Handle("", monkey(agentsGetHandler, "")).Methods("GET")
+	agents.Handle("", monkey(agentPostHandler, "")).Methods("POST")
+	agents.Handle("/{agent_id:[0-9]+}", monkey(agentGetHandler, "")).Methods("GET")
+	agents.Handle("/{agent_id:[0-9]+}", monkey(agentDeleteHandler, "")).Methods("DELETE")
+	agents.Handle("/{agent_id:[0-9]+}/version", monkey(agentGetVersionHandler, "")).Methods("GET")
+
+	agent := api.PathPrefix("/agent").Subrouter()
+	remote := api.PathPrefix("/remote").Subrouter()
+
+	agent.Handle("/temporary-access-token", monkey(agentTemporaryAccessTokenGetHandler, "")).Methods("GET")
+	agent.Handle("/verify-user-credentials", monkey(agentVerifyUserCredentialsPostHandler, "")).Methods("POST")
+	remote.Handle("/{agent_id:[0-9]+}/verify-user-credentials", monkey(remoteVerifyUserCredentialsPostHandler, "")).Methods("POST")
+
+	remote.Handle("/{agent_id:[0-9]+}/resources/{url:.*}", monkey(remoteResourceGetHandler, "")).Methods("GET")
+	agent.Handle("/{user_id:[0-9]+}/resources/{url:.*}", monkey(agentResourceGetHandler, "")).Methods("GET")
+
+	remote.Handle("/{agent_id:[0-9]+}/copy", monkey(remoteSourceResourcePostHandler(), "")).Methods("POST")
+	agent.Handle("/{user_id:[0-9]+}/copy", monkey(remoteDestinationResourcePostHandler(), "")).Methods("POST")
+
+	agent.PathPrefix("/{agent_id:[0-9]+}/transfers/{id:[a-f0-9-]+}/poll").
+		Handler(monkey(sseTransferPollGetHandler, "")).Methods("GET")
+	agent.PathPrefix("/{agent_id:[0-9]+}/transfers/{id:[a-f0-9-]+}/update/{message:.*}").
+		Handler(monkey(sseTransferUpdateGetHandler, "s")).Methods("PATCH")
+
+	remote.Handle("/{agent_id:[0-9]+}/transfers/{transfer_id:[a-f0-9-]+}", monkey(transferDeleteHandler, "")).Methods("DELETE")
 }

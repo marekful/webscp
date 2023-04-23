@@ -6,6 +6,16 @@
   --icon: #ffffff;
   --textPrimary: rgba(255, 255, 255, 0.87);
   --textSecondary: rgba(255, 255, 255, 0.6);
+
+  --distinct-background: #141D24;
+  --distinct-background2: #1b232a;
+  --distinct-hover: #20292F;
+
+  --card-title-background: #141D24;
+  --card-text-color: #c9c9c9;
+  --card-title-color: #bfbfbf;
+  --card-border: #575757;
+  --card-border-light: #434343;
 }
 
 body {
@@ -209,3 +219,16 @@ table th {
 .share__box__element {
   border-top-color: var(--divider);
 }
+
+.custom-select .items {
+  background-color: var(--background);
+}
+
+.custom-select .items div {
+  background-color: var(--background);
+}
+
+.custom-select .selected {
+  background-color: var(--distinct-background);
+}
+

@@ -6,10 +6,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/filebrowser/filebrowser/v2/rules"
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/storage"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/marekful/webscp/rules"
+	"github.com/marekful/webscp/settings"
+	"github.com/marekful/webscp/storage"
+	"github.com/marekful/webscp/users"
 )
 
 func init() {

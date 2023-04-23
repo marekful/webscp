@@ -9,6 +9,15 @@
         @action="openSearch()"
       />
 
+      <action
+        v-show="headerButtons.transfers"
+        id="transfers-button"
+        icon="sync"
+        :label="$t('buttons.transfers')"
+        show="transfers"
+        :counter="transfersInProgress"
+      />
+
       <template #actions>
         <template v-if="!isMobile">
           <action
@@ -273,6 +282,7 @@ import { enableExec } from "@/utils/constants";
 import * as upload from "@/utils/upload";
 import css from "@/utils/css";
 import throttle from "lodash.throttle";
+import transfers from "@/utils/transfers";
 
 import HeaderBar from "@/components/header/HeaderBar";
 import Action from "@/components/header/Action";
@@ -305,8 +315,9 @@ export default {
       "multiple",
       "selected",
       "loading",
+      "transfers",
     ]),
-    ...mapGetters(["selectedCount"]),
+    ...mapGetters(["selectedCount", "transfersInProgress", "transfersTotal"]),
     nameSorted() {
       return this.req.sorting.by === "name";
     },
@@ -382,6 +393,7 @@ export default {
         share: this.selectedCount === 1 && this.user.perm.share,
         move: this.selectedCount > 0 && this.user.perm.rename,
         copy: this.selectedCount > 0 && this.user.perm.create,
+        transfers: this.transfersTotal > 0,
       };
     },
     isMobile() {
@@ -423,6 +435,41 @@ export default {
     document.addEventListener("dragenter", this.dragEnter);
     document.addEventListener("dragleave", this.dragLeave);
     document.addEventListener("drop", this.drop);
+
+    // add transfers from localStorage
+    let stored = localStorage.getItem("rc-transfers");
+    if (stored) {
+      stored = JSON.parse(stored);
+      if (!stored.length) return;
+
+      for (let transferID of stored) {
+        if (transfers.get(this.transfers, transferID)) continue;
+
+        let transfer = localStorage.getItem(`transfer-${transferID}`);
+        if (!transfer) continue;
+
+        transfer = JSON.parse(transfer);
+
+        if (transfer.agent.user.id !== this.user.id) continue;
+
+        transfers.create(
+          this.$store,
+          transferID,
+          this.transfers,
+          transfer.action,
+          transfer.agent,
+          transfer.items,
+          transfer.status,
+          transfer.icon,
+          transfer.stats,
+          transfer.pending,
+          transfer.canceled,
+          transfer.error,
+          transfer.uploading
+        );
+      }
+      transfers.setButtonActive(this.transfers);
+    }
   },
   beforeDestroy() {
     // Remove event listeners before destroying this page.
@@ -525,7 +572,7 @@ export default {
         });
       }
 
-      if (items.length == 0) {
+      if (items.length === 0) {
         return;
       }
 
@@ -884,3 +931,12 @@ export default {
   },
 };
 </script>
+
+<style>
+#transfers-button {
+  opacity: 0.5;
+}
+#transfers-button.active {
+  opacity: 1;
+}
+</style>

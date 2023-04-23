@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <div class="top">
+    <div v-if="remoteLoading" class="remote-loading">
+      <h2 class="message delayed">
+        <div class="spinner">
+          <div class="bounce1"></div>
+          <div class="bounce2"></div>
+          <div class="bounce3"></div>
+        </div>
+        <span>{{ $t("files.loading") }}</span>
+      </h2>
+    </div>
+    <p>
+      <code>{{ nav }}</code>
+    </p>
     <ul class="file-list">
       <li
         @click="itemClick"
@@ -8,7 +21,7 @@
         role="button"
         tabindex="0"
         :aria-label="item.name"
-        :aria-selected="selected == item.url"
+        :aria-selected="selected === item.url"
         :key="item.name"
         v-for="item in items"
         :data-url="item.url"
@@ -16,18 +29,13 @@
         {{ item.name }}
       </li>
     </ul>
-
-    <p>
-      {{ $t("prompts.currentlyNavigating") }} <code>{{ nav }}</code
-      >.
-    </p>
   </div>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import url from "@/utils/url";
-import { files } from "@/api";
+import { files, remote_files } from "@/api";
 
 export default {
   name: "file-list",
@@ -40,16 +48,29 @@ export default {
       },
       selected: null,
       current: window.location.pathname,
+      remoteLoading: false,
     };
+  },
+  props: {
+    agentId: {
+      type: Number,
+      default: 0,
+    },
+  },
+  watch: {
+    agentId(agent_id) {
+      if (agent_id === 0) {
+        this.fillOptions(this.req);
+      } else {
+        this.remote(agent_id, "/files/");
+      }
+    },
   },
   computed: {
     ...mapState(["req", "user"]),
     nav() {
       return decodeURIComponent(this.current);
     },
-  },
-  mounted() {
-    this.fillOptions(this.req);
   },
   methods: {
     fillOptions(req) {
@@ -90,7 +111,45 @@ export default {
       // content.
       let uri = event.currentTarget.dataset.url;
 
-      files.fetch(uri).then(this.fillOptions).catch(this.$showError);
+      if (this.agentId === 0) {
+        files.fetch(uri).then(this.fillOptions).catch(this.$showError);
+      } else {
+        this.remoteLoading = true;
+        remote_files
+          .fetch(this.agentId, uri)
+          .then((res) => {
+            this.resetItems();
+            this.fillOptions(res);
+          })
+          .catch(this.remoteError)
+          .finally(() => (this.remoteLoading = false));
+      }
+    },
+    remote: function (agent_id, uri) {
+      this.remoteLoading = true;
+      remote_files
+        .fetch(agent_id, uri)
+        .then((res) => {
+          this.resetItems();
+          this.fillOptions(res);
+        })
+        .catch(this.remoteError)
+        .finally(() => (this.remoteLoading = false));
+    },
+    remoteError(error) {
+      if (error.status === 511) {
+        this.$store.commit("setLoginAgent", {
+          id: this.agentId,
+          component: typeof this.$parent.copy === "function" ? "copy" : "move",
+        });
+        this.$store.commit("showHover", "agent-login");
+        return;
+      }
+      this.$showError(error);
+    },
+    resetItems() {
+      this.items = [];
+      this.current = "";
     },
     touchstart(event) {
       let url = event.currentTarget.dataset.url;
@@ -136,3 +195,22 @@ export default {
   },
 };
 </script>
+
+<style>
+.top {
+  position: relative;
+}
+.remote-loading {
+  position: absolute;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.33);
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+.remote-loading .message {
+  height: 100%;
+}
+</style>

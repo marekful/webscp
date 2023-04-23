@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/marekful/webscp/errors"
+	"github.com/marekful/webscp/users"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/golang-jwt/jwt/v4/request"
-
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/users"
 )
 
 const (
@@ -194,7 +194,7 @@ func getToken(_ *http.Request, d *data, user *users.User) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExpirationTime)),
-			Issuer:    "File Browser",
+			Issuer:    "WebSCP",
 		},
 	}
 

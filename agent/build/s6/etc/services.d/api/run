@@ -1,0 +1,11 @@
+#!/usr/bin/with-contenv bash
+
+echo "Starting Rocket "
+
+cd /app || exit
+
+if [ "$DEVELOPMENT" == "1" ]; then
+  export RUST_BACKTRACE=1;
+fi
+
+/usr/bin/execlineb -P -c "s6-setuidgid agent /app/webserver"

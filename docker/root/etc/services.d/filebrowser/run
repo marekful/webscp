@@ -1,3 +1,5 @@
 #!/usr/bin/with-contenv bash
 
-exec s6-setuidgid abc filebrowser -c /config/settings.json -d /database/filebrowser.db;
+cd /app || exit
+
+/usr/bin/execlineb -P -c "s6-setuidgid webscp /app/webscp -c /app/settings.json -d /database.db"

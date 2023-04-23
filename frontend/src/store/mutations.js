@@ -49,6 +49,12 @@ const mutations = {
     i18n.default.locale = locale;
     state.user = value;
   },
+  setLoginAgent: (state, value) => {
+    state.loginAgent = value;
+  },
+  resetLoginAgent: (state) => {
+    state.loginAgent = null;
+  },
   setJWT: (state, value) => (state.jwt = value),
   multiple: (state, value) => (state.multiple = value),
   addSelected: (state, value) => state.selected.push(value),
@@ -59,6 +65,24 @@ const mutations = {
   },
   resetSelected: (state) => {
     state.selected = [];
+  },
+  addTransfer: (state, value) => {
+    state.transfers.push(value);
+  },
+  replaceTransfers: (state, value) => {
+    state.transfers = value;
+  },
+  removeTransfer: (state, value) => {
+    for (let idx = 0; idx < state.transfers.length; idx++) {
+      if (state.transfers[idx].transferID === value) {
+        if (state.transfers[idx].sseClient) {
+          state.transfers[idx].sseClient.close();
+          delete state.transfers[idx].sseClient;
+        }
+        state.transfers.splice(idx, 1);
+        break;
+      }
+    }
   },
   updateUser: (state, value) => {
     if (typeof value !== "object") return;

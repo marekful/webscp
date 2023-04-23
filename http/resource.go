@@ -14,12 +14,16 @@ import (
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/files"
-	"github.com/filebrowser/filebrowser/v2/fileutils"
+	"github.com/marekful/webscp/errors"
+	"github.com/marekful/webscp/files"
+	"github.com/marekful/webscp/fileutils"
 )
 
-var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var resourceGetHandler = withUser(resourceGetHandlerBase)
+
+var agentResourceGetHandler = withAgentUser(resourceGetHandlerBase)
+
+func resourceGetHandlerBase(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	file, err := files.NewFileInfo(files.FileOptions{
 		Fs:         d.user.Fs,
 		Path:       r.URL.Path,
@@ -52,7 +56,7 @@ var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 	}
 
 	return renderJSON(w, r, file)
-})
+}
 
 func resourceDeleteHandler(fileCache FileCache) handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

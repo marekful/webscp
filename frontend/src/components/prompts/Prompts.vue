@@ -17,9 +17,12 @@ import NewFile from "./NewFile";
 import NewDir from "./NewDir";
 import Replace from "./Replace";
 import ReplaceRename from "./ReplaceRename";
+import RemoteReplace from "./RemoteReplace.vue";
 import Share from "./Share";
 import Upload from "./Upload";
 import ShareDelete from "./ShareDelete";
+import Transfers from "./Transfers.vue";
+import AgentLogin from "./AgentLogin.vue";
 import { mapState } from "vuex";
 import buttons from "@/utils/buttons";
 
@@ -38,8 +41,11 @@ export default {
     Help,
     Replace,
     ReplaceRename,
+    RemoteReplace,
     Upload,
     ShareDelete,
+    Transfers,
+    AgentLogin,
   },
   data: function () {
     return {
@@ -97,16 +103,22 @@ export default {
           "download",
           "replace",
           "replace-rename",
+          "remote-replace",
           "share",
           "upload",
           "share-delete",
+          "transfers",
+          "agent-login",
         ].indexOf(this.show) >= 0;
 
       return (matched && this.show) || null;
     },
     showOverlay: function () {
       return (
-        this.show !== null && this.show !== "search" && this.show !== "more"
+        this.show !== null &&
+        this.show !== "search" &&
+        this.show !== "more" &&
+        this.show !== "transfers"
       );
     },
   },
