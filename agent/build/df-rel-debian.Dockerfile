@@ -36,6 +36,7 @@ FROM debian:bullseye-slim AS release
 
 ARG TARGETPLATFORM
 
+ENV DISTRO=debian
 ENV S6_OVERLAY_VERSION=3.1.4.1
 ENV ROCKET_CONFIG=/app/Rocket.toml
 
@@ -57,7 +58,7 @@ RUN apt-get update && \
     fi && \
     tar -C / -Jxpf /tmp/s6-overlay-symlinks-noarch.tar.xz && \
     tar -C / -Jxpf /tmp/s6-overlay-symlinks-arch.tar.xz && \
-    rm -f /tmp/s6-verlay-*.tar.xz && \
+    rm -f /tmp/s6-overlay-*.tar.xz && \
     apt-get purge -y xz-utils
 
 ##

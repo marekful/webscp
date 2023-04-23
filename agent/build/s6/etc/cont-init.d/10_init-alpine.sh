@@ -21,9 +21,11 @@ mkdir -p /app/data/temp
 chown -R agent:agent /app/data
 
 chown agent:agent /etc/scripts/uploader.sh /etc/scripts/cancel-transfer.sh \
-                  /etc/scripts/generate-key-pair.sh /etc/scripts/revoke-key-pair.sh
+                  /etc/scripts/generate-key-pair.sh /etc/scripts/revoke-key-pair.sh \
+                  /etc/scripts/extract-archive.sh
 chmod u+x /etc/scripts/uploader.sh /etc/scripts/cancel-transfer.sh \
-          /etc/scripts/generate-key-pair.sh /etc/scripts/revoke-key-pair.sh
+          /etc/scripts/generate-key-pair.sh /etc/scripts/revoke-key-pair.sh \
+          /etc/scripts/extract-archive.sh
 
 if [ -f /app/data/client/.ssh/id_rsa ];then
   echo "SSH keys exist"
