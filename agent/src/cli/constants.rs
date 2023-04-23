@@ -25,6 +25,7 @@ pub struct Defaults {
     pub cancel_transfer_script_path: &'static str,
     pub generate_key_pair_script_path: &'static str,
     pub revoke_key_pair_script_path: &'static str,
+    pub extract_archive_script_path: &'static str,
     pub temporary_key_file_name: &'static str,
     pub ssh_dir_path: &'static str,
 }
@@ -38,11 +39,12 @@ pub const DEFAULTS: Defaults = Defaults {
     public_key_file: "/app/data/client/.ssh/id_rsa.pub",
     temp_data_dir: "/app/data/temp/",
     with_contenv: "with-contenv",
-    env_name_fb_api_address: "FILEBROWSER_ADDRESS",
+    env_name_fb_api_address: "FILES_ADDRESS",
     uploader_script_path: "/etc/scripts/uploader.sh",
     cancel_transfer_script_path: "/etc/scripts/cancel-transfer.sh",
     generate_key_pair_script_path: "/etc/scripts/generate-key-pair.sh",
     revoke_key_pair_script_path: "/etc/scripts/revoke-key-pair.sh",
+    extract_archive_script_path: "/etc/scripts/extract-archive.sh",
     temporary_key_file_name: "/app/data/client/.ssh/id_ecdsa-pem",
     ssh_dir_path: "/app/data/client/.ssh",
 };
