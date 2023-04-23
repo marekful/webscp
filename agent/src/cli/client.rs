@@ -1,14 +1,5 @@
 use ssh2::Session;
-use std::{
-    fs,
-    fs::OpenOptions,
-    io::{prelude::*, Error},
-    net::TcpStream,
-    os::unix::fs::OpenOptionsExt,
-    path::Path,
-    process::exit,
-    time::Instant,
-};
+use std::{env, fs, fs::OpenOptions, io::{prelude::*, Error}, net::TcpStream, os::unix::fs::OpenOptionsExt, path::Path, process::exit, time::Instant};
 
 use tokio::{
     io::{AsyncBufReadExt, AsyncReadExt, BufReader},
@@ -174,7 +165,7 @@ impl Client<'_> {
             return result;
         }
 
-        print!("{:?} {:?}\n", dur_sess, dur_exec);
+        print!("{:.2}ms / {:.2}ms\n", dur_sess.as_millis(), dur_exec.as_millis());
 
         0
     }
@@ -311,7 +302,7 @@ impl Client<'_> {
         let sess = self.create_session(None).unwrap();
         let mut ch = sess.channel_session().unwrap();
         let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
-        let gzip_flag = match is_compressed {
+        /*let gzip_flag = match is_compressed {
             true => "z",
             false => "",
         };
@@ -322,7 +313,13 @@ impl Client<'_> {
         let command = &*format!(
             "tar {} -x{}f {} -C {} && rm -rf {}",
             skip_old_files_flag, gzip_flag, archive_path, remote_path, archive_path,
+        );*/
+
+        let command = &*format!(
+            "{} \"{}\" \"{}\" {} {}",
+            DEFAULTS.extract_archive_script_path, archive_name, remote_path, is_compressed, overwrite,
         );
+
         ch.exec(command).unwrap();
         let mut output = String::new();
         ch.read_to_string(&mut output).unwrap();
