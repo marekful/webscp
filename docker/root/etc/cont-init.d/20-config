@@ -4,12 +4,20 @@
 mkdir -p /database
 
 # copy config
-if [ ! -f "/config/settings.json" ]; then
-  cp -a /defaults/settings.json /config/settings.json
+if [ ! -f "/app/.filebrowser.json" ]; then
+  cp -a /defaults/settings.json /app/.filebrowser.json
+fi
+
+if grep webscp /etc/passwd >/dev/null; then
+  echo "User 'webscp' exists"
+else
+  if [ -z "$UUID" ]; then UUID=1000; fi
+  echo "Adding user 'webcp'"
+  adduser -s /bin/bash -D --uid "$UUID" webscp
 fi
 
 # permissions
-chown abc:abc \
-	/config/settings.json \
-	/database \
+chown webscp:webscp \
+	/app/.filebrowser.json \
+	/database.db \
 	/srv
