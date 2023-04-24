@@ -1,33 +1,34 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/filebrowser/logo/master/banner.png" width="550"/>
-</p>
+# WebSCP
 
-![Preview](https://user-images.githubusercontent.com/5447088/50716739-ebd26700-107a-11e9-9817-14230c53efd2.gif)
+[![Go Report Card](https://goreportcard.com/badge/github.com/marekful/webscp?style=flat-square)](https://goreportcard.com/report/github.com/filebrowser/filebrowser) [![Version](https://img.shields.io/github/v/release/marekful/webscp?display_name=tag&include_prereleases)](https://github.com/marekful/webscp/releases/latest) [![Docker](https://img.shields.io/docker/v/marekful/webscp-files/rc-beta-3?label=files)](https://hub.docker.com/r/marekful/webscp-files/tags) [![Docker](https://img.shields.io/docker/v/marekful/webscp-agent/rc-beta-3-alpine?label=agent)](https://hub.docker.com/r/marekful/webscp-agent/tags) [![Docker](https://img.shields.io/docker/v/marekful/webscp-agent/rc-beta-3-debian?label=agent)](https://hub.docker.com/r/marekful/webscp-agent/tags)
 
-[![Build](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml/badge.svg)](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/filebrowser/filebrowser?style=flat-square)](https://goreportcard.com/report/github.com/filebrowser/filebrowser)
-[![Documentation](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/filebrowser/filebrowser)
-[![Version](https://img.shields.io/github/release/filebrowser/filebrowser.svg?style=flat-square)](https://github.com/filebrowser/filebrowser/releases/latest)
-[![Chat IRC](https://img.shields.io/badge/freenode-%23filebrowser-blue.svg?style=flat-square)](http://webchat.freenode.net/?channels=%23filebrowser)
+WebSCP provides a simple, graphical frontend for securely copying files between Linux servers using [scp](https://linux.die.net/man/1/scp).
 
-filebrowser provides a file managing interface within a specified directory and it can be used to upload, delete, preview, rename and edit your files. It allows the creation of multiple users and each user can have its own directory. It can be used as a standalone app.
+It builds on the brilliant web browser based file manager, [File Browser](https://github.com/filebrowser/filebrowser), and extends it with the following features:
+
+* Single Sign On using Open ID Connect Discovery
+* 2 click setup to connect to other WebSCP instances
+* A graphical frontend for securely copying files between servers using [scp](https://linux.die.net/man/1/scp)
+
+The file manager comes with a configurable root directory and it can be used to upload, delete, preview, rename and edit your files. It allows the creation of multiple users and each user can have its own root directory and permissions.
 
 ## Features
 
-Please refer to our docs at [https://filebrowser.org/features](https://filebrowser.org/features)
+For File Browser features concering local operations, please refer to the original docs at [https://filebrowser.org/features](https://filebrowser.org/features).
 
-## Install
+* Seamleassly set up SSH key authentication based connectoins using only a temporary access token from the remote
+* Connections are only visible to the user who created them
+* Connection are tied to the remote user who generated the access token
+* Authentication with the remote user's credentials is required when a connection is beeing used
+* Upload files and/or directories to remote servers using existing connections
+* Optiona to compress files before upload
+* User permissions and restrictions are respected on both on the local and remote sides
+* Detect file name conflicts before remote copy
+* Option to keep or replace existing files on the remote in case of conflict
+* Keep track of remote operations or cancel them through the UI
 
-For installation instructions please refer to our docs at [https://filebrowser.org/installation](https://filebrowser.org/installation).
+](https://filebrowser.org/features)
 
-## Configuration
+## Installation
 
-[Authentication Method](https://filebrowser.org/configuration/authentication-method) - You can change the way the user authenticates with the filebrowser server
-
-[Command Runner](https://filebrowser.org/configuration/command-runner) - The command runner is a feature that enables you to execute any shell command you want before or after a certain event.
-
-[Custom Branding](https://filebrowser.org/configuration/custom-branding) - You can customize your File Browser installation by change its name to any other you want, by adding a global custom style sheet and by using your own logotype if you want.
-
-## Contributing
-
-If you're interested in contributing to this project, our docs are best places to start [https://filebrowser.org/contributing](https://filebrowser.org/contributing).
+WebSCP requires Docker to run. See sample configuration and installation instructions on [GitHub](https://github.com/marekful/webscp/tree/master/agent/install).
