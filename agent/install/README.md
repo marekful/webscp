@@ -26,5 +26,5 @@
 ## Run
 - In the directory where `compose.yaml` is located, execute `docker compose up -d`
 - You may inspect logs to confirm normal startup with `docker compose logs --follow`
-- The default user `admin` with password `admin` should have been created when WebSCP runs for the first time
+- The default user `admin` with password `admin` will be created when WebSCP runs for the first time
 
