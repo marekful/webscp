@@ -16,7 +16,7 @@ The file manager comes with a configurable root directory and it can be used to 
 
 For File Browser features concering local operations, please refer to the original docs at [https://filebrowser.org/features](https://filebrowser.org/features).
 
-* Seamleassly set up SSH key authentication based connectoins using only a temporary access token from the remote
+* Seamleassly set up SSH key authentication based connectoins using a one time access token from the remote
 * Connections are only visible to the user who created them
 * Connection are tied to the remote user who generated the access token
 * Authentication with the remote user's credentials is required when a connection is beeing used
