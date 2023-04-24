@@ -22,7 +22,7 @@ For File Browser features concering local operations, please refer to the origin
 * Authentication with the remote user's credentials is required when a connection is beeing used
 * Upload files and/or directories to remote servers using existing connections
 * Option to compress files before upload
-* User permissions and restrictions are respected on both on the local and remote sides
+* User permissions and restrictions are respected on both the local and remote sides
 * Detect file name conflicts before remote copy
 * Option to keep or replace existing files on the remote in case of conflict
 * Keep track of remote operations or cancel them through the UI
