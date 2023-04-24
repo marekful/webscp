@@ -6,7 +6,7 @@
   - A ports entry should be defined as `[host-port]:[container-port]`
   - Leave the container-port as `80`
   - Set the host-port to the port you want to expose the Web UI on the host
-  - E.g. if `ports` is `"3000:80"` then the Web UI should be accessible on `http://localhost:3000`
+  - E.g. if `ports` is `"7080:80"` then the Web UI should be accessible on `http://localhost:7080`
 - Under `services/files`, edit `UUID` under `environment`
   - Set it to the `uid` of the linux user in the host systen who should run WebSCP
   - WebSCP will have the same permissions and access rights within the _file system_ as the specified user
