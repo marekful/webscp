@@ -12,7 +12,7 @@ services:
       - INTERNAL_ADDRESS=http://files
       - UUID=1001
     ports:
-      - "10.0.0.83:7080:80"
+      - "7080:80"
 
   agent:
     image: marekful/webscp-agent:rc-beta-3-alpine
@@ -23,7 +23,7 @@ services:
       - FILES_ADDRESS=http://files
       - UUID=1001
     ports:
-      - "8022:22"
+      - "7022:22"
 
 volumes:
   data:
