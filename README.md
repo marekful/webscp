@@ -21,7 +21,7 @@ For File Browser features concering local operations, please refer to the origin
 * Connection are tied to the remote user who generated the access token
 * Authentication with the remote user's credentials is required when a connection is beeing used
 * Upload files and/or directories to remote servers using existing connections
-* Optiona to compress files before upload
+* Option to compress files before upload
 * User permissions and restrictions are respected on both on the local and remote sides
 * Detect file name conflicts before remote copy
 * Option to keep or replace existing files on the remote in case of conflict
