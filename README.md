@@ -27,8 +27,6 @@ For File Browser features concering local operations, please refer to the origin
 * Option to keep or replace existing files on the remote in case of conflict
 * Keep track of remote operations or cancel them through the UI
 
-](https://filebrowser.org/features)
-
 ## Installation
 
 WebSCP requires Docker to run. See sample configuration and installation instructions on [GitHub](https://github.com/marekful/webscp/tree/master/agent/install).
