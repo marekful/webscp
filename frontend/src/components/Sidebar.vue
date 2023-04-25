@@ -35,11 +35,15 @@
 
       <div>
         <button
-            v-if="isListing && !userHiddenDotfiles"
-            class="action"
-            @click="toggleDotfiles"
-            :aria-label="$t('sidebar.dotfiles')"
-            :title="this.$store.state.showDotfiles ? $t('sidebar.dotfiles_hide') : $t('sidebar.dotfiles_show')"
+          v-if="isListing && !userHiddenDotfiles"
+          class="action"
+          @click="toggleDotfiles"
+          :aria-label="$t('sidebar.dotfiles')"
+          :title="
+            this.$store.state.showDotfiles
+              ? $t('sidebar.dotfiles_hide')
+              : $t('sidebar.dotfiles_show')
+          "
         >
           <i class="material-icons">{{ toggleDotfilesIcon }}</i>
           <span>{{ $t("sidebar.dotfiles") }}</span>
@@ -107,13 +111,13 @@
 
     <p class="credits">
       <span>
-        <span v-if="disableExternal">File Browser</span>
+        <span v-if="disableExternal">WebSCP</span>
         <a
           v-else
           rel="noopener noreferrer"
           target="_blank"
-          href="https://github.com/filebrowser/filebrowser"
-          >File Browser</a
+          href="https://github.com/marekful/webscp"
+          >WebSCP</a
         >
         <span> {{ version }}</span>
       </span>

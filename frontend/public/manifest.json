@@ -1,6 +1,6 @@
 {
-  "name": "File Browser",
-  "short_name": "File Browser",
+  "name": "WebSCP",
+  "short_name": "WebSCP",
   "icons": [
     {
       "src": "./img/icons/android-chrome-192x192.png",

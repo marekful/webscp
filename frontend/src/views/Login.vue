@@ -1,7 +1,7 @@
 <template>
   <div id="login" :class="{ recaptcha: recaptcha }" v-if="authMethodJSON">
     <form @submit="submit">
-      <img :src="logoURL" alt="File Browser" />
+      <img :src="logoURL" alt="WebSCP" />
       <h1>{{ name }}</h1>
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
 
@@ -43,7 +43,7 @@
   </div>
   <div id="login" v-else-if="authMethodOIDC">
     <form @submit="submit">
-      <img :src="logoURL" alt="File Browser" />
+      <img :src="logoURL" alt="WebSCP" />
       <h1>{{ name }}</h1>
       <div v-if="error !== ''" class="wrong">{{ error }}</div>
       <input
