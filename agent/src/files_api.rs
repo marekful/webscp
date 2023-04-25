@@ -26,7 +26,6 @@ pub struct RemoteUser {
     pub id: u32,
     pub token: String,
     pub name: String,
-    pub root: String,
 }
 
 #[derive(Deserialize, Debug)]

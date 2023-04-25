@@ -24,7 +24,6 @@ pub struct GetRemoteUserRequest<'r> {
 pub struct GetRemoteUserResponse {
     code: i32,
     id: Option<u32>,
-    root: Option<String>,
     token: Option<String>,
     error: Option<String>,
 }
@@ -40,7 +39,6 @@ pub struct GetTokenUserResponse {
     code: i32,
     id: Option<u32>,
     name: Option<String>,
-    root: Option<String>,
     error: Option<String>,
 }
 
@@ -48,14 +46,12 @@ pub struct GetTokenUserResponse {
 struct RemoteUser {
     id: u32,
     token: String,
-    root: String,
 }
 
 #[derive(Deserialize, Debug)]
 struct TokenUser {
     id: u32,
     name: String,
-    root: String,
 }
 
 #[post(
@@ -83,7 +79,6 @@ pub async fn get_token_user(
                 code: err.code,
                 id: None,
                 name: None,
-                root: None,
                 error: Some(err.message),
             }),
         );
@@ -106,7 +101,6 @@ pub async fn get_token_user(
                 code: err.code,
                 id: None,
                 name: None,
-                root: None,
                 error: Some(err.message),
             }),
         );
@@ -124,7 +118,6 @@ pub async fn get_token_user(
                 code: 625,
                 id: None,
                 name: None,
-                root: None,
                 error: Some(deserialized_result.unwrap_err().to_string()),
             }),
         );
@@ -137,7 +130,6 @@ pub async fn get_token_user(
             code: 0,
             id: Some(token_user.id),
             name: Some(token_user.name),
-            root: Some(token_user.root),
             error: None,
         }),
     )
@@ -165,7 +157,6 @@ pub async fn get_remote_user(
                 code: err.code,
                 id: None,
                 token: None,
-                root: None,
                 error: Some(err.message),
             }),
         );
@@ -189,7 +180,6 @@ pub async fn get_remote_user(
             Json(GetRemoteUserResponse {
                 code: err.code,
                 id: None,
-                root: None,
                 token: None,
                 error: Some(err.message),
             }),
@@ -207,7 +197,6 @@ pub async fn get_remote_user(
             Json(GetRemoteUserResponse {
                 code: 325,
                 id: None,
-                root: None,
                 token: None,
                 error: None,
             }),
@@ -221,7 +210,6 @@ pub async fn get_remote_user(
         Json(GetRemoteUserResponse {
             code: 0,
             id: Some(remote_user.id),
-            root: Some(remote_user.root),
             token: Some(remote_user.token),
             error: None,
         }),

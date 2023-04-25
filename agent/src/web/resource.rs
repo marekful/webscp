@@ -32,7 +32,6 @@ pub struct CopyRequest {
     items: Vec<ResourceItem>,
     compress: bool,
     source_root: String,
-    destination_root: String,
 }
 
 #[derive(Serialize, Debug)]

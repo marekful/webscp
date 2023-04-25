@@ -302,18 +302,6 @@ impl Client<'_> {
         let sess = self.create_session(None).unwrap();
         let mut ch = sess.channel_session().unwrap();
         let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
-        /*let gzip_flag = match is_compressed {
-            true => "z",
-            false => "",
-        };
-        let skip_old_files_flag = match overwrite {
-            true => "",
-            false => "--skip-old-files"
-        };
-        let command = &*format!(
-            "tar {} -x{}f {} -C {} && rm -rf {}",
-            skip_old_files_flag, gzip_flag, archive_path, remote_path, archive_path,
-        );*/
 
         let command = &*format!(
             "{} \"{}\" \"{}\" {} {}",
