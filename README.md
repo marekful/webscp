@@ -4,11 +4,17 @@
 
 WebSCP provides a simple, graphical frontend for securely copying files between Linux servers using [scp](https://linux.die.net/man/1/scp).
 
+https://user-images.githubusercontent.com/10281476/234520425-08791a15-6bf4-4395-980c-96cb6c79f7b3.mov
+
 It builds on the brilliant web browser based file manager, [File Browser](https://github.com/filebrowser/filebrowser), and extends it with the following features:
 
 * Single Sign On using Open ID Connect Discovery
 * 2 click setup to connect to other WebSCP instances
 * A graphical frontend for securely copying files between servers using [scp](https://linux.die.net/man/1/scp)
+
+https://user-images.githubusercontent.com/10281476/234520613-ee4319ef-dec7-407e-a064-857b8a9c3faf.mov
+
+https://user-images.githubusercontent.com/10281476/234520712-72b5a7e5-ce96-4ce7-b1b0-3387027f2edb.mov
 
 The file manager comes with a configurable root directory and it can be used to upload, delete, preview, rename and edit your files. It allows the creation of multiple users and each user can have its own root directory and permissions.
 
