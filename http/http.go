@@ -113,8 +113,8 @@ func addAgentRoutes(
 	remote.Handle("/{agent_id:[0-9]+}/resources/{url:.*}", monkey(remoteResourceGetHandler, "")).Methods("GET")
 	agent.Handle("/{user_id:[0-9]+}/resources/{url:.*}", monkey(agentResourceGetHandler, "")).Methods("GET")
 
-	remote.Handle("/{agent_id:[0-9]+}/copy", monkey(remoteSourceResourcePostHandler(), "")).Methods("POST")
-	agent.Handle("/{user_id:[0-9]+}/copy", monkey(remoteDestinationResourcePostHandler(), "")).Methods("POST")
+	remote.Handle("/{agent_id:[0-9]+}", monkey(remoteSourceResourcePostHandler(), "")).Methods("PATCH")
+	agent.Handle("/{user_id:[0-9]+}", monkey(remoteDestinationResourcePostHandler(), "")).Methods("PATCH")
 
 	agent.PathPrefix("/{agent_id:[0-9]+}/transfers/{id:[a-f0-9-]+}/poll").
 		Handler(monkey(sseTransferPollGetHandler, "")).Methods("GET")
