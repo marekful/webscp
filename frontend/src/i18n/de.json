@@ -178,7 +178,7 @@
     "avoidChanges": "(leer lassen um Änderungen zu vermeiden)",
     "branding": "Design",
     "brandingDirectoryPath": "Designverzeichnispfad",
-    "brandingHelp": "Sie können das Erscheinungsbild Ihres File Browser anpassen, in dem Sie den Namen ändern, das Logo austauchsen oder eigene Stile definieren und sogar externe Links zu GitHub deaktivieren.\nUm mehr Informationen zum Anpassen des Designs zu bekommen, gehen Sie bitte zu {0}.",
+    "brandingHelp": "Sie können das Erscheinungsbild Ihres WebSCP anpassen, in dem Sie den Namen ändern, das Logo austauchsen oder eigene Stile definieren und sogar externe Links zu GitHub deaktivieren.\nUm mehr Informationen zum Anpassen des Designs zu bekommen, gehen Sie bitte zu {0}.",
     "changePassword": "Passwort ändern",
     "commandRunner": "Befehlseingabe",
     "commandRunnerHelp": "Hier könne Sie Befehle eintragen, welche bei den benannten Aktionen ausgeführt werden. Sie müssen pro Zeile jeweils einen Befehl eingeben. Die Umgebungsvariable {0} und {1} sind verfügbar, wobei {0} relative zu {1} ist. Für mehr Informationen über diese Funktion und die verfügbaren Umgebungsvariablen, lesen Sie bitte die {2}.",
