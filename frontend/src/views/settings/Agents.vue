@@ -111,7 +111,7 @@ import { agents as api } from "@/api";
 import Errors from "@/views/Errors";
 
 export default {
-  name: "settings",
+  name: "agents",
   components: {
     Errors,
   },
