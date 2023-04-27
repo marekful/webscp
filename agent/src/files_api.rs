@@ -329,9 +329,9 @@ impl FilesApi {
         token: String,
         items: String,
     ) -> Result<String, ClientError> {
-        let uri = format!("/api/agent/{user_id}/copy?action=remote-copy");
+        let uri = format!("/api/agent/{user_id}?action=remote-copy");
 
-        let mut response = match self.make_request("POST", &uri, Some(items), None, Some(token)) {
+        let mut response = match self.make_request("PATCH", &uri, Some(items), None, Some(token)) {
             Ok(r) => r,
             Err(e) => {
                 return Err(ClientError {
