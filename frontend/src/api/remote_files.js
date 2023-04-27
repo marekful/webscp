@@ -36,12 +36,12 @@ export async function fetch(agentId, url) {
 }
 
 function moveCopyStart(
-    agentID,
-    items,
-    copy = false,
-    overwrite,
-    keep = false,
-    compress = false
+  agentID,
+  items,
+  copy = false,
+  overwrite,
+  keep = false,
+  compress = false
 ) {
   let requestItems = [];
   for (let item of items) {
@@ -55,7 +55,7 @@ function moveCopyStart(
   return remoteResourceAction(
     agentID,
     query,
-    "POST",
+    "PATCH",
     JSON.stringify(requestItems)
   );
 }
@@ -86,11 +86,11 @@ async function remoteResourceAction(agentID, query, method, content) {
   if (content) {
     opts.body = content;
   }
-  if (method === "POST") {
+  if (method === "POST" || method === "PATCH") {
     opts.headers = { "Content-Type": "application/json" };
   }
 
-  return fetchURL(`/api/remote/${agentID}/copy${query}`, opts).then((res) =>
+  return fetchURL(`/api/remote/${agentID}${query}`, opts).then((res) =>
     res.json()
   );
 }
