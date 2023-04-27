@@ -123,7 +123,13 @@ func remoteDestinationResourcePostHandler() handleFunc {
 			}
 		}
 
-		return errToStatus(nil), nil
+		// Return the Agent User's scope that will be used in the extract phase
+		// of this remote-copy operation so changes to the user scope will be picked up
+		scope := d.user.Scope
+		if scope == "." {
+			scope = ""
+		}
+		return renderJSON(w, r, d.server.Root+scope)
 	})
 }
 
