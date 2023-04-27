@@ -6,6 +6,7 @@ RUN apt update && apt install -y libssl-dev openssh-server figlet
 
 ENV S6_OVERLAY_VERSION=3.1.4.1
 ENV DEVELOPMENT=1
+ENV DISTRO=debian
 
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
