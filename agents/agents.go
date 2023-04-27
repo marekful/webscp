@@ -21,14 +21,12 @@ type RemoteUser struct {
 	ID       uint   `storm:"index" json:"id"`
 	Name     string `json:"name"`
 	Password string `json:"password,omitempty"`
-	Root     string `json:"root"`
 	Token    string `json:"token"`
 }
 
 type TokenUser struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
-	Root string `json:"root"`
 }
 
 var checkableFields = []string{

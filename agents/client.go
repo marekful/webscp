@@ -34,7 +34,6 @@ type GetRemoteUserResponse struct {
 	Code  int32  `json:"code"`
 	ID    uint   `json:"id"`
 	Token string `json:"token"`
-	Root  string `json:"root"`
 	Error string `json:"error,omitempty"`
 }
 
@@ -42,7 +41,6 @@ type GetTokenUserResponse struct {
 	Code  int32  `json:"code"`
 	ID    uint   `json:"id"`
 	Name  string `json:"name"`
-	Root  string `json:"root"`
 	Error string `json:"error,omitempty"`
 }
 
@@ -70,10 +68,9 @@ type ResourceItem struct {
 }
 
 type RemoteResourceAgentRequest struct {
-	Items           []ResourceItem `json:"items"`
-	Compress        bool           `json:"compress"`
-	SourceRoot      string         `json:"source_root"`
-	DestinationRoot string         `json:"destination_root"`
+	Items      []ResourceItem `json:"items"`
+	Compress   bool           `json:"compress"`
+	SourceRoot string         `json:"source_root"`
 }
 
 type CancelTransferRequest struct {
@@ -165,7 +162,6 @@ func (c *AgentClient) GetTokenUser(userID uint, user *TokenUser, accessToken, to
 	}
 
 	user.ID = resp.ID
-	user.Root = resp.Root
 	user.Name = resp.Name
 
 	return 0, nil
@@ -213,7 +209,6 @@ func (c *AgentClient) GetRemoteUser(userID uint, user *RemoteUser, token string)
 	}
 
 	user.ID = resp.ID
-	user.Root = resp.Root
 	user.Token = resp.Token
 
 	return 0, nil
@@ -305,10 +300,9 @@ func (c *AgentClient) RemoteCopy(
 	requestURL := fmt.Sprintf("%s/api/agents/%d/resources/%s", agentAddress, c.Agent.ID, strings.Trim(archiveName, "\n"))
 
 	request := RemoteResourceAgentRequest{
-		Items:           items,
-		Compress:        compress,
-		SourceRoot:      srcRoot,
-		DestinationRoot: c.Agent.RemoteUser.Root,
+		Items:      items,
+		Compress:   compress,
+		SourceRoot: srcRoot,
 	}
 	requestBody, err := json.Marshal(request)
 	if err != nil {

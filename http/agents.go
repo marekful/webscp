@@ -29,7 +29,6 @@ type getUserRequest struct {
 type getUserResponse struct {
 	ID    uint   `json:"id"`
 	Token string `json:"token"`
-	Root  string `json:"root"`
 }
 
 func getAgentID(r *http.Request) (uint, error) {
@@ -250,16 +249,10 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 		return kexStatus, err
 	}
 
-	root := user.Root
-	if root == "." {
-		root = "/"
-	}
-
 	req.Data.Secret = ""
 	// req.Data.RemoteUser.Password = ""
 	req.Data.UserID = d.user.ID
 	req.Data.RemoteUser.ID = user.ID
-	req.Data.RemoteUser.Root = d.server.Root + root
 	req.Data.RemoteUser.Name = user.Name
 	req.Data.RemoteUser.Token = "x.0"
 
@@ -337,13 +330,7 @@ var agentVerifyUserCredentialsPostHandler = withAgent(func(w http.ResponseWriter
 		return http.StatusInternalServerError, err
 	}
 
-	root := u.Scope
-	if root == "." {
-		root = "/"
-	}
-	root = d.server.Root + root
-
-	return renderJSON(w, r, getUserResponse{ID: u.ID, Token: token, Root: root})
+	return renderJSON(w, r, getUserResponse{ID: u.ID, Token: token})
 })
 
 var agentGetVersionHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
