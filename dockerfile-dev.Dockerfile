@@ -58,7 +58,7 @@ RUN apk --update add ca-certificates \
 RUN adduser -D -H -s /bin/ash filebrowser
 
 HEALTHCHECK --start-period=2s --interval=5s --timeout=3s \
-  CMD curl -f http://localhost/health || exit 1
+  CMD curl -f http://localhost:8080/health || exit 1
 
 VOLUME /srv
 EXPOSE 80 8080 44000 45000

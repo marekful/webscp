@@ -37,14 +37,13 @@ FROM alpine:latest AS release
 ARG TARGETPLATFORM
 
 ENV S6_OVERLAY_VERSION=3.1.4.1
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp/
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp/
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-aarch64.tar.xz /tmp/
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-symlinks-noarch.tar.xz /tmp/
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-symlinks-arch.tar.xz /tmp/
-
-COPY docker/root /
 
 RUN apk --update add ca-certificates \
         mailcap \
@@ -64,19 +63,17 @@ RUN apk --update add ca-certificates \
     tar -C / -Jxpf /tmp/s6-overlay-symlinks-arch.tar.xz && \
     rm -f /tmp/s6-overlay-*.tar.xz
 
-#RUN adduser -D -H -s /bin/ash webscp
-
 HEALTHCHECK --start-period=2s --interval=5s --timeout=3s \
   CMD curl -f http://localhost/health || exit 1
 
-VOLUME /srv
-EXPOSE 80
-
 WORKDIR /app
+
+COPY docker/root /
 
 COPY --from=backend-build /work/webscp .
 COPY docker_config.json /settings.json
 
-ENV NODE_OPTIONS=--openssl-legacy-provider
+VOLUME /srv
+EXPOSE 80
 
 ENTRYPOINT ["/init"]
