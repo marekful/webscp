@@ -32,7 +32,6 @@ pub struct CopyRequest {
     items: Vec<ResourceItem>,
     compress: bool,
     source_root: String,
-    destination_root: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -124,6 +123,7 @@ pub async fn copy(
     let remote_user_id = &agent.remote_user.id.clone().to_string();
     let items_json = get_items_json(&request.items);
     let mut before_copy_args: Vec<&str> = Vec::new();
+    let mut destination_root: String;
     before_copy_args.push(&agent.host);
     before_copy_args.push(&agent.port);
     before_copy_args.push(remote_user_id);
@@ -139,7 +139,7 @@ pub async fn copy(
     )
     .await
     {
-        Ok(_) => {}
+        Ok(root) => destination_root = root,
         Err(err) => {
             // abort with error if copy pre-checks failed
             return (
@@ -158,7 +158,7 @@ pub async fn copy(
         port: agent.port,
         transfer_id: archive_name.to_string(),
         local_path: String::from(&request.source_root),
-        remote_path: String::from(&request.destination_root),
+        remote_path: String::from(destination_root),
         compress: request.compress,
         overwrite: request.items[0].overwrite,
         size: 0,
