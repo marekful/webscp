@@ -49,7 +49,7 @@ ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLA
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-symlinks-arch.tar.xz /tmp/
 
 RUN apk update && \
-    apk add openssh openssh-server-pam openssl figlet bash libgcc gcompat rsync && \
+    apk add openssh openssh-sftp-server openssl figlet bash libgcc gcompat rsync && \
     tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && \
     if [ "${TARGETPLATFORM}" = "linux/amd64" ] || [ "${TARGETPLATFORM}" = "linux/amd64/v2" ] || [ "${TARGETPLATFORM}" = "linux/amd64/v3" ] || [ -z "${TARGETPLATFORM}" ]; then \
       tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz; \
@@ -58,13 +58,12 @@ RUN apk update && \
     fi && \
     tar -C / -Jxpf /tmp/s6-overlay-symlinks-noarch.tar.xz && \
     tar -C / -Jxpf /tmp/s6-overlay-symlinks-arch.tar.xz && \
-    rm -f /tmp/s6-overlay-*.tar.xz
+    rm -f /tmp/s6-overlay-*.tar.xz && \
+    ln -s /usr/lib/ssh /usr/lib/openssh
 
 ##
 WORKDIR /app
 
-#COPY --from=build /app/target/release/webserver .
-#COPY --from=build /app/target/release/cli .
 COPY --from=build /app/target/*release/webserver .
 COPY --from=build /app/target/*release/cli .
 COPY --from=build /app/target/*aarch64-unknown-linux-musl/release/webserver .
