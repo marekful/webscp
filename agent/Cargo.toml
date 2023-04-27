@@ -1,7 +1,10 @@
 [package]
 name = "webscp-agent"
-version = "0.1.0"
+version = "0.1.1"
+authors = ["Marcell Fülop <marekful@domainloop.net>"]
+repository = "https://github.com/marekful/webscp/agent"
 edition = "2021"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
