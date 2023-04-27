@@ -11,7 +11,13 @@ import (
 )
 
 type AgentBackend interface {
-	ExchangeKeys(host string, port string, secret string) error
+	GetTokenUser(userID uint, user *TokenUser, accessToken, token string) (status int, err error)
+	ExchangeKeys(userID uint, host, port, secret, token string) (status int, err error)
+	GetRemoteUser(userID uint, user *RemoteUser, token string) (status int, err error)
+	GetResource(url, token string) (response *GetResourceResponse, status int, err error)
+	RemoteCopy(archiveName, srcRoot, token string, items []ResourceItem, compress bool) (response *BeforeCopyResponse, status int, err error)
+	CancelTransfer(transferID, token string) (status int, err error)
+	GetVersion(token string) GetVersionResponse
 }
 
 type AgentClient struct {
@@ -77,48 +83,37 @@ type CancelTransferRequest struct {
 	TransferID string `json:"transfer_id"`
 }
 
-func (c *AgentClient) ExchangeKeys(userID uint, host, port, secret, token string) (status int, err error) {
+func GetTemporaryAccessToken(token string, userID uint) (response *GenerateAccessTokenResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/users/%d/connections", agentAddress, userID)
-	body := []byte(`{
-		"host": "` + host + `", 
-		"port": "` + port + `",
-		"secret": "` + secret + `"
-	}`)
+	requestURL := fmt.Sprintf("%s/api/users/%d/temporary-access-token", agentAddress, userID)
 
-	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewBuffer(body))
+	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
-		return nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API reqeuest: %v", err)
 	}
 
 	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
 	r.AddCookie(&cookie)
 
-	r.Header.Add("Content-Type", "application/json")
-
 	client := &nethttps.Client{}
 	agentResponse, err := client.Do(r)
 	if err != nil {
-		return nethttps.StatusInternalServerError, fmt.Errorf("error sending agent API request: %v", err)
+		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error sending agent API request: %v", err)
 	}
 
 	defer agentResponse.Body.Close()
 
-	resp := &ExchangeKeysResponse{}
+	resp := &GenerateAccessTokenResponse{}
 	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
 	if dErr != nil {
-		return nethttps.StatusInternalServerError, dErr
+		return nil, nethttps.StatusInternalServerError, dErr
 	}
 
 	if agentResponse.StatusCode != nethttps.StatusOK {
-		return agentResponse.StatusCode, fmt.Errorf("token error: %s", resp.Error)
+		return nil, agentResponse.StatusCode, fmt.Errorf("generate token error")
 	}
 
-	if !resp.Success {
-		return nethttps.StatusInternalServerError, fmt.Errorf("unexpected error while sending agent API request")
-	}
-
-	return nethttps.StatusOK, nil
+	return resp, nethttps.StatusOK, nil
 }
 
 func (c *AgentClient) GetTokenUser(userID uint, user *TokenUser, accessToken, token string) (status int, err error) {
@@ -165,6 +160,50 @@ func (c *AgentClient) GetTokenUser(userID uint, user *TokenUser, accessToken, to
 	user.Name = resp.Name
 
 	return 0, nil
+}
+
+func (c *AgentClient) ExchangeKeys(userID uint, host, port, secret, token string) (status int, err error) {
+	agentAddress := os.Getenv("AGENT_ADDRESS")
+	requestURL := fmt.Sprintf("%s/api/users/%d/connections", agentAddress, userID)
+	body := []byte(`{
+		"host": "` + host + `", 
+		"port": "` + port + `",
+		"secret": "` + secret + `"
+	}`)
+
+	r, err := nethttps.NewRequest("POST", requestURL, bytes.NewBuffer(body))
+	if err != nil {
+		return nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API request: %v", err)
+	}
+
+	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookie)
+
+	r.Header.Add("Content-Type", "application/json")
+
+	client := &nethttps.Client{}
+	agentResponse, err := client.Do(r)
+	if err != nil {
+		return nethttps.StatusInternalServerError, fmt.Errorf("error sending agent API request: %v", err)
+	}
+
+	defer agentResponse.Body.Close()
+
+	resp := &ExchangeKeysResponse{}
+	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
+	if dErr != nil {
+		return nethttps.StatusInternalServerError, dErr
+	}
+
+	if agentResponse.StatusCode != nethttps.StatusOK {
+		return agentResponse.StatusCode, fmt.Errorf("token error: %s", resp.Error)
+	}
+
+	if !resp.Success {
+		return nethttps.StatusInternalServerError, fmt.Errorf("unexpected error while sending agent API request")
+	}
+
+	return nethttps.StatusOK, nil
 }
 
 func (c *AgentClient) GetRemoteUser(userID uint, user *RemoteUser, token string) (status int, err error) {
@@ -214,55 +253,10 @@ func (c *AgentClient) GetRemoteUser(userID uint, user *RemoteUser, token string)
 	return 0, nil
 }
 
-func (c *AgentClient) GetVersion(token string) GetVersionResponse {
-	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/agents/%d/version", agentAddress, c.Agent.ID)
-
-	returnVersion := ""
-	returnError := ""
-
-	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
-	if err != nil {
-		returnError = fmt.Sprintf("error initializing agent API request: %v", err)
-	}
-
-	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
-	r.AddCookie(&cookie)
-
-	client := &nethttps.Client{}
-	res, err := client.Do(r)
-	if err != nil {
-		returnError = fmt.Sprintf("error sending agent API request %v", err)
-	}
-
-	defer res.Body.Close()
-
-	resp := &GetVersionResponse{}
-	dErr := json.NewDecoder(res.Body).Decode(resp)
-	if dErr != nil {
-		returnError = dErr.Error()
-	}
-
-	returnVersion = resp.Version
-	if resp.Version == "" {
-		returnVersion = "unknown"
-	}
-
-	if resp.Error != "" {
-		returnError = resp.Error
-	}
-
-	return GetVersionResponse{
-		Version: returnVersion,
-		Error:   returnError,
-		Latency: resp.Latency,
-	}
-}
-
-func (c *AgentClient) GetResource(agent *Agent, url, token string) (response *GetResourceResponse, status int, err error) {
+func (c *AgentClient) GetResource(url, token string) (response *GetResourceResponse, status int, err error) {
 	url = neturl.PathEscape(url)
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/agents/%d/resources/%s", agentAddress, agent.ID, url)
+	requestURL := fmt.Sprintf("%s/api/agents/%d/resources/%s", agentAddress, c.Agent.ID, url)
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
@@ -339,9 +333,7 @@ func (c *AgentClient) RemoteCopy(
 	return resp, nethttps.StatusOK, nil
 }
 
-func (c *AgentClient) CancelTransfer(
-	transferID, token string,
-) (status int, err error) {
+func (c *AgentClient) CancelTransfer(transferID, token string) (status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/agents/%d/transfers/%s", agentAddress, c.Agent.ID, transferID)
 
@@ -368,35 +360,47 @@ func (c *AgentClient) CancelTransfer(
 	return nethttps.StatusOK, nil
 }
 
-func GetTemporaryAccessToken(token string, userID uint) (response *GenerateAccessTokenResponse, status int, err error) {
+func (c *AgentClient) GetVersion(token string) GetVersionResponse {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
-	requestURL := fmt.Sprintf("%s/api/users/%d/temporary-access-token", agentAddress, userID)
+	requestURL := fmt.Sprintf("%s/api/agents/%d/version", agentAddress, c.Agent.ID)
+
+	returnVersion := ""
+	returnError := ""
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
 	if err != nil {
-		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API reqeuest: %v", err)
+		returnError = fmt.Sprintf("error initializing agent API request: %v", err)
 	}
 
 	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
 	r.AddCookie(&cookie)
 
 	client := &nethttps.Client{}
-	agentResponse, err := client.Do(r)
+	res, err := client.Do(r)
 	if err != nil {
-		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error sending agent API request: %v", err)
+		returnError = fmt.Sprintf("error sending agent API request %v", err)
 	}
 
-	defer agentResponse.Body.Close()
+	defer res.Body.Close()
 
-	resp := &GenerateAccessTokenResponse{}
-	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
+	resp := &GetVersionResponse{}
+	dErr := json.NewDecoder(res.Body).Decode(resp)
 	if dErr != nil {
-		return nil, nethttps.StatusInternalServerError, dErr
+		returnError = dErr.Error()
 	}
 
-	if agentResponse.StatusCode != nethttps.StatusOK {
-		return nil, agentResponse.StatusCode, fmt.Errorf("generate token error")
+	returnVersion = resp.Version
+	if resp.Version == "" {
+		returnVersion = "unknown"
 	}
 
-	return resp, nethttps.StatusOK, nil
+	if resp.Error != "" {
+		returnError = resp.Error
+	}
+
+	return GetVersionResponse{
+		Version: returnVersion,
+		Error:   returnError,
+		Latency: resp.Latency,
+	}
 }
