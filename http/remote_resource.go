@@ -21,7 +21,7 @@ var remoteResourceGetHandler = injectAgentWithUser(func(w http.ResponseWriter, r
 
 	authCookie, _ := r.Cookie("auth")
 
-	resp, status, err := client.GetResource(d.agent, r.URL.Path, authCookie.Value)
+	resp, status, err := client.GetResource(r.URL.Path, authCookie.Value)
 	if err != nil {
 		return http.StatusBadRequest, err
 	}
