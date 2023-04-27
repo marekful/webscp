@@ -2,5 +2,5 @@ agent/
 filebrowser
 .idea/
 **/.idea/
-frontend/dist/
 frontend/node_modules/
+debug/

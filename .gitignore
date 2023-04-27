@@ -6,6 +6,7 @@ rice-box.go
 /filebrowser
 /filebrowser.exe
 /dist
+debug/
 
 .DS_Store
 node_modules
@@ -28,4 +29,4 @@ yarn-error.log*
 *.sln
 *.sw*
 bin/
-build/
+./build/

@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-var assets fs.FS = os.DirFS("frontend")
+var assets fs.FS = os.DirFS("./frontend")
 
 func Assets() fs.FS {
 	return assets
