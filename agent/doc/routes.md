@@ -1,16 +1,16 @@
 # API routes
 
 ```http request
-GET    /users/<user_id>/temporary-access-token
+GET    /users/<user-id>/temporary-access-token
 
-POST   /users/<user_id>/connections/<host>/<port>/login (get-remote-user)
-POST   /users/<user_id>/connections (register-public-key)
+POST   /users/<user-id>/connections/<host>/<port>/login (get-remote-user)
+POST   /users/<user-id>/connections (get-token-user, exchange-keys)
 
-GET    /agents/<agent_id>/resources/<path>
-PATCH  /agents/<agent_id>/resources/[[<archive_name>]]
+GET    /agents/<agent-id>/resources/<path>
+PATCH  /agents/<agent-id>/resources/[[<archive-name>]]
 
-DELETE /agents/<agent_id>/transfers/<transfer_id>
+DELETE /agents/<agent-id>/transfers/<transfer-id>
 
-GET    /agents/<agent_id>/version
-GET    /agents/<agent_id>/ping
+GET    /agents/<agent-id>/version
+GET    /agents/<agent-id>/ping
 ```
