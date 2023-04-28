@@ -2,7 +2,7 @@ version: "3.5"
 
 services:
   files:
-    image: marekful/webscp-files:rc-beta-3
+    image: marekful/webscp-files:rc-beta-4.4
     volumes:
       - ./database.db:/database.db
       - ./settings.json:/app/settings.json
@@ -15,7 +15,7 @@ services:
       - "10.0.0.83:7080:80"
 
   agent:
-    image: marekful/webscp-agent:rc-beta-3-alpine
+    image: marekful/webscp-agent:rc-beta-4.4-alpine
     volumes:
       - /:/srv
       - data:/app/data
