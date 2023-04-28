@@ -35,4 +35,4 @@ For File Browser features concering local operations, please refer to the origin
 
 ## Installation
 
-WebSCP requires Docker to run. See sample configuration and installation instructions on [GitHub](https://github.com/marekful/webscp/tree/master/agent/install).
+WebSCP requires Docker to run. See sample configuration and installation instructions on [GitHub](https://github.com/marekful/webscp/tree/main/agent/install).
