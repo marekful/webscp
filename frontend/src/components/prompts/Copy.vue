@@ -21,6 +21,7 @@
           type="checkbox"
           name="compress"
           id="compress"
+          ref="compress"
           :checked="compress"
           @click="setCompress"
         />
@@ -28,6 +29,7 @@
       </span>
       <button
         class="button button--flat button--grey"
+        ref="cancel"
         @click="$store.commit('closeHovers')"
         :aria-label="$t('buttons.cancel')"
         :title="$t('buttons.cancel')"
@@ -36,6 +38,7 @@
       </button>
       <button
         class="button button--flat"
+        ref="submit"
         @click="copy"
         :aria-label="$t('buttons.copy')"
         :title="$t('buttons.copy')"
@@ -85,8 +88,20 @@ export default {
     setCompress() {
       this.compress = !this.compress;
     },
+    disableControls() {
+      this.$refs.submit.setAttribute("disabled", "disabled");
+      this.$refs.cancel.setAttribute("disabled", "disabled");
+      this.$refs.compress.setAttribute("disabled", "disabled");
+    },
+    enableControls() {
+      if (!this.$refs.submit) return;
+      this.$refs.submit.removeAttribute("disabled");
+      this.$refs.cancel.removeAttribute("disabled");
+      this.$refs.compress.removeAttribute("disabled");
+    },
     copy: function (event) {
       event.preventDefault();
+      this.disableControls();
 
       // Create a new promise for each file.
       let items = [];
@@ -123,6 +138,7 @@ export default {
           })
           .catch((e) => {
             buttons.done("copy");
+            this.enableControls();
             this.$showError(e);
           });
       };
@@ -182,6 +198,7 @@ export default {
             }, 10);
           })
           .catch((e) => {
+            this.enableControls();
             buttons.donePromise("transfers").then(() => {
               this.$showError(e);
             });
