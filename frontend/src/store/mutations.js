@@ -67,7 +67,7 @@ const mutations = {
     state.selected = [];
   },
   addTransfer: (state, value) => {
-    state.transfers.push(value);
+    state.transfers.unshift(value);
   },
   replaceTransfers: (state, value) => {
     state.transfers = value;
