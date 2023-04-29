@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/marekful/webscp?style=flat-square)](https://goreportcard.com/report/github.com/filebrowser/filebrowser) [![Version](https://img.shields.io/github/v/release/marekful/webscp?display_name=tag&include_prereleases)](https://github.com/marekful/webscp/releases/latest) [![Docker](https://img.shields.io/docker/v/marekful/webscp-files/latest?label=files&logo=docker&color=blue)](https://hub.docker.com/r/marekful/webscp-files/tags) [![Docker](https://img.shields.io/docker/v/marekful/webscp-agent/latest?label=agent&logo=docker&color=blue)](https://hub.docker.com/r/marekful/webscp-agent/tags) 
 
-WebSCP provides a simple, graphical frontend for securely copying files between your Linux or MacOS machines. It uses [OpenSSH](https://en.wikipedia.org/wiki/OpenSSH) to access remote machines and [scp](https://linux.die.net/man/1/scp) to copy files.
+WebSCP provides a simple, graphical frontend for securely copying files between your Linux or MacOS machines. 
 
 https://user-images.githubusercontent.com/10281476/234520425-08791a15-6bf4-4395-980c-96cb6c79f7b3.mov
 
@@ -10,7 +10,9 @@ It builds on the brilliant web browser based file manager, [File Browser](https:
 
 * Single Sign On using Open ID Connect Discovery
 * 2 click setup to connect to other WebSCP instances
-* A graphical frontend for securely copying files between servers using [scp](https://linux.die.net/man/1/scp)
+* A graphical frontend for securely copying files between servers
+
+It uses [OpenSSH](https://en.wikipedia.org/wiki/OpenSSH) to access remote machines and [scp](https://linux.die.net/man/1/scp) to copy files.
 
 https://user-images.githubusercontent.com/10281476/234520613-ee4319ef-dec7-407e-a064-857b8a9c3faf.mov
 
@@ -33,6 +35,8 @@ For File Browser features concering local operations, please refer to the origin
 * Option to keep or replace existing files on the remote in case of conflict
 * Keep track of remote operations or cancel them through the UI
 
-## Installation
+## Compatibility & Installation
 
-WebSCP requires Docker to run. See sample configuration and installation instructions on [GitHub](https://github.com/marekful/webscp/tree/main/install).
+WebSCP is compatible with newer (64bit) MacOS (Intel, M1, M2) and Linux (Intel, ARM) and it requires Docker ([Mac](https://docs.docker.com/desktop/install/mac-install/), [Linux](https://docs.docker.com/engine/install/)) to run.
+
+See sample configuration and installation instructions on [GitHub](https://github.com/marekful/webscp/tree/main/install).
