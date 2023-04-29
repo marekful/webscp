@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/marekful/webscp?style=flat-square)](https://goreportcard.com/report/github.com/filebrowser/filebrowser) [![Version](https://img.shields.io/github/v/release/marekful/webscp?display_name=tag&include_prereleases)](https://github.com/marekful/webscp/releases/latest) [![Docker](https://img.shields.io/docker/v/marekful/webscp-files/rc-beta-4.4?label=files&logo=docker)](https://hub.docker.com/r/marekful/webscp-files/tags) [![Docker](https://img.shields.io/docker/v/marekful/webscp-agent/rc-beta-4.4-alpine?label=agent&logo=docker)](https://hub.docker.com/r/marekful/webscp-agent/tags) [![Docker](https://img.shields.io/docker/v/marekful/webscp-agent/rc-beta-4.4-debian?label=agent&logo=docker)](https://hub.docker.com/r/marekful/webscp-agent/tags)
 
-WebSCP provides a simple, graphical frontend for securely copying files between Linux servers using [scp](https://linux.die.net/man/1/scp).
+WebSCP provides a simple, graphical frontend for securely copying files between your Linux or MacOS machines. It uses [OpenSSH](https://en.wikipedia.org/wiki/OpenSSH) to access remote machines and [scp](https://linux.die.net/man/1/scp) to copy files.
 
 https://user-images.githubusercontent.com/10281476/234520425-08791a15-6bf4-4395-980c-96cb6c79f7b3.mov
 
