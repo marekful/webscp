@@ -1,6 +1,5 @@
 agent/
-filebrowser
 .idea/
 **/.idea/
 frontend/node_modules/
-debug/
+#frontend/dist/
