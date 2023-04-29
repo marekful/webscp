@@ -23,7 +23,7 @@ services:
       - FILES_ADDRESS=http://files
       - UUID=1001
     ports:
-      - "8022:22"
+      - "7022:22"
 
 volumes:
   data:
