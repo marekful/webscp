@@ -1,4 +1,4 @@
-# Install WebSCP on a Linux server and run it with Docker
+# Install WebSCP on Linux or MacOS and run it with Docker
 
 ## Prepare for first run
 - Create an empty directory and copy these 3 files
