@@ -21,15 +21,15 @@ RUN apk add bash make git ncurses yarn npm
 
 WORKDIR /work
 
-COPY ./go.mod .
-COPY ./go.sum .
+COPY ./backend/go.mod .
+COPY ./backend/go.sum .
 
 RUN go mod download
 
-COPY . /work/
+COPY ./backend/ /work/
 COPY --from=frontend-buid /work/dist/ /work/frontend/dist/
 
-RUN make build-backend
+RUN cod backend && make build-backend
 
 ################## Run ##################
 FROM alpine:latest AS release
@@ -51,8 +51,8 @@ EXPOSE 80
 
 WORKDIR /app
 
-COPY --from=backend-build /work/webscp .
-COPY docker_config.json /.filebrowser.json
+COPY --from=backend-build /work/backend/webscp .
+COPY backend/docker_config.json /settings.json
 
 ENV NODE_OPTIONS=--openssl-legacy-provider
 

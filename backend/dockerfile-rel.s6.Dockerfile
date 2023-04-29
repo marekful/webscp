@@ -21,15 +21,15 @@ RUN apk add bash make git ncurses yarn npm
 
 WORKDIR /work
 
-COPY ./go.mod .
-COPY ./go.sum .
+COPY ./backend/go.mod .
+COPY ./backend/go.sum .
 
 RUN go mod download
 
 COPY . /work/
-COPY --from=frontend-buid /work/dist/ /work/frontend/dist/
+COPY --from=frontend-buid /work/dist/ /work/backend/frontend/dist/
 
-RUN make build-backend
+RUN cd backend && make build-backend
 
 ################## Run ##################
 FROM alpine:latest AS release
@@ -68,10 +68,10 @@ HEALTHCHECK --start-period=2s --interval=5s --timeout=3s \
 
 WORKDIR /app
 
-COPY docker/root /
+COPY backend/docker/root /
 
-COPY --from=backend-build /work/webscp .
-COPY docker_config.json /settings.json
+COPY --from=backend-build /work/backend/webscp .
+COPY backend/docker_config.json /settings.json
 
 VOLUME /srv
 EXPOSE 80

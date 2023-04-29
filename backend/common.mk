@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 DATE ?= $(shell date +%FT%T%z)
 BASE_PATH := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-VERSION ?= $(shell git describe --tags --always --match=v* 2> /dev/null || \
+VERSION ?= $(shell git describe --tags --always --match 'v*' 2> /dev/null || \
            			cat $(CURDIR)/.version 2> /dev/null || echo v0)
 VERSION_HASH = $(shell git rev-parse HEAD)
 BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
