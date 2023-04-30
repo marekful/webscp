@@ -54,6 +54,7 @@ pub async fn resources(
     files: &State<Files>,
     cookies: &CookieJar<'_>,
 ) -> (Status, Json<ResourcesResponse>) {
+    // verify that the requester has a valid session in Files and owns the referred agent
     let (agent, _) = match files.api.get_agent(agent_id, cookies.get("rc_auth")).await {
         Ok(a) => a,
         Err(e) => {
@@ -68,6 +69,7 @@ pub async fn resources(
         }
     };
 
+    // create arguments for the 'get-remote-resource' command
     let mut args: Vec<&str> = Vec::new();
     let remote_user_id = agent.remote_user.id.clone().to_string();
     let path_encoded = encode(path);
@@ -76,7 +78,7 @@ pub async fn resources(
     args.push(&remote_user_id);
     args.push(&agent.remote_user.token);
     args.push(&path_encoded);
-
+    // execute command and send success or error response
     return match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
         Ok(output) => (
             Status::Ok,
