@@ -1,6 +1,6 @@
 # WebSCP
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/marekful/webscp?style=flat-square)](https://goreportcard.com/report/github.com/filebrowser/filebrowser) [![Version](https://img.shields.io/github/v/release/marekful/webscp?display_name=tag&include_prereleases)](https://github.com/marekful/webscp/releases/latest) [![Docker](https://img.shields.io/docker/v/marekful/webscp-files/latest?label=files&logo=docker&color=blue)](https://hub.docker.com/r/marekful/webscp-files/tags) [![Docker](https://img.shields.io/docker/v/marekful/webscp-agent/latest?label=agent&logo=docker&color=blue)](https://hub.docker.com/r/marekful/webscp-agent/tags) 
+[![Go Report Card](https://goreportcard.com/badge/github.com/marekful/webscp?style=flat-square)](https://goreportcard.com/report/github.com/marekful/webscp/backend) [![Version](https://img.shields.io/github/v/release/marekful/webscp?display_name=tag&include_prereleases)](https://github.com/marekful/webscp/releases/latest) [![Docker](https://img.shields.io/docker/v/marekful/webscp-files/latest?label=files&logo=docker&color=blue)](https://hub.docker.com/r/marekful/webscp-files/tags) [![Docker](https://img.shields.io/docker/v/marekful/webscp-agent/latest?label=agent&logo=docker&color=blue)](https://hub.docker.com/r/marekful/webscp-agent/tags) 
 
 WebSCP provides a simple, graphical frontend for securely copying files between your Linux or MacOS machines. 
 
