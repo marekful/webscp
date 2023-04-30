@@ -1,6 +1,6 @@
 use reqwest::{blocking::Response, Response as AsyncResponse, StatusCode};
 use rocket::{
-    http::{Cookie, Status},
+    http::{Cookie},
     serde::json::serde_json,
 };
 use std::{env, io::Read, time::Duration};

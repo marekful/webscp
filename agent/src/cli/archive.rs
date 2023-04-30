@@ -1,10 +1,10 @@
 use flate2::{write::GzEncoder, Compression};
-use rocket::{tokio::task};
+use rocket::tokio::task;
 use std::{
     fs,
     fs::File,
     future::Future,
-    io::{Error, Write},
+    io::{Error},
     path::Path,
     time::{Duration, Instant},
 };
