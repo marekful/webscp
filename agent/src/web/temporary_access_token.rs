@@ -17,7 +17,6 @@ use crate::{
     client::Client,
     command_runner::run_command_async,
     constants::DEFAULTS,
-    files_api::{FilesUser, RequestError},
     Files,
 };
 
@@ -97,7 +96,7 @@ pub async fn get_temporary_access_token(
             code: 0,
             token: Some(token),
             valid_until: Some(valid_until_timestamp),
-            error: Some(token_hash),
+            error: None,
         }),
     )
 }

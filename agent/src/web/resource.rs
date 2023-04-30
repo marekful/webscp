@@ -123,7 +123,7 @@ pub async fn copy(
     let remote_user_id = &agent.remote_user.id.clone().to_string();
     let items_json = get_items_json(&request.items);
     let mut before_copy_args: Vec<&str> = Vec::new();
-    let mut destination_root: String;
+    let destination_root: String;
     before_copy_args.push(&agent.host);
     before_copy_args.push(&agent.port);
     before_copy_args.push(remote_user_id);
@@ -148,7 +148,7 @@ pub async fn copy(
                     code: err.code,
                     message: Some(err.message),
                 }),
-            )
+            );
         }
     };
 

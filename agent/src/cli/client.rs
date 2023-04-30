@@ -1,5 +1,14 @@
 use ssh2::Session;
-use std::{env, fs, fs::OpenOptions, io::{prelude::*, Error}, net::TcpStream, os::unix::fs::OpenOptionsExt, path::Path, process::exit, time::Instant};
+use std::{
+    fs,
+    fs::OpenOptions,
+    io::{prelude::*, Error},
+    net::TcpStream,
+    os::unix::fs::OpenOptionsExt,
+    path::Path,
+    process::exit,
+    time::Instant,
+};
 
 use tokio::{
     io::{AsyncBufReadExt, AsyncReadExt, BufReader},
@@ -165,7 +174,11 @@ impl Client<'_> {
             return result;
         }
 
-        print!("{:.2}ms / {:.2}ms\n", dur_sess.as_millis(), dur_exec.as_millis());
+        print!(
+            "{:.2}ms / {:.2}ms\n",
+            dur_sess.as_millis(),
+            dur_exec.as_millis()
+        );
 
         0
     }
@@ -279,7 +292,7 @@ impl Client<'_> {
             &archive_name,
             &transfer.remote_path,
             transfer.compress,
-            transfer.overwrite
+            transfer.overwrite,
         ) {
             Ok(_) => Ok(()),
             Err(e) => {
@@ -301,11 +314,13 @@ impl Client<'_> {
     ) -> Result<(), ClientError> {
         let sess = self.create_session(None).unwrap();
         let mut ch = sess.channel_session().unwrap();
-        let archive_path = format!("{}{}.dst.tar", DEFAULTS.temp_data_dir, archive_name);
-
         let command = &*format!(
             "{} \"{}\" \"{}\" {} {}",
-            DEFAULTS.extract_archive_script_path, archive_name, remote_path, is_compressed, overwrite,
+            DEFAULTS.extract_archive_script_path,
+            archive_name,
+            remote_path,
+            is_compressed,
+            overwrite,
         );
 
         ch.exec(command).unwrap();

@@ -1,6 +1,6 @@
 use rocket::{
     http::{CookieJar, Status},
-    serde::{Deserialize, json::Json, Serialize},
+    serde::{json::Json, Deserialize, Serialize},
     State,
 };
 
