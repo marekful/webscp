@@ -45,6 +45,18 @@ func (a OIDCAuth) LoginPage() bool {
 	return false
 }
 
+// ConfigChanged tells if the provided config values are different compared to saved values.
+func (a OIDCAuth) ConfigChanged(config map[string]string) bool {
+	if a.OIDC == nil {
+		return true
+	}
+
+	return config["clientid"] != a.OIDC.ClientID ||
+		config["clientsecret"] != a.OIDC.ClientSecret ||
+		config["issuer"] != a.OIDC.Issuer ||
+		config["redirecturl"] != a.OIDC.RedirectURL
+}
+
 // OAuthClient describes the oidc connector parameters.
 type OAuthClient struct {
 	ClientID               string                `json:"clientID"`

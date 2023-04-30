@@ -32,3 +32,8 @@ func (a ProxyAuth) Auth(r *http.Request, usr users.Store, stg *settings.Settings
 func (a ProxyAuth) LoginPage() bool {
 	return false
 }
+
+// ConfigChanged tells if the provided config values are different compared to saved values.
+func (a ProxyAuth) ConfigChanged(config map[string]string) bool {
+	return config["header"] != a.Header
+}

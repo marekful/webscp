@@ -68,7 +68,7 @@ func injectAgent(r *http.Request, d *data) {
 	}
 }
 
-func injectPath(r *http.Request, d *data) {
+func injectPath(r *http.Request) {
 	vars := mux.Vars(r)
 	if len(vars["url"]) > 0 {
 		decodedURL, err := url.QueryUnescape(vars["url"])
@@ -98,7 +98,7 @@ func withAgent(fn handleFunc) handleFunc {
 		}
 
 		injectAgent(r, d)
-		injectPath(r, d)
+		injectPath(r)
 
 		return fn(w, r, d)
 	}
@@ -132,7 +132,7 @@ func withAgentUser(fn handleFunc) handleFunc {
 			return http.StatusUnauthorized, nil
 		}
 
-		injectPath(r, d)
+		injectPath(r)
 
 		return fn(w, r, d)
 	})
@@ -143,7 +143,7 @@ func withAgentUser(fn handleFunc) handleFunc {
 func injectAgentWithUser(fn handleFunc) handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		injectAgent(r, d)
-		injectPath(r, d)
+		injectPath(r)
 
 		if d.agent.UserID != d.user.ID {
 			return http.StatusForbidden, nil

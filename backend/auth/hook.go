@@ -81,6 +81,11 @@ func (a *HookAuth) LoginPage() bool {
 	return true
 }
 
+// ConfigChanged tells if the provided config values are different compared to saved values.
+func (a *HookAuth) ConfigChanged(config map[string]string) bool {
+	return config["command"] != a.Command
+}
+
 // RunCommand starts the hook command and returns the action
 func (a *HookAuth) RunCommand() (string, error) {
 	command := strings.Split(a.Command, " ")

@@ -22,3 +22,8 @@ func (a NoAuth) Auth(r *http.Request, usr users.Store, stg *settings.Settings, s
 func (a NoAuth) LoginPage() bool {
 	return false
 }
+
+// ConfigChanged tells if the provided config values are different compared to saved values.
+func (a NoAuth) ConfigChanged(config map[string]string) bool {
+	return false
+}

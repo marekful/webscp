@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -137,6 +138,10 @@ user created with the credentials from options "username" and "password".`,
 		server := getRunParams(cmd.Flags(), d.store)
 		setupLog(server.Log)
 
+		if method, updateErr := updateAuthParams(cmd.Flags(), d.store); updateErr != nil {
+			log.Printf("Could not save authentication parameters for method: %s, %s", method, updateErr)
+		}
+
 		root, err := filepath.Abs(server.Root)
 		checkErr(err)
 		server.Root = root
@@ -264,6 +269,140 @@ func getRunParams(flags *pflag.FlagSet, st *storage.Storage) *settings.Server {
 	return server
 }
 
+func saveAuthParams(method settings.AuthMethod, auther auth.Auther, st *storage.Storage) error {
+	s, _ := st.Settings.Get()
+	s.AuthMethod = method
+	err := st.Settings.Save(s)
+
+	if err != nil {
+		return fmt.Errorf("error saving auth method: %s, %v", method, err)
+	}
+
+	err = st.Auth.Save(auther)
+	if err != nil {
+		return fmt.Errorf("error saving auth params for method: %s, %v", method, err)
+	}
+
+	return nil
+}
+
+func authChanged(auther auth.Auther, config map[string]string, methodChanged bool) bool {
+	changed := false
+	if !methodChanged {
+		changed = auther.ConfigChanged(config)
+	}
+
+	if !methodChanged && !changed {
+		return false
+	}
+
+	return methodChanged || changed
+}
+
+//nolint:gocyclo
+func updateAuthParams(flags *pflag.FlagSet, st *storage.Storage) (settings.AuthMethod, error) {
+	val, set := getObjParam(flags, "auth")
+	saved, _ := st.Settings.Get()
+	method := settings.AuthMethod(val["method"])
+	if !set {
+		return method, nil
+	}
+
+	methodChanged := false
+	var auther auth.Auther
+	if saved.AuthMethod != method {
+		methodChanged = true
+		log.Printf("Configured authentication method has changed from %s to %s", saved.AuthMethod, method)
+	}
+
+	if method == auth.MethodOIDCAuth {
+		oidcAuth := &auth.OIDCAuth{}
+		id, idSet := val["clientid"]
+		secret, secretSet := val["clientsecret"]
+		url, urlSet := val["issuer"]
+		redirect, redirectSet := val["redirecturl"]
+		appendQueryStr, appendQuerySet := val["redirecturlappendquery"]
+		if !appendQuerySet {
+			appendQueryStr = "false"
+		}
+
+		if !authChanged(oidcAuth, val, methodChanged) {
+			return method, nil
+		}
+
+		if !(idSet && secretSet && urlSet && redirectSet) {
+			msg := "could not save auth params for method: %s, you must set 'clientID', 'clientSecret', 'issuer' and 'redirectURL'"
+			return method, fmt.Errorf(msg, method)
+		}
+
+		oidcAuth.OIDC = &auth.OAuthClient{
+			ClientID:               id,
+			ClientSecret:           secret,
+			Issuer:                 url,
+			RedirectURL:            redirect,
+			RedirectURLAppendQuery: appendQueryStr == "true",
+		}
+
+		auther = oidcAuth
+	} else if method == auth.MethodJSONAuth {
+		jsonAuth := &auth.JSONAuth{}
+		host, hostSet := val["recaptchahost"]
+		key, keySet := val["recaptchakey"]
+		secret, secretSet := val["recaptchasecret"]
+
+		if !authChanged(jsonAuth, val, methodChanged) {
+			return method, nil
+		}
+
+		if hostSet && keySet && secretSet {
+			jsonAuth.ReCaptcha = &auth.ReCaptcha{
+				Host:   host,
+				Key:    key,
+				Secret: secret,
+			}
+		}
+
+		auther = jsonAuth
+	} else if method == auth.MethodNoAuth {
+		if !methodChanged {
+			return method, nil
+		}
+
+		auther = &auth.NoAuth{}
+	} else if method == auth.MethodProxyAuth {
+		header, headerSet := val["header"]
+		if !headerSet {
+			return method, fmt.Errorf("could not save auth params for method %s, you must set 'header'", method)
+		}
+
+		proxyAuth := &auth.ProxyAuth{Header: header}
+		if !authChanged(proxyAuth, val, methodChanged) {
+			return method, nil
+		}
+
+		auther = proxyAuth
+	} else if method == auth.MethodHookAuth {
+		command, commandSet := val["command"]
+		if !commandSet {
+			return method, fmt.Errorf("could not save auth params for method %s, you must set 'command'", method)
+		}
+
+		hookAuth := auth.HookAuth{Command: command}
+		if !authChanged(&hookAuth, val, methodChanged) {
+			return method, nil
+		}
+
+		auther = &hookAuth
+	}
+
+	if err := saveAuthParams(method, auther, st); err != nil {
+		return method, err
+	}
+
+	log.Printf("Updated authentication parameters for method: %s", method)
+	return method, nil
+}
+
 // getParamB returns a parameter as a string and a boolean to tell if it is different from the default
 //
 // NOTE: we could simply bind the flags to viper and use IsSet.
@@ -291,6 +430,23 @@ func getParamB(flags *pflag.FlagSet, key string) (string, bool) {
 func getParam(flags *pflag.FlagSet, key string) string {
 	val, _ := getParamB(flags, key)
 	return val
+}
+
+func getObjParam(flags *pflag.FlagSet, key string) (map[string]string, bool) {
+	value, _ := flags.GetStringToString(key)
+
+	// If set on Flags, use it.
+	if flags.Changed(key) {
+		return value, true
+	}
+
+	// If set through viper (env, config), return it.
+	if v.IsSet(key) {
+		return v.GetStringMapString(key), true
+	}
+
+	// Otherwise use default value on flags.
+	return value, false
 }
 
 func setupLog(logMethod string) {

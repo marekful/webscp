@@ -64,6 +64,25 @@ func (a JSONAuth) LoginPage() bool {
 	return true
 }
 
+// ConfigChanged tells if the provided config values are different compared to saved values.
+func (a JSONAuth) ConfigChanged(config map[string]string) bool {
+	_, hostSet := config["recaptchahost"]
+	_, keySet := config["recaptchakey"]
+	_, secretSet := config["recaptchasecret"]
+
+	if !(hostSet && keySet && secretSet) {
+		return a.ReCaptcha != nil
+	}
+
+	if a.ReCaptcha == nil {
+		return true
+	}
+
+	return config["recaptchahost"] != a.ReCaptcha.Host ||
+		config["recaptchakey"] != a.ReCaptcha.Key ||
+		config["recaptchasecret"] != a.ReCaptcha.Secret
+}
+
 const reCaptchaAPI = "/recaptcha/api/siteverify"
 
 // ReCaptcha identifies a recaptcha connection.
