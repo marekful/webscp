@@ -109,16 +109,11 @@ fn valid_until(seconds: u64) -> (u64, Instant) {
     (timestamp, instant)
 }
 
-struct FutureError {
-    code: i32,
-    message: String,
-}
-
 fn revoke_temporary_access_token(
     token_id: String,
     token_hash: String,
     token_expires: Instant,
-) -> impl Future<Output = Result<(), FutureError>> + 'static {
+) -> impl Future<Output = Result<(), ()>> + 'static {
     async move {
         let one_sec = Duration::from_secs(1);
         let lock_file_path = format!("{}/{}", DEFAULTS.ssh_dir_path, token_hash);

@@ -1,10 +1,8 @@
-#![allow(unused)] // FIXME
-
-mod archive;
-mod client;
-mod command;
+pub mod archive;
+pub mod client;
+pub mod command;
 mod command_runner;
-mod constants;
+pub mod constants;
 #[path = "../files_api.rs"]
 mod files_api;
 
