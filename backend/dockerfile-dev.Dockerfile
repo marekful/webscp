@@ -20,7 +20,7 @@ RUN npm run build
 ####################################################
 ################## Backend build ###################
 ####################################################
-FROM docker.io/golang:1.20.1-alpine AS go-builder
+FROM docker.io/golang:1.20.3-alpine AS go-builder
 
 RUN apk add bash make git ncurses yarn npm
 

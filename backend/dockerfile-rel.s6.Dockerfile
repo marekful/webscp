@@ -15,7 +15,7 @@ COPY  ./frontend /work/
 RUN npm run build
 
 ################## Backend build ##################
-FROM docker.io/golang:1.20.1-alpine AS backend-build
+FROM docker.io/golang:1.20.3-alpine AS backend-build
 
 RUN apk add bash make git ncurses yarn npm
 
