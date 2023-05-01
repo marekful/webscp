@@ -1,5 +1,5 @@
 ###############################################################
-FROM rust:1.68-alpine AS build
+FROM rust:1.69-alpine AS build
 ENV PTHREAD_STACK_MIN 8388608
 ARG TARGETPLATFORM
 

@@ -1,4 +1,4 @@
-FROM rust:1.68
+FROM rust:1.69
 
 RUN apt update && apt install -y libssl-dev openssh-server figlet
 
