@@ -34,7 +34,7 @@ RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ] || [ "${TARGETPLATFORM}" = "linux
     fi
 
 ###############################################################
-FROM alpine:latest AS release
+FROM alpine:3.17.3 AS release
 
 ARG TARGETPLATFORM
 
