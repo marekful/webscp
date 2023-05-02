@@ -30,6 +30,10 @@ var remoteResourceGetHandler = injectAgentWithUser(func(w http.ResponseWriter, r
 		return renderJSON(w, r, resp.Resource)
 	}
 
+	if status == http.StatusUnauthorized {
+		status = http.StatusForbidden
+	}
+
 	return status, fmt.Errorf("%s", resp.Error)
 })
 
@@ -75,6 +79,10 @@ func remoteSourceResourcePostHandler() handleFunc {
 		status, response, err := remoteResourcePostAction(r, action, req, d, compress)
 		if status == http.StatusOK {
 			return renderJSON(w, r, response)
+		}
+
+		if status == http.StatusUnauthorized {
+			status = http.StatusForbidden
 		}
 
 		return status, err
