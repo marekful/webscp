@@ -33,33 +33,41 @@
         <p>
           <strong>MD5: </strong
           ><code
-            ><a @click="checksum($event, 'md5')">{{
+            ><a v-if="md5Hash === null" @click="checksum($event, 'md5')">{{
               $t("prompts.show")
-            }}</a></code
+            }}</a
+            >{{ md5Hash }}</code
           >
         </p>
         <p>
           <strong>SHA1: </strong
           ><code
-            ><a @click="checksum($event, 'sha1')">{{
+            ><a v-if="sha1Hash === null" @click="checksum($event, 'sha1')">{{
               $t("prompts.show")
-            }}</a></code
+            }}</a
+            >{{ sha1Hash }}</code
           >
         </p>
         <p>
           <strong>SHA256: </strong
           ><code
-            ><a @click="checksum($event, 'sha256')">{{
-              $t("prompts.show")
-            }}</a></code
+            ><a
+              v-if="sha256Hash === null"
+              @click="checksum($event, 'sha256')"
+              >{{ $t("prompts.show") }}</a
+            >
+            {{ sha256Hash }}</code
           >
         </p>
         <p>
           <strong>SHA512: </strong
           ><code
-            ><a @click="checksum($event, 'sha512')">{{
-              $t("prompts.show")
-            }}</a></code
+            ><a
+              v-if="sha512Hash === null"
+              @click="checksum($event, 'sha512')"
+              >{{ $t("prompts.show") }}</a
+            >
+            {{ sha512Hash }}</code
           >
         </p>
       </template>
@@ -87,6 +95,14 @@ import { files as api } from "@/api";
 
 export default {
   name: "info",
+  data: function () {
+    return {
+      md5Hash: null,
+      sha1Hash: null,
+      sha256Hash: null,
+      sha512Hash: null,
+    };
+  },
   computed: {
     ...mapState(["req", "selected"]),
     ...mapGetters(["selectedCount", "isListing"]),
@@ -141,8 +157,7 @@ export default {
 
       try {
         const hash = await api.checksum(link, algo);
-        // eslint-disable-next-line
-        event.target.innerHTML = hash
+        this[`${algo}Hash`] = hash;
       } catch (e) {
         this.$showError(e);
       }
