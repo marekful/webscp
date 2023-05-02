@@ -105,7 +105,7 @@ export default {
   z-index: 1;
 }
 
-.custom-select .items div {
+.custom-select .items > div {
   padding-left: 1em;
   cursor: pointer;
   user-select: none;

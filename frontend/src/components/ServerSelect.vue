@@ -161,29 +161,29 @@ div.section-title {
   border-bottom: 1px solid var(--dark-blue);
   color: var(--surfaceSecondary);
   border-radius: 0px 0px 6px 6px;
-  background-color: var(--moon-grey);
+  background-color: var(--distinct-background);
 }
 
-.server-select .custom-select .items .selected {
+.server-select .custom-select .items > .selected {
   color: var(--dark-blue);
-  border: 1px solid var(--dark-blue);
+  border: 1px solid var(--grey-blue);
   border-width: 1px 0;
   background-color: var(--distinct-hover);
 }
 
-.server-select .custom-select .items div {
+.server-select .custom-select .items > div {
   color: var(--textPrimary);
 }
 
-.server-select .custom-select .items div:first-child {
+.server-select .custom-select .items > div:first-child {
   margin-top: 0.5em;
 }
 
-.server-select .custom-select .items div:last-child {
+.server-select .custom-select .items > div:last-child {
   margin-bottom: 0.5em;
 }
 
-.server-select .custom-select .items div:hover {
+.server-select .custom-select .items > div:hover {
   background-color: var(--distinct-hover);
   color: var(--dark-blue);
 }

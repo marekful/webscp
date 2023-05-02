@@ -224,7 +224,7 @@ table th {
   background-color: var(--background);
 }
 
-.custom-select .items div {
+.custom-select .items > div {
   background-color: var(--background);
 }
 
