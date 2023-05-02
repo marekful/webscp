@@ -68,11 +68,11 @@ export default {
     },
     async fillOptions() {
       let servers = (await agents.getAll()) || [];
-      this.serverList = ["Local"];
+      this.serverList = [["Local"]];
 
       for (let index = 0; index < servers.length; index++) {
         let server = servers[index];
-        let label = `${server.host}:${server.port} (${server.remote_user.name})`;
+        let label = `${server.host}:${server.port}`;
         this.servers[index + 1] = {
           id: server.id,
           user: { id: this.user.id },
@@ -80,7 +80,7 @@ export default {
           port: server.port,
           index: index + 1,
         };
-        this.serverList.push(label);
+        this.serverList.push([`WebSCP (${server.remote_user.name})`, label]);
       }
     },
   },

@@ -1,7 +1,13 @@
 <template>
   <div class="custom-select" :tabindex="tabindex" @blur="open = false">
     <div class="selected" :class="{ open: open }" @click="open = !open">
-      {{ selected }}
+      <div v-if="Array.isArray(selected)">
+        <div>{{ selected[0] }}</div>
+        <div v-if="selected[1] !== undefined">{{ selected[1] }}</div>
+      </div>
+      <div v-else>
+        {{ selected }}
+      </div>
     </div>
     <div class="items" :class="{ selectHide: !open }">
       <div
@@ -10,7 +16,13 @@
         :class="'option-' + i + (i === selectedIndex ? ' selected' : '')"
         @click="click($event, option, i)"
       >
-        {{ option }}
+        <div v-if="Array.isArray(option)">
+          <div>{{ option[0] }}</div>
+          <div v-if="option[1] !== undefined">{{ option[1] }}</div>
+        </div>
+        <div v-else>
+          {{ option }}
+        </div>
       </div>
     </div>
   </div>
