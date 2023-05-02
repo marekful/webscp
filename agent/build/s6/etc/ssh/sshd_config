@@ -21,6 +21,8 @@ HostKey /app/data/host-keys/ssh_host_ecdsa_key
 #HostKey /etc/ssh/host-keys/ssh_host_rsa_key
 #HostKey /etc/ssh/host-keys/ssh_host_ed25519_key
 
+HostkeyAlgorithms +ecdsa-sha2-nistp256
+
 # Ciphers and keying
 #RekeyLimit default none
 
