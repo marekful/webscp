@@ -1,4 +1,4 @@
-FROM rust:1.69@sha256:0996206db384a076bbd96411eb738047b1d978d41e0184cb5ebcb37edf988362
+FROM rust:1.69@sha256:9d78a0a4235f3b63f4e8303f53248a146693fc825c15d0831d1e072e474aefdf
 
 RUN apt update && apt install -y libssl-dev openssh-server figlet
 
