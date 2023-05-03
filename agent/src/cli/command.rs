@@ -136,9 +136,9 @@ pub fn command_ping(client: Client, _: Option<Vec<String>>) {
 pub fn command_get_local_version(client: Client, _: Option<Vec<String>>) {
     const AGENT_VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
     let agent_version = AGENT_VERSION.unwrap_or("unknown").to_string();
-    let fb_version = client.files_api.get_version();
+    let files_version = client.files_api.get_version();
 
-    println!("{} / {}", agent_version, fb_version);
+    println!("{{\"agent\": \"{}\", \"files\": \"{}\"}}", agent_version, files_version);
 }
 
 pub fn command_remote_before_copy(client: Client, args: Option<Vec<String>>) {
