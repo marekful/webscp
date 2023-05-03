@@ -1,5 +1,5 @@
 ###############################################################
-FROM rust:1.69-alpine@sha256:3dd0bb6f134635fe40dd9c18bd9603f9d90ce3538ac25ae3e69b9b127137acf2 AS build
+FROM rust:1.69-alpine@sha256:a1123af3383f0e71da8deca8afc1e506ff3ee48c7903f253a11b7b632d938190 AS build
 ENV PTHREAD_STACK_MIN 8388608
 ARG TARGETPLATFORM
 
@@ -34,7 +34,7 @@ RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ] || [ "${TARGETPLATFORM}" = "linux
     fi
 
 ###############################################################
-FROM alpine:3.17.3@sha256:b6ca290b6b4cdcca5b3db3ffa338ee0285c11744b4a6abaa9627746ee3291d8d AS release
+FROM alpine:3.17.3@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126 AS release
 
 ARG TARGETPLATFORM
 

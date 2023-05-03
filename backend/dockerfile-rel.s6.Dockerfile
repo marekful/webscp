@@ -1,5 +1,5 @@
 ################## Frontend build ##################
-FROM docker.io/node:18@sha256:d9946ebbeb3ca08ccaa24a8220d7da1f9e9fd749d489913faeed89e02f70a202 AS frontend-buid
+FROM docker.io/node:18@sha256:196c5cfdd2f7f41a42c418b4fc6c553f9ab3575cfdc228199de8a465be788155 AS frontend-buid
 
 WORKDIR /work
 
@@ -15,7 +15,7 @@ COPY  ./frontend /work/
 RUN npm run build
 
 ################## Backend build ##################
-FROM docker.io/golang:1.20.3-alpine@sha256:48c87cd759e3342fcbc4241533337141e7d8457ec33ab9660abe0a4346c30b60 AS backend-build
+FROM docker.io/golang:1.20.3-alpine@sha256:08e9c086194875334d606765bd60aa064abd3c215abfbcf5737619110d48d114 AS backend-build
 
 RUN apk add bash make git ncurses yarn npm
 
@@ -32,7 +32,7 @@ COPY --from=frontend-buid /work/dist/ /work/backend/frontend/dist/
 RUN cd backend && make build-backend
 
 ################## Run ##################
-FROM alpine:3.17@sha256:b6ca290b6b4cdcca5b3db3ffa338ee0285c11744b4a6abaa9627746ee3291d8d AS release
+FROM alpine:3.17@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126 AS release
 
 ARG TARGETPLATFORM
 
