@@ -122,7 +122,7 @@ func withAgentUser(fn handleFunc) handleFunc {
 			return http.StatusUnauthorized, nil
 		}
 
-		user, dErr := d.store.Users.Get(d.server.Root, uint(id64))
+		user, dErr := d.store.Users.Get(d.server.Root, id64)
 		if dErr != nil {
 			return http.StatusUnauthorized, nil
 		}
