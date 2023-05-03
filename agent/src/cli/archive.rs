@@ -4,7 +4,7 @@ use std::{
     fs,
     fs::File,
     future::Future,
-    io::{Error},
+    io::Error,
     path::Path,
     time::{Duration, Instant},
 };

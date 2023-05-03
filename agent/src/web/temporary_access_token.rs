@@ -13,12 +13,7 @@ use std::{
 };
 use tokio::{task, time::Instant};
 
-use crate::{
-    client::Client,
-    command_runner::run_command_async,
-    constants::DEFAULTS,
-    Files,
-};
+use crate::{client::Client, command_runner::run_command_async, constants::DEFAULTS, Files};
 
 #[derive(Serialize, Debug)]
 pub struct TemporaryAccessTokenResponse {
