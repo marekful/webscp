@@ -61,7 +61,7 @@
               <th>{{ $t("settings.agent.port") }}</th>
               <th>{{ $t("settings.agent.user") }}</th>
               <th :title="$t('settings.agent.agentVersionHint')">
-                {{ $t("settings.agent.agentVersion") }}
+                {{ $t("settings.agent.version") }}
               </th>
               <th :title="$t('settings.agent.latencyHint')">
                 {{ $t("settings.agent.latency") }}
@@ -87,7 +87,9 @@
               <td>{{ agent.host }}</td>
               <td>{{ agent.port }}</td>
               <td>{{ agent.remote_user.name }}</td>
-              <td v-if="!agent.error" class="version">{{ agent.version }}</td>
+              <td v-if="!agent.error" class="version">
+                {{ agent.version.files }} ({{ agent.version.agent }})
+              </td>
               <td v-else class="version" :colspan="agent.error ? '2' : ''">
                 <div class="error">{{ agent.error }}</div>
               </td>
