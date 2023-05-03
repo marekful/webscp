@@ -1,6 +1,10 @@
 <template>
   <div
-    :class="{ item: true, dotfile: this.isDotFile, hidden: this.isDotFile && !showDotfiles }"
+    :class="{
+      item: true,
+      dotfile: this.isDotFile,
+      hidden: this.isDotFile && !showDotfiles,
+    }"
     role="button"
     tabindex="0"
     :draggable="isDraggable"

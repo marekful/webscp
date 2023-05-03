@@ -3,7 +3,7 @@ name: main
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
     tags:
       - 'v*'
   pull_request:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - run: make lint-frontend
+      - run: cd backend && make lint-frontend
   lint-backend:
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.20.1
-      - run: make lint-backend
+      - run: cd backend && make lint-backend
   lint-commits:
     runs-on: ubuntu-latest
     steps:
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - run: make lint-commits
+      - run: cd backend && make lint-commits
   lint:
     runs-on: ubuntu-latest
     needs: [lint-frontend, lint-backend, lint-commits]
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - run: make test-frontend
+      - run: cd backend && make test-frontend
   test-backend:
     runs-on: ubuntu-latest
     steps:
@@ -58,7 +58,7 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.20.1
-      - run: make test-backend
+      - run: cd backend && make test-backend
   test:
     runs-on: ubuntu-latest
     needs: [test-frontend, test-backend]
@@ -79,13 +79,13 @@ jobs:
           go-version: 1.20.1
       - uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: '18'
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Build frontend
-        run: make build-frontend
+        run: cd backend && make build-frontend
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:

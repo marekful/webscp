@@ -35,7 +35,7 @@ lint: lint-frontend lint-backend lint-commits ## Run all linters
 
 .PHONY: lint-frontend
 lint-frontend: ## Run frontend linters
-	$Q cd frontend && npm ci && npm run lint
+	$Q cd ../frontend && npm ci && npm run lint
 
 .PHONY: lint-backend
 lint-backend: | $(golangci-lint) ## Run backend linters
