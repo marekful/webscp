@@ -1,9 +1,11 @@
 use rocket::{
     http::CookieJar,
-    serde::{json::Json, Serialize},
+    serde::{
+        json::{serde_json, Json},
+        Serialize,
+    },
     State,
 };
-use rocket::serde::json::serde_json;
 use serde::Deserialize;
 
 use crate::{
@@ -90,8 +92,12 @@ pub async fn version(
         return Json(VersionResponse {
             version: None,
             latency: None,
-            error: Some(format!("parse error: {} -- {}", deserialized_result.unwrap_err().to_string(), version_str)),
-        })
+            error: Some(format!(
+                "parse error: {} -- {}",
+                deserialized_result.unwrap_err().to_string(),
+                version_str
+            )),
+        });
     }
     let version: Version = deserialized_result.unwrap();
 
