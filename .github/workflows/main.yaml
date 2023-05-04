@@ -16,16 +16,18 @@ jobs:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '16'
-      - run: cd backend && make lint-frontend
+          node-version: '18'
+      - run: make lint-frontend
+        working-directory: backend
   lint-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
       - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
-          go-version: 1.20.1
-      - run: cd backend && make lint-backend
+          go-version: 1.20.3
+      - run: make lint-backend
+        working-directory: backend
   lint-commits:
     runs-on: ubuntu-latest
     steps:
@@ -34,8 +36,9 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '16'
-      - run: cd backend && make lint-commits
+          node-version: '18'
+      - run: make lint-commits
+        working-directory: backend
   lint:
     runs-on: ubuntu-latest
     needs: [lint-frontend, lint-backend, lint-commits]
@@ -49,16 +52,19 @@ jobs:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '16'
-      - run: cd backend && make test-frontend
+          node-version: '18'
+      - run: make test-frontend
+        working-directory: backend
   test-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
       - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
-          go-version: 1.20.1
-      - run: cd backend && make test-backend
+          go-version: 1.20.3
+
+      - run: make test-backend
+        working-directory: backend
   test:
     runs-on: ubuntu-latest
     needs: [test-frontend, test-backend]
@@ -76,25 +82,71 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
-          go-version: 1.20.1
+          go-version: 1.20.3
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
           node-version: '18'
+      -
+        name: "Files: Docker meta"
+        id: files_meta
+        uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e # v4.4.0
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            marekful/webscp-files
+            hub.docker.com/marekful/webscp-files
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+      - name: "Agent: Docker meta"
+        id: agent_meta
+        uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e # v4.4.0
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            marekful/webscp-agent
+            hub.docker.com/marekful/webscp-agent
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
       - name: Set up QEMU
         uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # v2.1.0
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c # v2.5.0
-      - name: Build frontend
-        run: cd backend && make build-frontend
       - name: Login to Docker Hub
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@f82d6c1c344bcacabba2c841718984797f664a6b # 4.2.0
+      -
+        name: "Files: Docker buildx && push"
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4.0.0
         with:
-          version: latest
-          args: release --rm-dist
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          context: backend
+          file: dockerfile-rel.s6.Dockerfile
+          platforms: linux/amd64,linux/amd64/v2,linux/amd64/v3,linux/arm64/v8
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.files_meta.outputs.tags }}
+          labels: ${{ steps.files_meta.outputs.labels }}
+      -
+        name: "Agent: Docker buildx && push"
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671 # v4.0.0
+        with:
+          context: agent
+          file: build/df-rel-alpine.Dockerfile
+          platforms: linux/amd64,linux/amd64/v2,linux/amd64/v3,linux/arm64/v8
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.agent_meta.outputs.tags }}
+          labels: ${{ steps.agent_meta.outputs.labels }}
