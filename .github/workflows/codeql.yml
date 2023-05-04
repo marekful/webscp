@@ -20,7 +20,7 @@ on:
   schedule:
     - cron: '41 6 * * 0'
 
-permissions: none
+permissions: read-all
 
 jobs:
   analyze:
