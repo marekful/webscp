@@ -24,7 +24,7 @@ jobs:
   lint-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: 1.20.3
@@ -33,7 +33,7 @@ jobs:
   lint-commits:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
         with:
           fetch-depth: 0
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
@@ -48,13 +48,22 @@ jobs:
       - run: echo "done"
 
   lint-rust:
+    name: "Agent: Rust format check"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
-      - uses: dtolnay/rust-toolchain@b44cb146d03e8d870c57ab64b80f04586349ca5d
-      - uses: mbrobbel/rustfmt-check@5bff2c089f8c32070f1ec03b23fcc51f7604e0ff # v0.5.0
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: actions-rs/toolchain@b2417cde72dcf67f306c0ae8e0828a81bf0b189f # v1.0.6
+        with:
+          toolchain: nightly
+          components: rustfmt
+          override: true
+      - uses: LoliGothick/rustfmt-check@a86cbe9bddeb4dd029177643cf6d08270abbf9b7 # v0.3.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          flags: --all
+          options: --manifest-path=Cargo.toml
+          args: --config-path=rustfmt.toml
+          working-directory: agent
 
 # tests
   test-frontend:
