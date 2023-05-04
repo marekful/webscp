@@ -44,6 +44,7 @@ jobs:
   lint-rust:
     name: "Agent: Rust format check"
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - uses: actions-rs/toolchain@b2417cde72dcf67f306c0ae8e0828a81bf0b189f # v1.0.6
