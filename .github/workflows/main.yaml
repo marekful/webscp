@@ -47,6 +47,15 @@ jobs:
     steps:
       - run: echo "done"
 
+  lint-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - uses: dtolnay/rust-toolchain@b44cb146d03e8d870c57ab64b80f04586349ca5d
+      - uses: mbrobbel/rustfmt-check@5bff2c089f8c32070f1ec03b23fcc51f7604e0ff # v0.5.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
 # tests
   test-frontend:
     runs-on: ubuntu-latest
@@ -127,16 +136,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.files_meta.outputs.tags }}
           labels: ${{ steps.files_meta.outputs.labels }}
-
-  lint-rust:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
-      - uses: dtolnay/rust-toolchain@b44cb146d03e8d870c57ab64b80f04586349ca5d
-      - uses: mbrobbel/rustfmt-check@5bff2c089f8c32070f1ec03b23fcc51f7604e0ff # v0.5.0
-        working_directory: agent
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
   release-agent:
     runs-on: ubuntu-latest
