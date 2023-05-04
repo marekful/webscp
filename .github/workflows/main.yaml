@@ -61,7 +61,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           flags: --all
-          options: --manifest-path=Cargo.toml
+          ##options: --manifest-path=Cargo.toml
           args: --config-path=rustfmt.toml
           working-directory: agent
 
