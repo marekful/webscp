@@ -23,8 +23,8 @@ on:
 permissions: read-all
 
 jobs:
-  analyze:
-    name: Analyze
+  codeql-analyze:
+    name: CodeQL Analyze
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
       actions: read
@@ -69,6 +69,11 @@ jobs:
         cd backend
         make build-backend
 
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
+      with:
+        category: "/language:${{matrix.language}}"
+
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
 
@@ -78,8 +83,17 @@ jobs:
     # - run: |
     #     echo "Run, Build Application using script"
     #     ./location_of_script_within_repo/buildscript.sh
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
+  rust-analyze:
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+    - name: Setup Rust nightly toolchain
+      uses: actions-rs/toolchain@ae10961054e4aa8b4aa7dffede299aaf087aa33b # v1.0.1
       with:
-        category: "/language:${{matrix.language}}"
+        toolchain: nightly
+        override: true
+        components: rustfmt
+    - name: Analyze Rust
+      run: |
+        cd agent
+        cargo +nightly fmt --check
