@@ -81,21 +81,3 @@ jobs:
     # - run: |
     #     echo "Run, Build Application using script"
     #     ./location_of_script_within_repo/buildscript.sh
-  rust-analyze:
-    runs-on: ubuntu-latest
-    name: Rust Analyze
-    permissions:
-      security-events: write
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
-    - name: Setup Rust nightly toolchain
-      uses: actions-rs/toolchain@b2417cde72dcf67f306c0ae8e0828a81bf0b189f # v1.0.6
-      with:
-        toolchain: nightly
-        override: true
-        components: rustfmt
-    - name: Analyze Rust
-      run: |
-        cd agent
-        cargo +nightly fmt --check
