@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '18'
+          node-version: '16'
       - run: make lint-frontend
         working-directory: backend
   lint-backend:
@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '18'
+          node-version: '16'
       - run: make lint-commits
         working-directory: backend
   lint-agent:
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '18'
+          node-version: '16'
       - run: make test-frontend
         working-directory: backend
   test-backend:
@@ -105,7 +105,7 @@ jobs:
           go-version: 1.20.3
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '18'
+          node-version: '16'
       -
         name: Files - save Docker meta data
         id: files_meta
@@ -146,7 +146,7 @@ jobs:
           labels: ${{ steps.files_meta.outputs.labels }}
 
   build-agent:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, X64]
     needs: [lint, test]
     if: startsWith(github.event.ref, 'refs/tags/v')
     steps:
@@ -158,7 +158,7 @@ jobs:
           go-version: 1.20.3
       - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
-          node-version: '18'
+          node-version: '16'
       -
         name: Agent - save Docker meta data
         id: agent_meta
