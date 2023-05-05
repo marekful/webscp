@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'go', 'javascript' ]
+        language: [ 'go', 'javascript', 'cpp', 'csharp' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Use only 'java' to analyze code written in Java, Kotlin or both
         # Use only 'javascript' to analyze code written in JavaScript, TypeScript or both
@@ -59,9 +59,15 @@ jobs:
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
+    #- if: matrix.language == 'cpp' || matrix.language == 'csharp'
+    #  name: Autobuild
+    #  uses: github/codeql-action/autobuild@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
     - if: matrix.language == 'cpp' || matrix.language == 'csharp'
-      name: Autobuild
-      uses: github/codeql-action/autobuild@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
+      name: Build Rust
+      run: |
+        echo "Starting custom Rust build..."
+        cd agent
+        cargo build
     - if: matrix.language == 'go'
       name: Build Go
       run: |
