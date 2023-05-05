@@ -62,12 +62,6 @@ jobs:
     #- if: matrix.language == 'cpp' || matrix.language == 'csharp'
     #  name: Autobuild
     #  uses: github/codeql-action/autobuild@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
-    - if: matrix.language == 'cpp' || matrix.language == 'csharp'
-      name: Build Rust
-      run: |
-        echo "Starting custom Rust build..."
-        cd agent
-        cargo build
     - if: matrix.language == 'go'
       name: Build Go
       run: |
