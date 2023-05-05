@@ -88,7 +88,9 @@
               <td>{{ agent.port }}</td>
               <td>{{ agent.remote_user.name }}</td>
               <td v-if="!agent.error" class="version">
-                {{ agent.version.files }} ({{ agent.version.agent }})
+                <span v-if="typeof agent.version === 'object'">
+                  {{ agent.version.files }} ({{ agent.version.agent }})
+                </span>
               </td>
               <td v-else class="version" :colspan="agent.error ? '2' : ''">
                 <div class="error">{{ agent.error }}</div>
