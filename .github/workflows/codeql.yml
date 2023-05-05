@@ -27,8 +27,6 @@ jobs:
     name: CodeQL Analyze
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
-      actions: read
-      contents: read
       security-events: write
 
     strategy:
@@ -84,6 +82,10 @@ jobs:
     #     echo "Run, Build Application using script"
     #     ./location_of_script_within_repo/buildscript.sh
   rust-analyze:
+    runs-on: ubuntu-latest
+    name: Rust Analyze
+    permissions:
+      security-events: write
     steps:
     - name: Checkout repository
       uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
