@@ -40,7 +40,7 @@ jobs:
         working-directory: backend
   lint-commits:
     runs-on: ubuntu-latest
-    if: !startsWith(github.event.ref, 'refs/heads/snyk-')
+    if: startsWith(github.event.ref, 'refs/heads/snyk-') == 'false'
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
