@@ -12,8 +12,8 @@ RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ] || [ "${TARGETPLATFORM}" = "linux
     fi
 
 ##
-COPY Cargo-alpine.toml /app/Cargo.toml
-COPY Cargo-alpine.lock /app/Cargo.lock
+COPY Cargo.toml /app/Cargo.toml
+COPY Cargo.lock /app/Cargo.lock
 
 WORKDIR /app
 

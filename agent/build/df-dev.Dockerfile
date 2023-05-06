@@ -21,8 +21,8 @@ RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && \
 
 #VOLUME ["/app/target", "/usr/local/cargo"]
 
-COPY Cargo.toml /app/Cargo.toml
-COPY Cargo.lock /app/Cargo.lock
+COPY Cargo-dev.toml /app/Cargo.toml
+COPY Cargo-dev.lock /app/Cargo.lock
 
 WORKDIR /app
 
