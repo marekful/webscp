@@ -17,7 +17,7 @@ COPY Cargo-alpine.lock /app/Cargo.lock
 
 WORKDIR /app
 
-RUN cargo fetch
+RUN nice -n 12 cargo fetch
 
 ##
 COPY src /app/src
@@ -28,9 +28,9 @@ RUN apk add openssl-dev musl-dev
 #
 #RUN RUSTFLAGS='-C target-feature=-crt-static' cargo build --release
 RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ] || [ "${TARGETPLATFORM}" = "linux/amd64/v2" ] || [ "${TARGETPLATFORM}" = "linux/amd64/v3" ] || [ -z "${TARGETPLATFORM}" ]; then \
-      RUSTFLAGS='-C target-feature=-crt-static' cargo build --release; \
+      RUSTFLAGS='-C target-feature=-crt-static' nice -n 10 cargo build --release; \
     elif [ "${TARGETPLATFORM}" = "linux/arm64" ] || [ "${TARGETPLATFORM}" = "linux/arm64/v8" ]; then \
-      RUSTFLAGS='-C target-feature=-crt-static' cargo build --target aarch64-unknown-linux-musl --release; \
+      RUSTFLAGS='-C target-feature=-crt-static' nice -n 10 cargo build --target aarch64-unknown-linux-musl --release; \
     fi
 
 ###############################################################

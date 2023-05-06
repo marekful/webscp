@@ -20,13 +20,13 @@ on:
   schedule:
     - cron: '41 6 * * 0'
 
+permissions: read-all
+
 jobs:
-  analyze:
-    name: Analyze
+  codeql-analyze:
+    name: CodeQL Analyze
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
-      actions: read
-      contents: read
       security-events: write
 
     strategy:
@@ -57,15 +57,20 @@ jobs:
 
     # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
     # If this step fails, then you should remove it and run the build manually (see below)
-    - if: matrix.language == 'cpp' || matrix.language == 'csharp'
-      name: Autobuild
-      uses: github/codeql-action/autobuild@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
+    #- if: matrix.language == 'cpp' || matrix.language == 'csharp'
+    #  name: Autobuild
+    #  uses: github/codeql-action/autobuild@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
     - if: matrix.language == 'go'
       name: Build Go
       run: |
         echo "Starting custom Go build..."
         cd backend
         make build-backend
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
+      with:
+        category: "/language:${{matrix.language}}"
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
@@ -76,8 +81,3 @@ jobs:
     # - run: |
     #     echo "Run, Build Application using script"
     #     ./location_of_script_within_repo/buildscript.sh
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
-      with:
-        category: "/language:${{matrix.language}}"

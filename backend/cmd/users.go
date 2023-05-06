@@ -52,12 +52,12 @@ func printUsers(usrs []*users.User) {
 	w.Flush()
 }
 
-func parseUsernameOrID(arg string) (username string, id uint64) {
-	id64, err := strconv.ParseUint(arg, 10, 64)
+func parseUsernameOrID(arg string) (username string, id uint) {
+	rawID, err := strconv.Atoi(arg)
 	if err != nil {
 		return arg, 0
 	}
-	return "", id64
+	return "", uint(rawID)
 }
 
 func addUserFlags(flags *pflag.FlagSet) {
