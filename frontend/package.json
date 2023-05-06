@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "ace-builds": "1.17.0",
-    "clipboard": "2.0.8",
-    "core-js": "3.30.0",
+    "clipboard": "2.0.11",
+    "core-js": "3.30.1",
     "css-vars-ponyfill": "2.4.3",
-    "js-base64": "2.6.4",
+    "file-loader": "6.2.0",
+    "filesize": "10.0.7",
+    "js-base64": "3.7.5",
     "lodash.clonedeep": "4.5.0",
     "lodash.throttle": "4.1.1",
     "material-icons": "1.13.4",
@@ -38,13 +40,14 @@
     "@vue/cli-plugin-babel": "5.0.8",
     "@vue/cli-plugin-eslint": "5.0.8",
     "@vue/cli-service": "5.0.8",
-    "@vue/eslint-config-prettier": "6.0.0",
-    "babel-eslint": "10.1.0",
-    "compression-webpack-plugin": "6.0.3",
+    "@vue/eslint-config-prettier": "7.1.0",
+    "babel-eslint": "7.2.3",
+    "compression-webpack-plugin": "10.0.0",
+    "escope": "3.5.0",
     "eslint": "8.40.0",
-    "eslint-plugin-prettier": "3.3.1",
+    "eslint-plugin-prettier": "4.2.1",
     "eslint-plugin-vue": "9.11.0",
-    "prettier": "2.2.1",
+    "prettier": "2.8.8",
     "vue-template-compiler": "2.7.14"
   },
   "eslintConfig": {
@@ -57,7 +60,11 @@
       "eslint:recommended",
       "@vue/prettier"
     ],
-    "rules": {},
+    "rules": {
+      "vue/multi-word-component-names": 0,
+      "vue/no-reserved-component-names": 0,
+      "vue/no-mutating-props": 0
+    },
     "parserOptions": {
       "parser": "babel-eslint"
     }
