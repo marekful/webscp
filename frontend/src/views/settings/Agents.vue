@@ -215,7 +215,7 @@ td.status {
 
 .card .token textarea {
   width: 100%;
-  background-color: var(--moon-grey);
+  background-color: var(--background);
   height: 4em;
   border: 1px solid var(--icon-blue);
   padding: 0.5em;
