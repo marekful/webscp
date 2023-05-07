@@ -3,7 +3,6 @@ use rocket::{
     serde::{json::Json, Serialize},
     State,
 };
-use rustfmt::config::NewlineStyle::Unix;
 use sha256::digest;
 use std::{
     ops::Add,
