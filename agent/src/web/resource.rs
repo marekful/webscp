@@ -129,7 +129,7 @@ pub async fn copy(
         &agent.port,
         remote_user_id,
         &agent.remote_user.token,
-        &items_json
+        &items_json,
     ];
 
     // execute command

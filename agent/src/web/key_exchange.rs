@@ -48,7 +48,7 @@ pub async fn register_public_key(
     let args: Vec<&str> = vec![
         host_info.host,
         host_info.port,
-        host_info.secret.unwrap_or("")
+        host_info.secret.unwrap_or(""),
     ];
 
     match run_command_async(201, true, false, COMMAND_EXCHANGE_KEYS, args).await {

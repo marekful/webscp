@@ -28,11 +28,7 @@ pub fn run_command(
 
     // return error if failed to execute command
     if let Err(err) = result {
-        return Err(get_error(
-            command_id,
-            err.to_string(),
-            "500".to_string(),
-        ));
+        return Err(get_error(command_id, err.to_string(), "500".to_string()));
     }
     let result = result.unwrap();
     let stderr = String::from_utf8(result.stderr).unwrap_or("".to_string());

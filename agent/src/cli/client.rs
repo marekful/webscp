@@ -200,7 +200,7 @@ impl Client<'_> {
             &local_path,
             &transfer.host,
             &transfer.port,
-            &remote_path
+            &remote_path,
         ];
 
         // setup command for asynchronous execution
@@ -347,12 +347,7 @@ impl Client<'_> {
             Err(e) => {
                 Client::print_error_and_exit(
                     132,
-                    format!(
-                        "503 Couldn't connect to {}:{}: {}",
-                        self.host,
-                        self.port,
-                        e
-                    ),
+                    format!("503 Couldn't connect to {}:{}: {}", self.host, self.port, e),
                 );
                 return None;
             }
