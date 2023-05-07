@@ -52,13 +52,11 @@ pub async fn version(
     };
 
     // create arguments for the 'get-remote-version' command
-    let mut version_ags: Vec<&str> = Vec::new();
-    version_ags.push(&agent.host);
-    version_ags.push(&agent.port);
+    let version_args: Vec<&str> = vec![&agent.host, &agent.port];
 
     // execute 'get-remote-version' command
     let version_str =
-        match run_command_async(81, true, false, COMMAND_GET_REMOTE_VERSION, version_ags).await {
+        match run_command_async(81, true, false, COMMAND_GET_REMOTE_VERSION, version_args).await {
             Ok(version) => version,
             Err(err) => {
                 return Json(VersionResponse {
@@ -70,9 +68,7 @@ pub async fn version(
         };
 
     // create arguments for the 'ping' command
-    let mut ping_args: Vec<&str> = Vec::new();
-    ping_args.push(&agent.host);
-    ping_args.push(&agent.port);
+    let ping_args: Vec<&str> = vec![&agent.host, &agent.port];
 
     // execute 'ping' command
     let ping = match run_command_async(91, true, false, COMMAND_PING, ping_args).await {
@@ -94,7 +90,7 @@ pub async fn version(
             latency: None,
             error: Some(format!(
                 "parse error: {} -- {}",
-                deserialized_result.unwrap_err().to_string(),
+                deserialized_result.unwrap_err(),
                 version_str
             )),
         });
@@ -125,11 +121,8 @@ pub async fn ping(
         }
     };
 
-    let mut args: Vec<&str> = Vec::new();
-    args.push(&agent.host);
-    args.push(&agent.port);
-
-    return match run_command_async(71, true, false, COMMAND_PING, args).await {
+    let args: Vec<&str> = vec![&agent.host, &agent.port];
+    match run_command_async(71, true, false, COMMAND_PING, args).await {
         Ok(output) => Json(PingResponse {
             latency: Some(output.trim().to_string()),
             error: None,
@@ -138,5 +131,5 @@ pub async fn ping(
             latency: None,
             error: Some(err.message),
         }),
-    };
+    }
 }

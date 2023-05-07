@@ -84,10 +84,7 @@ pub async fn get_token_user(
         );
     }
     // create argument list for the get-remote-user-name command
-    let mut args: Vec<&str> = Vec::new();
-    args.push(host);
-    args.push(port);
-    args.push(request.access_token);
+    let args: Vec<&str> = vec![host, port, request.access_token];
 
     // execute command
     let result = run_command_async(274, true, false, COMMAND_GET_TOKEN_USER, args).await;
@@ -163,11 +160,7 @@ pub async fn get_remote_user(
     }
 
     // create argument list for the get-remote-user command
-    let mut args: Vec<&str> = Vec::new();
-    args.push(host);
-    args.push(port);
-    args.push(request.name);
-    args.push(request.password);
+    let args: Vec<&str> = vec![host, port, request.name, request.password];
 
     // execute command
     let result = run_command_async(274, true, false, COMMAND_GET_REMOTE_USER, args).await;

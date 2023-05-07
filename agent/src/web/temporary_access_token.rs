@@ -6,7 +6,6 @@ use rocket::{
 use rustfmt::config::NewlineStyle::Unix;
 use sha256::digest;
 use std::{
-    future::Future,
     ops::Add,
     path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -52,12 +51,13 @@ pub async fn get_temporary_access_token(
     // create arguments for the generate temporary access token command
     let key_id = Client::random_hex();
     let user_id = user.id.to_string();
-    let mut args: Vec<&str> = Vec::new();
-    args.push(DEFAULTS.generate_key_pair_script_path);
-    args.push(&key_id);
-    args.push(&user_id);
-    args.push(&user.username);
-    args.push(&user.scope);
+    let args: Vec<&str> = vec![
+        DEFAULTS.generate_key_pair_script_path,
+        &key_id,
+        &user_id,
+        &user.username,
+        &user.scope,
+    ];
 
     // execute command
     let token = match run_command_async(280, false, false, "bash", args).await {
@@ -80,7 +80,7 @@ pub async fn get_temporary_access_token(
     let token_hash = digest(token.clone());
     let _future = task::spawn(revoke_temporary_access_token(
         key_id,
-        token_hash.clone(),
+        token_hash,
         valid_until_instant,
     ));
 
@@ -104,52 +104,46 @@ fn valid_until(seconds: u64) -> (u64, Instant) {
     (timestamp, instant)
 }
 
-fn revoke_temporary_access_token(
+async fn revoke_temporary_access_token(
     token_id: String,
     token_hash: String,
     token_expires: Instant,
-) -> impl Future<Output = Result<(), ()>> + 'static {
-    async move {
-        let one_sec = Duration::from_secs(1);
-        let lock_file_path = format!("{}/{}", DEFAULTS.ssh_dir_path, token_hash);
+) -> Result<(), ()> {
+    let one_sec = Duration::from_secs(1);
+    let lock_file_path = format!("{}/{}", DEFAULTS.ssh_dir_path, token_hash);
 
-        // create arguments for the revoke key command
-        let mut args: Vec<&str> = Vec::new();
-        args.push(DEFAULTS.revoke_key_pair_script_path);
-        args.push(&token_id);
+    // create arguments for the revoke key command
+    let args: Vec<&str> = vec![DEFAULTS.revoke_key_pair_script_path, &token_id];
 
-        // initialize command
-        let revoke_key = run_command_async(281, false, false, "bash", args);
+    // initialize command
+    let revoke_key = run_command_async(281, false, false, "bash", args);
 
-        // create arguments for the remove lock file command
-        let mut args: Vec<&str> = Vec::new();
-        args.push("-f");
-        args.push(&lock_file_path);
+    // create arguments for the remove lock file command
+    let args: Vec<&str> = vec!["-f", &lock_file_path];
 
-        // initialize command
-        let remove_lock_file = run_command_async(282, false, false, "rm", args);
+    // initialize command
+    let remove_lock_file = run_command_async(282, false, false, "rm", args);
 
-        // loop-wait until timeout or lock file removed (by registered client)
-        loop {
-            tokio::time::sleep(one_sec).await;
+    // loop-wait until timeout or lock file removed (by registered client)
+    loop {
+        tokio::time::sleep(one_sec).await;
 
-            if !Path::new(&lock_file_path).exists() {
-                // proceed to revoke key
-                break;
-            }
-
-            if token_expires < Instant::now() {
-                // execute remove lock file command
-                let _ = remove_lock_file.await;
-
-                // proceed to revoke key
-                break;
-            }
+        if !Path::new(&lock_file_path).exists() {
+            // proceed to revoke key
+            break;
         }
 
-        // execute revoke key command
-        let _ = revoke_key.await;
+        if token_expires < Instant::now() {
+            // execute remove lock file command
+            let _ = remove_lock_file.await;
 
-        Ok(())
+            // proceed to revoke key
+            break;
+        }
     }
+
+    // execute revoke key command
+    let _ = revoke_key.await;
+
+    Ok(())
 }

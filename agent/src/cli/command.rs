@@ -176,7 +176,7 @@ pub fn command_local_before_copy(client: Client<'_>, args: Option<Vec<String>>) 
 
     match client.files_api.local_before_copy(user_id, token, items) {
         Ok(response) => {
-            print!("{}", response.trim().to_string());
+            print!("{}", response.trim());
         }
         Err(e) => {
             let mut msg = e.message;

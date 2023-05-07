@@ -17,9 +17,8 @@ pub struct FutureCommandError {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    #[allow(clippy::type_complexity)]
     let mut exec: Option<fn(Client, Option<Vec<String>>)> = None;
-    //let mut exec_async: Option<fn(Option<Client>, Option<Vec<String>>)> = None;
-    //let mut exec_async: dyn Future<Output=Result<fn(Option<Client>, Option<Vec<String>>), FutureCommandError>> = None;
 
     // commands executed locally - these require no 'host' and 'port'
     // arguments but may require others
