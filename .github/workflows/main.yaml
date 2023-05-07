@@ -40,7 +40,7 @@ jobs:
         working-directory: backend
   lint-commits:
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.head_ref, 'snyk-') }}
+    if: ${{ !startsWith(github.head_ref, 'snyk-') && !startsWith(github.head_ref, 'dependabot/') }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
