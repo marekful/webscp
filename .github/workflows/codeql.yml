@@ -99,16 +99,16 @@ jobs:
         make build-backend
 
     - name: Perform CodeQL Analysis
-      if: ${{ matrix.language == 'go' && steps.filter.outputs.agent == 'true' }}
+      if: ${{ matrix.language == 'go' && steps.filter.outputs.backend == 'true' }}
       uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
       with:
-        category: "/language:go"
+        category: "/language:[go]"
 
     - name: Perform CodeQL Analysis
       if: ${{ matrix.language == 'javascript' && steps.filter.outputs.frontend == 'true' }}
       uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
       with:
-        category: "/language:javascript"
+        category: "/language:[javascript]"
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
