@@ -13,7 +13,6 @@ cssVars();
 
 sync(store, router);
 
-// start application
 async function start() {
   try {
     if (loginPage || authMethod === "oidc") {
