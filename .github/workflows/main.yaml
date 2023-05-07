@@ -6,6 +6,7 @@ on:
       - 'main'
     tags:
       - 'v*'
+      - 'test*'
   pull_request:
 
 permissions: read-all
