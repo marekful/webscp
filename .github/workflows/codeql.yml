@@ -101,6 +101,5 @@ jobs:
       - name: Perform Clippy Analysis
         uses: qernal/github-actions-rust-clippy@a81d3695b821a19ee95e2cbc10e57ad8c3840354 # v2.0.2
         with:
-          args: "--verbose,--all-targets"
           path_glob: "app/src"
           rust_version: 1.69
