@@ -4,7 +4,7 @@ use rocket::{
     tokio::{task, time},
     State,
 };
-use std::{fs, future::Future, time::Duration};
+use std::{fs, time::Duration};
 use urlencoding::encode;
 
 use crate::client::Client;
@@ -79,7 +79,7 @@ pub async fn resources(
     args.push(&agent.remote_user.token);
     args.push(&path_encoded);
     // execute command and send success or error response
-    return match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
+    match run_command_async(202, true, false, COMMAND_GET_REMOTE_RESOURCE, args).await {
         Ok(output) => (
             Status::Ok,
             Json(ResourcesResponse {
@@ -96,7 +96,7 @@ pub async fn resources(
                 error: Some(err.message),
             }),
         ),
-    };
+    }
 }
 
 #[patch("/agents/<agent_id>/resources/<archive_name>", data = "<request>")]
@@ -124,15 +124,16 @@ pub async fn copy(
     // create arguments for 'remote-before-copy' command
     let remote_user_id = &agent.remote_user.id.clone().to_string();
     let items_json = get_items_json(&request.items);
-    let mut before_copy_args: Vec<&str> = Vec::new();
-    let destination_root: String;
-    before_copy_args.push(&agent.host);
-    before_copy_args.push(&agent.port);
-    before_copy_args.push(remote_user_id);
-    before_copy_args.push(&agent.remote_user.token);
-    before_copy_args.push(&items_json);
+    let before_copy_args: Vec<&str> = vec![
+        &agent.host,
+        &agent.port,
+        remote_user_id,
+        &agent.remote_user.token,
+        &items_json
+    ];
+
     // execute command
-    match run_command_async(
+    let destination_root = match run_command_async(
         204,
         true,
         false,
@@ -141,7 +142,7 @@ pub async fn copy(
     )
     .await
     {
-        Ok(root) => destination_root = root,
+        Ok(root) => root,
         Err(err) => {
             // abort with error if copy pre-checks failed
             return (
@@ -160,7 +161,7 @@ pub async fn copy(
         port: agent.port,
         transfer_id: archive_name.to_string(),
         local_path: String::from(&request.source_root),
-        remote_path: String::from(destination_root),
+        remote_path: destination_root,
         compress: request.compress,
         overwrite: request.items[0].overwrite,
         size: 0,
@@ -217,107 +218,104 @@ pub struct FutureError {
     pub message: String,
 }
 
-fn finish_upload_in_background(
+async fn finish_upload_in_background(
     mut transfer: Transfer,
     req_items: Vec<ResourceItem>,
-) -> impl Future<Output = Result<(), FutureError>> + 'static {
-    async move {
-        // allow some time for the upload state poll to initialize
-        let _ = time::sleep(Duration::from_millis(50)).await;
+) -> Result<(), FutureError> {
+    // allow some time for the upload state poll to initialize
+    time::sleep(Duration::from_millis(50)).await;
 
-        // send progress update
-        let files_api = FilesApi::new();
-        let msg = match transfer.compress {
-            true => "compressing",
-            false => "archiving",
-        };
-        files_api
-            .send_upload_status_update_async(&transfer, msg)
-            .await;
+    // send progress update
+    let files_api = FilesApi::new();
+    let msg = match transfer.compress {
+        true => "compressing",
+        false => "archiving",
+    };
+    files_api
+        .send_upload_status_update_async(&transfer, msg)
+        .await;
 
-        // create list of files to archive
-        let mut items = Vec::new();
-        for item in req_items.iter() {
-            items.push(ArchiveItem {
-                source: (item.source).parse().unwrap(),
-                destination: (item.destination).parse().unwrap(),
-            })
-        }
-        task::yield_now().await;
+    // create list of files to archive
+    let mut items = Vec::new();
+    for item in req_items.iter() {
+        items.push(ArchiveItem {
+            source: (item.source).parse().unwrap(),
+            destination: (item.destination).parse().unwrap(),
+        })
+    }
+    task::yield_now().await;
 
-        // create archive of files
-        let archive_path = &*format!(
-            "{}{}.agent.tar.gz",
-            DEFAULTS.temp_data_dir, transfer.transfer_id
-        );
-        let mut archive_writer =
-            match ArchiveWriter::new(archive_path, transfer.compress, &transfer.local_path) {
-                Ok(w) => w,
-                Err(e) => {
-                    files_api
-                        .send_upload_status_update_async(&transfer, &e.message)
-                        .await;
-                    return Err(FutureError {
-                        code: e.code,
-                        message: e.message,
-                    });
-                }
-            };
-        task::yield_now().await;
-
-        if let Err(e) = archive_writer.crate_archive(items, &transfer).await {
-            // send progress update and abort with error
-            let err_msg = format!("{} (code:{})", e.message, e.code);
-            files_api
-                .send_upload_status_update_async(&transfer, &err_msg)
-                .await;
-            return Err(FutureError {
-                code: e.code,
-                message: e.message,
-            });
-        };
-        task::yield_now().await;
-
-        // ensure the gzip encoder has flushed
-        drop(archive_writer);
-
-        task::yield_now().await;
-
-        transfer.size = fs::metadata(archive_path).unwrap().len();
-
-        files_api
-            .send_upload_status_update_async(&transfer, "starting upload")
-            .await;
-
-        // execute file upload
-        match Client::remote_do_copy_async(&files_api, &transfer).await {
-            Ok(_) => {
-                files_api
-                    .send_upload_status_update_async(&transfer, "complete")
-                    .await;
-                Ok(())
-            }
+    // create archive of files
+    let archive_path = &*format!(
+        "{}{}.agent.tar.gz",
+        DEFAULTS.temp_data_dir, transfer.transfer_id
+    );
+    let mut archive_writer =
+        match ArchiveWriter::new(archive_path, transfer.compress, &transfer.local_path) {
+            Ok(w) => w,
             Err(e) => {
-                let err_msg;
-                let error = e.message;
-                if e.code == 346 {
-                    err_msg = format!("signal::interrupt::{}", error);
-                } else {
-                    err_msg = error.clone();
-                }
                 files_api
-                    .send_upload_status_update_async(&transfer, &err_msg)
+                    .send_upload_status_update_async(&transfer, &e.message)
                     .await;
                 return Err(FutureError {
                     code: e.code,
-                    message: error,
+                    message: e.message,
                 });
             }
+        };
+    task::yield_now().await;
+
+    if let Err(e) = archive_writer.crate_archive(items, &transfer).await {
+        // send progress update and abort with error
+        let err_msg = format!("{} (code:{})", e.message, e.code);
+        files_api
+            .send_upload_status_update_async(&transfer, &err_msg)
+            .await;
+        return Err(FutureError {
+            code: e.code,
+            message: e.message,
+        });
+    };
+    task::yield_now().await;
+
+    // ensure the gzip encoder has flushed
+    drop(archive_writer);
+
+    task::yield_now().await;
+
+    transfer.size = fs::metadata(archive_path).unwrap().len();
+
+    files_api
+        .send_upload_status_update_async(&transfer, "starting upload")
+        .await;
+
+    // execute file upload
+    match Client::remote_do_copy_async(&files_api, &transfer).await {
+        Ok(_) => {
+            files_api
+                .send_upload_status_update_async(&transfer, "complete")
+                .await;
+            Ok(())
+        }
+        Err(e) => {
+            let error = e.message;
+            let err_msg = if e.code == 346 {
+                format!("signal::interrupt::{}", error)
+            } else {
+                error.clone()
+            };
+            files_api
+                .send_upload_status_update_async(&transfer, &err_msg)
+                .await;
+            Err(FutureError {
+                code: e.code,
+                message: error,
+            })
         }
     }
 }
 
-fn get_items_json(items: &Vec<ResourceItem>) -> String {
+fn get_items_json(items: &[ResourceItem]) -> String {
     // TODO: Use Display trait or otherwise improve this
     let mut json_str: Vec<String> = Vec::new();
     let mut first = true;
@@ -327,7 +325,7 @@ fn get_items_json(items: &Vec<ResourceItem>) -> String {
             "{{\"source\": \"{}\", \"destination\": \"{}\", \"overwrite\": {}, \"keep\": {}}}",
             item.source, item.destination, item.overwrite, item.keep
         );
-        if first == true {
+        if first {
             first = false;
         } else {
             json_str.push(String::from(","));

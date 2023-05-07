@@ -27,10 +27,10 @@ pub fn run_command(
         .output();
 
     // return error if failed to execute command
-    if result.is_err() {
+    if let Err(err) = result {
         return Err(get_error(
             command_id,
-            result.unwrap_err().to_string(),
+            err.to_string(),
             "500".to_string(),
         ));
     }
@@ -40,7 +40,7 @@ pub fn run_command(
     let code = result.status.code().unwrap();
 
     // return error if the command's error output is not empty
-    if !allow_stderr && stderr.trim().len() > 0 {
+    if !allow_stderr && stderr.trim().is_empty() {
         return Err(get_error(code, stderr.trim().to_string(), stderr));
     }
 
@@ -81,7 +81,7 @@ pub async fn run_command_async(
     let code = result.status.code().unwrap();
 
     // return error if the command's error output is not empty
-    if !allow_stderr && stderr.trim().len() > 0 {
+    if !allow_stderr && !stderr.trim().is_empty() {
         return Err(get_error(code, stderr.trim().to_string(), stderr));
     }
 
@@ -101,7 +101,7 @@ fn get_command_args<'a>(
 ) -> (&'a str, Vec<&'a str>) {
     let mut command_args: Vec<&str> = Vec::new();
     let program;
-    if is_cli == true {
+    if is_cli {
         // prepend command to the provided list of arguments and execute cli as the program
         program = DEFAULTS.cli_executable_path;
         command_args.push(command);

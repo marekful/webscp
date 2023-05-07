@@ -45,12 +45,13 @@ pub async fn register_public_key(
         );
     }
 
-    let mut args: Vec<&str> = Vec::new();
-    args.push(host_info.host);
-    args.push(host_info.port);
-    args.push(host_info.secret.unwrap_or(""));
+    let args: Vec<&str> = vec![
+        host_info.host,
+        host_info.port,
+        host_info.secret.unwrap_or("")
+    ];
 
-    return match run_command_async(201, true, false, COMMAND_EXCHANGE_KEYS, args).await {
+    match run_command_async(201, true, false, COMMAND_EXCHANGE_KEYS, args).await {
         Ok(_) => (
             Status::Ok,
             Json(RegisterPublicKeyResponse {
@@ -67,5 +68,5 @@ pub async fn register_public_key(
                 error: Some(err.message),
             }),
         ),
-    };
+    }
 }

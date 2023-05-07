@@ -1,15 +1,15 @@
-pub const COMMAND_GET_LOCAL_VERSION: &'static str = "get-local-version";
-pub const COMMAND_GET_LOCAL_RESOURCE: &'static str = "get-local-resource";
-pub const COMMAND_GET_REMOTE_VERSION: &'static str = "get-remote-version";
-pub const COMMAND_GET_REMOTE_RESOURCE: &'static str = "get-remote-resource";
-pub const COMMAND_REMOTE_BEFORE_COPY: &'static str = "remote-before-copy";
-pub const COMMAND_REMOTE_DO_COPY: &'static str = "remote-do-copy";
-pub const COMMAND_LOCAL_BEFORE_COPY: &'static str = "local-before-copy";
-pub const COMMAND_EXCHANGE_KEYS: &'static str = "exchange-keys";
-pub const COMMAND_GET_REMOTE_USER: &'static str = "get-remote-user";
-pub const COMMAND_GET_TOKEN_USER: &'static str = "get-token-user";
-pub const COMMAND_GET_LOCAL_USER: &'static str = "get-local-user";
-pub const COMMAND_PING: &'static str = "ping";
+pub const COMMAND_GET_LOCAL_VERSION: &str = "get-local-version";
+pub const COMMAND_GET_LOCAL_RESOURCE: &str = "get-local-resource";
+pub const COMMAND_GET_REMOTE_VERSION: &str = "get-remote-version";
+pub const COMMAND_GET_REMOTE_RESOURCE: &str = "get-remote-resource";
+pub const COMMAND_REMOTE_BEFORE_COPY: &str = "remote-before-copy";
+pub const COMMAND_REMOTE_DO_COPY: &str = "remote-do-copy";
+pub const COMMAND_LOCAL_BEFORE_COPY: &str = "local-before-copy";
+pub const COMMAND_EXCHANGE_KEYS: &str = "exchange-keys";
+pub const COMMAND_GET_REMOTE_USER: &str = "get-remote-user";
+pub const COMMAND_GET_TOKEN_USER: &str = "get-token-user";
+pub const COMMAND_GET_LOCAL_USER: &str = "get-local-user";
+pub const COMMAND_PING: &str = "ping";
 
 pub struct Defaults {
     pub cli_executable_path: &'static str,

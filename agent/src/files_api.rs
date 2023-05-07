@@ -56,15 +56,15 @@ pub struct Transfer {
 impl Clone for Transfer {
     fn clone(&self) -> Self {
         Self {
-            agent_id: self.agent_id.clone(),
+            agent_id: self.agent_id,
             host: self.host.clone(),
             port: self.port.clone(),
             transfer_id: self.transfer_id.clone(),
             local_path: self.local_path.clone(),
             remote_path: self.remote_path.clone(),
-            compress: self.compress.clone(),
-            overwrite: self.overwrite.clone(),
-            size: self.size.clone(),
+            compress: self.compress,
+            overwrite: self.overwrite,
+            size: self.size,
             rc_auth: self.rc_auth.clone(),
         }
     }
@@ -73,6 +73,12 @@ impl Clone for Transfer {
 #[derive(Debug)]
 pub struct FilesApi {
     base_url: String,
+}
+
+impl Default for FilesApi {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FilesApi {
@@ -253,8 +259,6 @@ impl FilesApi {
         let _ = self
             .make_async_request("PATCH", &uri, None, None, None)
             .await;
-
-        ()
     }
 
     pub fn send_upload_status_update(&self, transfer: &Transfer, message: &str) {
@@ -265,8 +269,6 @@ impl FilesApi {
 
         /*let auth = Some(transfer.rc_auth.to_string());*/
         let _ = self.make_request("PATCH", &uri, None, None, None);
-
-        ()
     }
 
     pub fn get_local_resource(
@@ -293,10 +295,10 @@ impl FilesApi {
         let mut output = String::new();
         let result = response.read_to_string(&mut output);
 
-        if result.is_err() {
+        if let Err(err) = result {
             return Err(ClientError {
                 code: 188,
-                message: result.unwrap_err().to_string(),
+                message: err.to_string(),
                 http_code: Some(500),
             });
         }
@@ -342,10 +344,10 @@ impl FilesApi {
         let mut output = String::new();
         let result = response.read_to_string(&mut output);
 
-        if result.is_err() {
+        if let Err(err) = result {
             return Err(ClientError {
                 code: 192,
-                message: result.unwrap_err().to_string(),
+                message: err.to_string(),
                 http_code: Some(500),
             });
         }
@@ -389,10 +391,10 @@ impl FilesApi {
         let mut output = String::new();
         let result = response.read_to_string(&mut output);
 
-        if result.is_err() {
+        if let Err(err) = result {
             return Err(ClientError {
                 code: 196,
-                message: result.unwrap_err().to_string(),
+                message: err.to_string(),
                 http_code: Some(500),
             });
         }
@@ -422,10 +424,10 @@ impl FilesApi {
         };
 
         let mut version = String::new();
-        return match response.read_to_string(&mut version) {
+        match response.read_to_string(&mut version) {
             Ok(_) => version,
             Err(_) => "unknown".to_string(),
-        };
+        }
     }
 
     fn make_request(
@@ -462,19 +464,19 @@ impl FilesApi {
             }
         };
 
-        if body.is_some() {
+        if let Some(body_content) = body {
             req = req
                 .header("Content-Type", "application/json")
-                .body(body.unwrap());
+                .body(body_content);
         }
 
         let have_remote_token = remote_token.is_some();
         let token = local_token.unwrap_or(remote_token.unwrap_or("".to_string()));
-        if token.len() > 0 {
+        if !token.is_empty() {
             if method == "GET" {
                 req = req.header("Cookie", format!("auth={}", token));
             } else {
-                req = req.header("X-Auth", format!("{}", token));
+                req = req.header("X-Auth", token);
             }
         }
 
@@ -540,11 +542,11 @@ impl FilesApi {
 
         let have_remote_token = remote_token.is_some();
         let token = local_token.unwrap_or(remote_token.unwrap_or("".to_string()));
-        if token.len() > 0 {
+        if !token.is_empty() {
             if method == "GET" {
                 req = req.header("Cookie", format!("auth={}", token));
             } else {
-                req = req.header("X-Auth", format!("{}", token));
+                req = req.header("X-Auth", token);
             }
         }
 
@@ -575,6 +577,7 @@ impl FilesApi {
     fn get_base_url() -> String {
         let default_fb_api_address = DEFAULTS.default_fb_api_address;
         let fb_api_address_result = env::var(DEFAULTS.env_name_fb_api_address);
-        return fb_api_address_result.unwrap_or(default_fb_api_address.to_string());
+
+        fb_api_address_result.unwrap_or(default_fb_api_address.to_string())
     }
 }
