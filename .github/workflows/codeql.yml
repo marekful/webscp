@@ -81,3 +81,25 @@ jobs:
     # - run: |
     #     echo "Run, Build Application using script"
     #     ./location_of_script_within_repo/buildscript.sh
+
+  clippy-analyze:
+    name: Clippy Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - name: Check out repository
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@b2417cde72dcf67f306c0ae8e0828a81bf0b189f # v1.0.6
+        with:
+          toolchain: nightly
+          components: clippy
+          override: true
+      - name: Perform Clippy Analysis
+        uses: qernal/github-actions-rust-clippy@a81d3695b821a19ee95e2cbc10e57ad8c3840354 # v2.0.2
+        with:
+          path_glob: "agent/"
+          rust_version: 1.69
