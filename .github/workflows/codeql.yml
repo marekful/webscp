@@ -23,6 +23,25 @@ on:
 permissions: read-all
 
 jobs:
+  # change set filter
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      agent: ${{ steps.filter.outputs.agent }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
+        with:
+          filters: |
+            agent:
+              - 'agent/**'
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
   codeql-analyze:
     name: CodeQL Analyze
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
@@ -42,6 +61,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
+    - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
+      id: filter
+      with:
+        filters: |
+          agent:
+            - 'agent/**'
+          backend:
+            - 'backend/**'
+          frontend:
+            - 'frontend/**'
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
@@ -60,7 +90,7 @@ jobs:
     #- if: matrix.language == 'cpp' || matrix.language == 'csharp'
     #  name: Autobuild
     #  uses: github/codeql-action/autobuild@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
-    - if: matrix.language == 'go'
+    - if: ${{ matrix.language == 'go' && steps.filter.outputs.backend == 'true' }}
       name: Build Go
       run: |
         echo "Starting custom Go build..."
@@ -68,6 +98,7 @@ jobs:
         make build-backend
 
     - name: Perform CodeQL Analysis
+      if: ${{ steps.filter.outputs.frontend == 'true' || steps.filter.outputs.agent == 'true' }}
       uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
       with:
         category: "/language:${{matrix.language}}"
@@ -85,6 +116,8 @@ jobs:
   clippy-analyze:
     name: Clippy Analyze
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.agent == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
