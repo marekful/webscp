@@ -104,6 +104,7 @@ jobs:
           working-directory: agent
   lint:
     runs-on: ubuntu-latest
+    if: ${{ always() }}
     needs: [lint-frontend, lint-backend, lint-commits, lint-agent]
     steps:
       - name: Harden Runner
@@ -146,6 +147,7 @@ jobs:
         working-directory: backend
   test:
     runs-on: ubuntu-latest
+    if: ${{ always() }}
     needs: [test-frontend, test-backend]
     steps:
       - name: Harden Runner
