@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'BUILD/test*'
     tags:
       - 'v*'
       - 'test*'
