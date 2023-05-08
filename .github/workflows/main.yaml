@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - 'main'
-      - 'BUILD/test*'
+      - 'BUILD/test**'
     tags:
-      - 'v*'
-      - 'test*'
+      - 'v**'
+      - 'test**'
   pull_request:
 
 permissions: read-all
