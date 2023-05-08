@@ -155,3 +155,14 @@ jobs:
         with:
           path_glob: "agent/"
           rust_version: 1.69
+
+  analyze:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [codeql-analyze-go, codeql-analyze-javascript, clippy-analyze]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - run: echo "done"
