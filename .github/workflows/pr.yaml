@@ -1,0 +1,171 @@
+name: pull-request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions: read-all
+
+jobs:
+  # change set filter
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      agent: ${{ steps.filter.outputs.agent }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
+        id: filter
+        with:
+          filters: |
+            agent:
+              - 'agent/*.toml'
+              - 'agent/*.lock'
+              - 'agent/src/*.rs'
+              - 'agent/src/**/*.rs'
+              - 'agent/build/df-rel-alpine.Dockerfile'
+              - 'agent/build/config/**'
+              - 'agent/build/s6/**'
+            backend:
+              - 'backend/go.mod'
+              - 'backend/go.sum'
+              - 'backend/main.go'
+              - 'backend/Makefile'
+              - 'backend/*.mk'
+              - 'backend/dockerfile-rel.s6.Dockerfile'
+              - 'backend/**/**'
+            frontend:
+              - 'frontend/package.json'
+              - 'frontend/package-lock.json'
+              - 'frontend/*.config.js'
+              - 'frontend/src/**'
+              - 'frontend/public/**'
+  # linters
+  lint-frontend:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
+        with:
+          node-version: '16'
+      - run: make lint-frontend
+        working-directory: backend
+  lint-backend:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+        with:
+          go-version: 1.20.3
+      - run: make lint-backend
+        working-directory: backend
+  lint-commits:
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.head_ref, 'snyk-') && !startsWith(github.head_ref, 'dependabot/') }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
+        with:
+          node-version: '16'
+      - run: make lint-commits
+        working-directory: backend
+  lint-agent:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.agent == 'true' }}
+    permissions:
+      checks: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        with:
+          fetch-depth: 0
+      - uses: actions-rs/toolchain@b2417cde72dcf67f306c0ae8e0828a81bf0b189f # v1.0.6
+        with:
+          toolchain: nightly
+          components: rustfmt
+          override: true
+      - uses: LoliGothick/rustfmt-check@a86cbe9bddeb4dd029177643cf6d08270abbf9b7 # v0.3.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          flags: --all
+          ##options: --manifest-path=Cargo.toml
+          args: --config-path=agent/rustfmt.toml
+          working-directory: agent
+  lint:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [lint-frontend, lint-backend, lint-commits, lint-agent]
+    steps:
+      - run: echo "done"
+
+  # tests
+  test-frontend:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
+        with:
+          node-version: '16'
+      - run: make test-frontend
+        working-directory: backend
+  test-backend:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
+        with:
+          go-version: 1.20.3
+
+      - run: make test-backend
+        working-directory: backend
+  test:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [test-frontend, test-backend]
+    steps:
+      - run: echo "done"

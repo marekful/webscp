@@ -1,43 +1,17 @@
-name: main
+name: release
 
 on:
   push:
-    branches:
-      - 'main'
     tags:
-      - 'v**'
-      - 'test**'
-  pull_request:
+      - 'v*'
+      - 'test*'
 
 permissions: read-all
 
 jobs:
-  # change set filter
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      agent: ${{ steps.filter.outputs.agent }}
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-    steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
-        with:
-          fetch-depth: 0
-      - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
-        id: filter
-        with:
-          filters: |
-            agent:
-              - 'agent/**'
-            backend:
-              - 'backend/**'
-            frontend:
-              - 'frontend/**'
   # linters
   lint-frontend:
     runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.frontend == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
@@ -53,8 +27,6 @@ jobs:
         working-directory: backend
   lint-backend:
     runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.backend == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
@@ -86,8 +58,6 @@ jobs:
         working-directory: backend
   lint-agent:
     runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.agent == 'true' }}
     permissions:
       checks: write
     steps:
@@ -112,7 +82,6 @@ jobs:
           working-directory: agent
   lint:
     runs-on: ubuntu-latest
-    if: ${{ always() }}
     needs: [lint-frontend, lint-backend, lint-commits, lint-agent]
     steps:
       - run: echo "done"
@@ -120,8 +89,6 @@ jobs:
   # tests
   test-frontend:
     runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.frontend == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
@@ -137,8 +104,6 @@ jobs:
         working-directory: backend
   test-backend:
     runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ needs.changes.outputs.backend == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
@@ -155,7 +120,6 @@ jobs:
         working-directory: backend
   test:
     runs-on: ubuntu-latest
-    if: ${{ always() }}
     needs: [test-frontend, test-backend]
     steps:
       - run: echo "done"
@@ -164,7 +128,7 @@ jobs:
   build-files:
     runs-on: ubuntu-latest
     needs: [lint, test]
-    if: ${{ always() && (startsWith(github.event.ref, 'refs/tags/v') || startsWith(github.event.ref, 'refs/tags/test')) }}
+    if: ${{ startsWith(github.event.ref, 'refs/tags/v') || startsWith(github.event.ref, 'refs/tags/test') }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
@@ -221,7 +185,7 @@ jobs:
   build-agent:
     runs-on: [self-hosted, X64]
     needs: [lint, test]
-    if: ${{ always() && (startsWith(github.event.ref, 'refs/tags/v') || startsWith(github.event.ref, 'refs/tags/test')) }}
+    if: ${{ startsWith(github.event.ref, 'refs/tags/v') || startsWith(github.event.ref, 'refs/tags/test') }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
@@ -277,10 +241,10 @@ jobs:
   # publish release
   release:
     runs-on: ubuntu-latest
-    if: ${{ always() && startsWith(github.event.ref, 'refs/tags/v') }}
+    needs: [ build-files, build-agent ]
+    if: ${{ startsWith(github.event.ref, 'refs/tags/v') }}
     permissions:
       contents: write
-    needs: [build-files, build-agent]
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
