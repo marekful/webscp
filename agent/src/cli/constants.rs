@@ -32,7 +32,7 @@ pub struct Defaults {
 
 pub const DEFAULTS: Defaults = Defaults {
     cli_executable_path: "/app/cli",
-    default_fb_api_address: "http://webscp-files:80",
+    default_fb_api_address: "http://files",
     authorized_keys_file: "/app/data/client/.ssh/authorized_keys",
     known_hosts_file: "/app/data/client/.ssh/known_hosts",
     private_key_file: "/app/data/client/.ssh/id_rsa",

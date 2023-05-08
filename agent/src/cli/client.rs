@@ -1,5 +1,6 @@
 use ssh2::Session;
 use std::{
+    fmt::Display,
     fs,
     fs::OpenOptions,
     io::{prelude::*, Error},
@@ -68,8 +69,13 @@ impl Client<'_> {
         )
     }
 
-    pub fn print_error_and_exit(code: i32, message: String) {
+    fn print_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
         eprint!("{message}");
+        exit(code);
+    }
+
+    fn println_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
+        eprintln!("{message}");
         exit(code);
     }
 
@@ -102,7 +108,7 @@ impl Client<'_> {
                 print!("{resources_result}");
             }
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -116,7 +122,7 @@ impl Client<'_> {
                 print!("{resources_result}");
             }
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -130,7 +136,7 @@ impl Client<'_> {
                 print!("{resources_result}");
             }
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -151,7 +157,7 @@ impl Client<'_> {
         match Client::_remote_before_copy(&sess, user_id, token, items) {
             Ok(result) => print!("{}", result),
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -345,7 +351,7 @@ impl Client<'_> {
         let tcp = match TcpStream::connect(self.host.to_owned() + ":" + &*self.port.to_string()) {
             Ok(tcp) => tcp,
             Err(e) => {
-                Client::print_error_and_exit(
+                Self::print_error_and_exit(
                     132,
                     format!("503 Couldn't connect to {}:{}: {}", self.host, self.port, e),
                 );
@@ -364,8 +370,7 @@ impl Client<'_> {
                 match sess.userauth_pubkey_file("agent", Some(pubkey), privkey, None) {
                     Ok(r) => r,
                     Err(_e) => {
-                        eprintln!("401 Public key authentication failed");
-                        exit(135);
+                        Self::print_error_and_exit(135, "401 Public key authentication failed");
                     }
                 }
             }
@@ -378,14 +383,14 @@ impl Client<'_> {
                 let path = format!("{}-{}-atmp", DEFAULTS.temporary_key_file_name, key_id_copy);
                 let privkey: &Path = Path::new(&path);
                 match sess.userauth_pubkey_file("agent", None, privkey, None) {
-                    Ok(r) => r,
-                    Err(_e) => {
-                        eprintln!("401 Invalid access token");
-                        exit(134);
+                    Ok(_) => {
+                        Self::remove_key_file(key_id_copy.as_str());
+                    }
+                    Err(_) => {
+                        Self::remove_key_file(key_id_copy.as_str());
+                        Self::print_error_and_exit(134, "401 Invalid access token");
                     }
                 };
-
-                Self::remove_key_file(key_id_copy.as_str());
             }
         }
 
@@ -442,14 +447,8 @@ impl Client<'_> {
         }*/
 
         // retrieve their host key
-        let mut args: Vec<&str> = Vec::new();
         let port_str = self.port.to_string();
-        args.push("-H");
-        args.push("-p");
-        args.push(&port_str);
-        args.push("-t");
-        args.push("ecdsa");
-        args.push(self.host);
+        let args: Vec<&str> = vec!["-H", "-p", &port_str, "-t", "ecdsa", self.host];
         let host_key = match run_command(318, false, true, "ssh-keyscan", args) {
             Ok(r) => r,
             Err(e) => {
@@ -507,8 +506,7 @@ impl Client<'_> {
             "-----BEGIN EC PRIVATE KEY-----\n{}\n-----END EC PRIVATE KEY-----",
             secret_lines
         ) {
-            eprintln!("Couldn't write to file: {}", e);
-            exit(133);
+            Self::println_error_and_exit(133, format!("Couldn't write to file: {}", e));
         }
     }
 
@@ -519,8 +517,7 @@ impl Client<'_> {
         )) {
             Ok(_) => {}
             Err(e) => {
-                eprintln!("Couldn't remove file: {}", e);
-                exit(131);
+                Self::println_error_and_exit(131, format!("Couldn't remove file: {}", e));
             }
         }
     }

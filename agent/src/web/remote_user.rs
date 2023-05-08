@@ -71,8 +71,7 @@ pub async fn get_token_user(
         .api
         .check_user_auth(user_id, cookies.get("rc_auth"))
         .await;
-    if res.is_err() {
-        let err = res.unwrap_err();
+    if let Err(err) = res {
         return (
             Status::Unauthorized,
             Json(GetTokenUserResponse {
@@ -90,8 +89,7 @@ pub async fn get_token_user(
     let result = run_command_async(274, true, false, COMMAND_GET_TOKEN_USER, args).await;
 
     // return error response if failed to execute command
-    if result.is_err() {
-        let err = result.unwrap_err();
+    if let Err(err) = result {
         return (
             err.status,
             Json(GetTokenUserResponse {
@@ -108,14 +106,14 @@ pub async fn get_token_user(
     let deserialized_result = serde_json::from_str(&result_str);
 
     // return error response if no remote user could be parsed
-    if deserialized_result.is_err() {
+    if let Err(err) = deserialized_result {
         return (
             Status::InternalServerError,
             Json(GetTokenUserResponse {
                 code: 625,
                 id: None,
                 name: None,
-                error: Some(deserialized_result.unwrap_err().to_string()),
+                error: Some(err.to_string()),
             }),
         );
     }
@@ -146,8 +144,7 @@ pub async fn get_remote_user(
         .api
         .check_user_auth(user_id, cookies.get("rc_auth"))
         .await;
-    if res.is_err() {
-        let err = res.unwrap_err();
+    if let Err(err) = res {
         return (
             Status::Unauthorized,
             Json(GetRemoteUserResponse {
@@ -166,8 +163,7 @@ pub async fn get_remote_user(
     let result = run_command_async(274, true, false, COMMAND_GET_REMOTE_USER, args).await;
 
     // return error response if failed to execute command
-    if result.is_err() {
-        let err = result.unwrap_err();
+    if let Err(err) = result {
         return (
             err.status,
             Json(GetRemoteUserResponse {
