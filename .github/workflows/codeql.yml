@@ -23,16 +23,38 @@ on:
 permissions: read-all
 
 jobs:
-  codeql-analyze:
-    name: CodeQL Analyze
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+  # change set filter
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      agent: ${{ steps.filter.outputs.agent }}
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50 # v2.11.1
+        id: filter
+        with:
+          filters: |
+            agent:
+              - 'agent/**'
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  codeql-analyze-go:
+    name: CodeQL Analyze Go
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on:  ubuntu-latest
     permissions:
       security-events: write
 
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'go', 'javascript' ]
+        language: [ 'go' ]
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Use only 'java' to analyze code written in Java, Kotlin or both
         # Use only 'javascript' to analyze code written in JavaScript, TypeScript or both
@@ -60,8 +82,7 @@ jobs:
     #- if: matrix.language == 'cpp' || matrix.language == 'csharp'
     #  name: Autobuild
     #  uses: github/codeql-action/autobuild@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
-    - if: matrix.language == 'go'
-      name: Build Go
+    - name: Build Go
       run: |
         echo "Starting custom Go build..."
         cd backend
@@ -70,7 +91,7 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
       with:
-        category: "/language:${{matrix.language}}"
+        category: "/language:[go]"
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
@@ -82,9 +103,40 @@ jobs:
     #     echo "Run, Build Application using script"
     #     ./location_of_script_within_repo/buildscript.sh
 
+  codeql-analyze-javascript:
+    name: CodeQL Analyze JavaScript
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@f31a31c052207cc13b328d6295c5b728bb49568c # v2.3.2
+        with:
+          category: "/language:[javascript]"
+
+
   clippy-analyze:
     name: Clippy Analyze
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.agent == 'true' }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
@@ -103,3 +155,14 @@ jobs:
         with:
           path_glob: "agent/"
           rust_version: 1.69
+
+  analyze:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [codeql-analyze-go, codeql-analyze-javascript, clippy-analyze]
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+        with:
+          egress-policy: audit
+      - run: echo "done"
