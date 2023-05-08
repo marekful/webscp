@@ -15,7 +15,6 @@ pub struct FutureCommandError {
     pub message: String,
 }
 
-// program entry point
 fn main() {
     let args: Vec<String> = env::args().collect();
     #[allow(clippy::type_complexity)]
