@@ -28,7 +28,7 @@ pub fn run_command(
 
     // return error if failed to execute command
     if let Err(err) = result {
-        return Err(get_error(command_id, err.to_string(), "500".to_string()));
+        return Err(get_error(command_id, err.to_string(), "500"));
     }
     let result = result.unwrap();
     let stderr = String::from_utf8(result.stderr).unwrap_or("".to_string());
@@ -36,13 +36,13 @@ pub fn run_command(
     let code = result.status.code().unwrap();
 
     // return error if the command's error output is not empty
-    if !allow_stderr && stderr.trim().is_empty() {
-        return Err(get_error(code, stderr.trim().to_string(), stderr));
+    if !allow_stderr && !stderr.trim().is_empty() {
+        return Err(get_error(code, stderr.trim(), &stderr));
     }
 
     // return error if the command's return code is not zero
     if code != 0 {
-        return Err(get_error(code, stderr.trim().to_string(), stderr));
+        return Err(get_error(code, stderr.trim(), &stderr));
     }
 
     // return the commands standard output on success
@@ -63,12 +63,8 @@ pub async fn run_command_async(
     let result = cmd.args(command_args).output().await;
 
     // return error if failed to execute command
-    if result.is_err() {
-        return Err(get_error(
-            command_id,
-            result.unwrap_err().to_string(),
-            "500".to_string(),
-        ));
+    if let Err(err) = result {
+        return Err(get_error(command_id, err.to_string(), "500"));
     }
 
     let result = result.unwrap();
@@ -78,12 +74,12 @@ pub async fn run_command_async(
 
     // return error if the command's error output is not empty
     if !allow_stderr && !stderr.trim().is_empty() {
-        return Err(get_error(code, stderr.trim().to_string(), stderr));
+        return Err(get_error(code, stderr.trim(), &stderr));
     }
 
     // return error if the command's return code is not zero
     if code != 0 {
-        return Err(get_error(code, stderr.trim().to_string(), stderr));
+        return Err(get_error(code, stderr.trim(), &stderr));
     }
 
     // return the commands standard output on success
@@ -111,14 +107,18 @@ fn get_command_args<'a>(
     (program, command_args)
 }
 
-fn get_error(code: i32, message: String, stderr: String) -> CommandError {
-    let s: String = stderr.chars().take(3).collect();
+fn get_error<TM: Into<String>, TE: Into<String>>(
+    code: i32,
+    message: TM,
+    stderr: TE,
+) -> CommandError {
+    let s: String = stderr.into().chars().take(3).collect();
     let http_code: u16 = s.parse().unwrap_or(400);
-    let msg = message.replacen(&format!("{} ", http_code), "", 1);
+    let msg = message.into().replacen(&format!("{} ", http_code), "", 1);
 
     CommandError {
         code,
-        message: msg + " (code:" + code.to_string().as_str() + ")",
+        message: format!("{} (code:{})", msg, code),
         status: Status::new(http_code),
     }
 }

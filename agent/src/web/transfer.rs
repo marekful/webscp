@@ -21,7 +21,7 @@ pub async fn cancel_transfer(
         }
     };
 
-    // create argument list for uploader script
+    // create argument list for cancel transfer script
     let script_args: Vec<&str> = vec![DEFAULTS.cancel_transfer_script_path, transfer_id];
 
     // setup and execute command
