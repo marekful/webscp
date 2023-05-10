@@ -53,11 +53,11 @@ func printUsers(usrs []*users.User) {
 }
 
 func parseUsernameOrID(arg string) (username string, id uint) {
-	id64, err := strconv.ParseUint(arg, 10, 64)
+	rawID, err := strconv.Atoi(arg)
 	if err != nil {
 		return arg, 0
 	}
-	return "", uint(id64)
+	return "", uint(rawID)
 }
 
 func addUserFlags(flags *pflag.FlagSet) {

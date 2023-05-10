@@ -61,7 +61,7 @@
               <th>{{ $t("settings.agent.port") }}</th>
               <th>{{ $t("settings.agent.user") }}</th>
               <th :title="$t('settings.agent.agentVersionHint')">
-                {{ $t("settings.agent.agentVersion") }}
+                {{ $t("settings.agent.version") }}
               </th>
               <th :title="$t('settings.agent.latencyHint')">
                 {{ $t("settings.agent.latency") }}
@@ -87,7 +87,11 @@
               <td>{{ agent.host }}</td>
               <td>{{ agent.port }}</td>
               <td>{{ agent.remote_user.name }}</td>
-              <td v-if="!agent.error" class="version">{{ agent.version }}</td>
+              <td v-if="!agent.error" class="version">
+                <span v-if="typeof agent.version === 'object'">
+                  {{ agent.version.files }} ({{ agent.version.agent }})
+                </span>
+              </td>
               <td v-else class="version" :colspan="agent.error ? '2' : ''">
                 <div class="error">{{ agent.error }}</div>
               </td>
@@ -211,7 +215,7 @@ td.status {
 
 .card .token textarea {
   width: 100%;
-  background-color: var(--moon-grey);
+  background-color: var(--background);
   height: 4em;
   border: 1px solid var(--icon-blue);
   padding: 0.5em;

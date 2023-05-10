@@ -1,6 +1,10 @@
 <template>
   <div
-    :class="{ item: true, dotfile: this.isDotFile, hidden: this.isDotFile && !showDotfiles }"
+    :class="{
+      item: true,
+      dotfile: this.isDotFile,
+      hidden: this.isDotFile && !showDotfiles,
+    }"
     role="button"
     tabindex="0"
     :draggable="isDraggable"
@@ -37,7 +41,7 @@
 <script>
 import { enableThumbs } from "@/utils/constants";
 import { mapMutations, mapGetters, mapState } from "vuex";
-import filesize from "filesize";
+import { filesize } from "filesize";
 import moment from "moment";
 import { files as api } from "@/api";
 import * as upload from "@/utils/upload";

@@ -40,9 +40,7 @@ Vue.prototype.$showError = (error, displayReport = true) => {
   if (!disableExternal && displayReport) {
     btns.unshift(
       Noty.button(i18n.t("buttons.reportIssue"), "", function () {
-        window.open(
-          "https://github.com/marekful/webscp/issues/new/choose"
-        );
+        window.open("https://github.com/marekful/webscp/issues/new/choose");
       })
     );
   }

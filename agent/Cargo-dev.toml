@@ -1,6 +1,6 @@
 [package]
 name = "webscp-agent"
-version = "0.1.2"
+version = "0.1.4"
 authors = ["Marcell Fülöp <marekful@domainloop.net>"]
 repository = "https://github.com/marekful/webscp/agent"
 edition = "2021"
@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 ssh2 = "0.9.4"
 serde = "1.0.156"
-reqwest = { version = "0.11", features = ["blocking", "rustls-tls"] }
+reqwest = { version = "0.11", features = ["blocking"] }
 urlencoding = "2.1.2"
 json = "0.12.4"
 flate2 = "1.0.25"

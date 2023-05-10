@@ -1,5 +1,6 @@
 use ssh2::Session;
 use std::{
+    fmt::Display,
     fs,
     fs::OpenOptions,
     io::{prelude::*, Error},
@@ -43,11 +44,11 @@ pub struct ClientError {
 
 impl From<Error> for ClientError {
     fn from(err: Error) -> Self {
-        return ClientError {
+        ClientError {
             code: 987,
             message: err.to_string(),
             http_code: Some(500),
-        };
+        }
     }
 }
 
@@ -68,8 +69,13 @@ impl Client<'_> {
         )
     }
 
-    pub fn print_error_and_exit(code: i32, message: String) {
+    fn print_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
         eprint!("{message}");
+        exit(code);
+    }
+
+    fn println_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
+        eprintln!("{message}");
         exit(code);
     }
 
@@ -77,7 +83,7 @@ impl Client<'_> {
         let key_id: u64 = rand::random::<u64>();
         let key_id_hex = format!("{:x}", key_id);
 
-        String::from(key_id_hex)
+        key_id_hex
     }
 
     pub fn exchange_keys(&self, secret: &str) -> i32 {
@@ -102,7 +108,7 @@ impl Client<'_> {
                 print!("{resources_result}");
             }
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -116,7 +122,7 @@ impl Client<'_> {
                 print!("{resources_result}");
             }
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -125,12 +131,12 @@ impl Client<'_> {
 
     pub fn get_remote_resource(&self, user_id: u32, token: &str, path: &str) -> i32 {
         let sess = self.create_session(None).unwrap();
-        match Client::remote_get_resource(&sess, user_id, &token, &path) {
+        match Client::remote_get_resource(&sess, user_id, token, path) {
             Ok(resources_result) => {
                 print!("{resources_result}");
             }
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -146,12 +152,12 @@ impl Client<'_> {
         0
     }
 
-    pub fn remote_before_copy(&self, user_id: u32, token: &str, items: &String) -> i32 {
+    pub fn remote_before_copy(&self, user_id: u32, token: &str, items: &str) -> i32 {
         let sess = self.create_session(None).unwrap();
-        match Client::_remote_before_copy(&sess, user_id, &token, &items) {
+        match Client::_remote_before_copy(&sess, user_id, token, items) {
             Ok(result) => print!("{}", result),
             Err(e) => {
-                Client::print_error_and_exit(e.code, e.message);
+                Self::print_error_and_exit(e.code, e.message);
             }
         }
 
@@ -174,8 +180,8 @@ impl Client<'_> {
             return result;
         }
 
-        print!(
-            "{:.2}ms / {:.2}ms\n",
+        println!(
+            "{:.2}ms / {:.2}ms",
             dur_sess.as_millis(),
             dur_exec.as_millis()
         );
@@ -195,12 +201,13 @@ impl Client<'_> {
         let remote_path = format!("{}{}{}", DEFAULTS.temp_data_dir, archive_name, ".dst.tar");
 
         // create argument list for uploader script
-        let mut script_args: Vec<&str> = Vec::new();
-        script_args.push(DEFAULTS.uploader_script_path);
-        script_args.push(&local_path);
-        script_args.push(&transfer.host);
-        script_args.push(&transfer.port);
-        script_args.push(&remote_path);
+        let script_args: Vec<&str> = vec![
+            DEFAULTS.uploader_script_path,
+            &local_path,
+            &transfer.host,
+            &transfer.port,
+            &remote_path,
+        ];
 
         // setup command for asynchronous execution
         let mut cmd = Command::new("bash");
@@ -270,9 +277,7 @@ impl Client<'_> {
         }
 
         // remove local copy of archive
-        let mut rm_args: Vec<&str> = Vec::new();
-        rm_args.push("-f");
-        rm_args.push(local_path.as_str());
+        let rm_args: Vec<&str> = vec!["-f", &local_path];
         let _rm_result = run_command_async(83, false, true, "rm", rm_args).await;
 
         // abort process on any errors from command execution (including usr1 signal)
@@ -289,7 +294,7 @@ impl Client<'_> {
         let port: i16 = transfer.port.to_string().parse::<i16>().unwrap();
         let client = Client::new(&transfer.host, port);
         match client.remote_extract_archive(
-            &archive_name,
+            archive_name,
             &transfer.remote_path,
             transfer.compress,
             transfer.overwrite,
@@ -346,14 +351,9 @@ impl Client<'_> {
         let tcp = match TcpStream::connect(self.host.to_owned() + ":" + &*self.port.to_string()) {
             Ok(tcp) => tcp,
             Err(e) => {
-                Client::print_error_and_exit(
+                Self::print_error_and_exit(
                     132,
-                    format!(
-                        "503 Couldn't connect to {}:{}: {}",
-                        self.host,
-                        self.port,
-                        e.to_string()
-                    ),
+                    format!("503 Couldn't connect to {}:{}: {}", self.host, self.port, e),
                 );
                 return None;
             }
@@ -370,8 +370,7 @@ impl Client<'_> {
                 match sess.userauth_pubkey_file("agent", Some(pubkey), privkey, None) {
                     Ok(r) => r,
                     Err(_e) => {
-                        eprintln!("401 Public key authentication failed");
-                        exit(135);
+                        Self::print_error_and_exit(135, "401 Public key authentication failed");
                     }
                 }
             }
@@ -384,14 +383,14 @@ impl Client<'_> {
                 let path = format!("{}-{}-atmp", DEFAULTS.temporary_key_file_name, key_id_copy);
                 let privkey: &Path = Path::new(&path);
                 match sess.userauth_pubkey_file("agent", None, privkey, None) {
-                    Ok(r) => r,
-                    Err(_e) => {
-                        eprintln!("401 Invalid access token");
-                        exit(134);
+                    Ok(_) => {
+                        Self::remove_key_file(key_id_copy.as_str());
+                    }
+                    Err(_) => {
+                        Self::remove_key_file(key_id_copy.as_str());
+                        Self::print_error_and_exit(134, "401 Invalid access token");
                     }
                 };
-
-                Self::remove_key_file(key_id_copy.as_str());
             }
         }
 
@@ -405,7 +404,7 @@ impl Client<'_> {
         // upload our public key
         let mut upload = sess.channel_session().unwrap();
         upload
-            .exec(&*format!(
+            .exec(&format!(
                 "echo -n \"{key}\" >> {}",
                 DEFAULTS.authorized_keys_file
             ))
@@ -448,14 +447,8 @@ impl Client<'_> {
         }*/
 
         // retrieve their host key
-        let mut args: Vec<&str> = Vec::new();
         let port_str = self.port.to_string();
-        args.push("-H");
-        args.push("-p");
-        args.push(&port_str);
-        args.push("-t");
-        args.push("ecdsa");
-        args.push(self.host);
+        let args: Vec<&str> = vec!["-H", "-p", &port_str, "-t", "ecdsa", self.host];
         let host_key = match run_command(318, false, true, "ssh-keyscan", args) {
             Ok(r) => r,
             Err(e) => {
@@ -481,7 +474,7 @@ impl Client<'_> {
         let lock_file = digest(secret);
         let mut result = sess.channel_session().unwrap();
         result
-            .exec(&*format!("rm -f {}/{}", DEFAULTS.ssh_dir_path, lock_file))
+            .exec(&format!("rm -f {}/{}", DEFAULTS.ssh_dir_path, lock_file))
             .unwrap();
         let mut key = String::new();
         result.read_to_string(&mut key).unwrap();
@@ -513,11 +506,8 @@ impl Client<'_> {
             "-----BEGIN EC PRIVATE KEY-----\n{}\n-----END EC PRIVATE KEY-----",
             secret_lines
         ) {
-            eprintln!("Couldn't write to file: {}", e);
-            exit(133);
+            Self::println_error_and_exit(133, format!("Couldn't write to file: {}", e));
         }
-
-        ()
     }
 
     fn remove_key_file(key_id: &str) {
@@ -527,12 +517,9 @@ impl Client<'_> {
         )) {
             Ok(_) => {}
             Err(e) => {
-                eprintln!("Couldn't remove file: {}", e);
-                exit(131);
+                Self::println_error_and_exit(131, format!("Couldn't remove file: {}", e));
             }
         }
-
-        ()
     }
 
     fn get_agent_version(sess: &Session) -> String {
@@ -639,7 +626,7 @@ impl Client<'_> {
         items: &str,
     ) -> Result<String, ClientError> {
         let mut ch = sess.channel_session().unwrap();
-        ch.exec(&*format!(
+        ch.exec(&format!(
             "{} {} {} {}",
             Client::command(COMMAND_LOCAL_BEFORE_COPY),
             user_id,

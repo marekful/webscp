@@ -116,13 +116,17 @@ func withAgentUser(fn handleFunc) handleFunc {
 
 		// Fetch the user referred to in query params
 		vars := mux.Vars(r)
-		userID := vars["user_id"]
-		id64, err := strconv.ParseUint(userID, 10, 64)
+		userID, set := vars["user_id"]
+		if !set {
+			return http.StatusUnauthorized, nil
+		}
+
+		rawID, err := strconv.Atoi(userID)
 		if err != nil {
 			return http.StatusUnauthorized, nil
 		}
 
-		user, dErr := d.store.Users.Get(d.server.Root, uint(id64))
+		user, dErr := d.store.Users.Get(d.server.Root, uint(rawID))
 		if dErr != nil {
 			return http.StatusUnauthorized, nil
 		}

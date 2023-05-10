@@ -191,8 +191,7 @@
       "address": "Address",
       "agentPort": "Agent Port",
       "agentSettings": "Remote Agents",
-      "agentVersion": "Version",
-      "agentVersionHint": "Agent / Files",
+      "agentVersionHint": "WebSCP Files (Agent)",
       "connectionCreated": "Remote Agent Connection created",
       "connectionDeleted": "Remote Agent Connection deleted",
       "connections": "Connections",
@@ -215,7 +214,8 @@
       "status": "Status",
       "tokenHint": "It's the only time this token is shown and it expires after first use or 5 minutes.",
       "user": "User",
-      "validUntil": "Valid until"
+      "validUntil": "Valid until",
+      "version": "Version"
     },
     "allowCommands": "Execute commands",
     "allowEdit": "Edit, rename and delete files or directories",

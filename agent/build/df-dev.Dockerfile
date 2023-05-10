@@ -1,4 +1,4 @@
-FROM rust:1.69
+FROM rust:1.69@sha256:9d78a0a4235f3b63f4e8303f53248a146693fc825c15d0831d1e072e474aefdf
 
 RUN apt update && apt install -y libssl-dev openssh-server figlet
 
@@ -21,8 +21,8 @@ RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && \
 
 #VOLUME ["/app/target", "/usr/local/cargo"]
 
-COPY Cargo.toml /app/Cargo.toml
-COPY Cargo.lock /app/Cargo.lock
+COPY Cargo-dev.toml /app/Cargo.toml
+COPY Cargo-dev.lock /app/Cargo.lock
 
 WORKDIR /app
 

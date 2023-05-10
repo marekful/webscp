@@ -17,8 +17,8 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml/v2 v2.0.6
 	github.com/shirou/gopsutil/v3 v3.23.1
-	github.com/spf13/afero v1.9.3
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/afero v1.9.5
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.1
@@ -47,7 +47,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.11.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect

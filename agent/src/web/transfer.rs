@@ -21,10 +21,8 @@ pub async fn cancel_transfer(
         }
     };
 
-    // create argument list for uploader script
-    let mut script_args: Vec<&str> = Vec::new();
-    script_args.push(DEFAULTS.cancel_transfer_script_path);
-    script_args.push(&transfer_id);
+    // create argument list for cancel transfer script
+    let script_args: Vec<&str> = vec![DEFAULTS.cancel_transfer_script_path, transfer_id];
 
     // setup and execute command
     let mut cmd = Command::new("bash");

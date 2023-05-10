@@ -1,5 +1,5 @@
 ###############################################################
-FROM rust:1.69-alpine AS build
+FROM rust:1.69-alpine@sha256:a1123af3383f0e71da8deca8afc1e506ff3ee48c7903f253a11b7b632d938190 AS build
 ENV PTHREAD_STACK_MIN 8388608
 ARG TARGETPLATFORM
 
@@ -12,12 +12,12 @@ RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ] || [ "${TARGETPLATFORM}" = "linux
     fi
 
 ##
-COPY Cargo-alpine.toml /app/Cargo.toml
-COPY Cargo-alpine.lock /app/Cargo.lock
+COPY Cargo.toml /app/Cargo.toml
+COPY Cargo.lock /app/Cargo.lock
 
 WORKDIR /app
 
-RUN cargo fetch
+RUN nice -n 12 cargo fetch
 
 ##
 COPY src /app/src
@@ -28,13 +28,13 @@ RUN apk add openssl-dev musl-dev
 #
 #RUN RUSTFLAGS='-C target-feature=-crt-static' cargo build --release
 RUN if [ "${TARGETPLATFORM}" = "linux/amd64" ] || [ "${TARGETPLATFORM}" = "linux/amd64/v2" ] || [ "${TARGETPLATFORM}" = "linux/amd64/v3" ] || [ -z "${TARGETPLATFORM}" ]; then \
-      RUSTFLAGS='-C target-feature=-crt-static' cargo build --release; \
+      RUSTFLAGS='-C target-feature=-crt-static' nice -n 10 cargo build --release; \
     elif [ "${TARGETPLATFORM}" = "linux/arm64" ] || [ "${TARGETPLATFORM}" = "linux/arm64/v8" ]; then \
-      RUSTFLAGS='-C target-feature=-crt-static' cargo build --target aarch64-unknown-linux-musl --release; \
+      RUSTFLAGS='-C target-feature=-crt-static' nice -n 10 cargo build --target aarch64-unknown-linux-musl --release; \
     fi
 
 ###############################################################
-FROM alpine:3.17.3 AS release
+FROM alpine:3.17.3@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126 AS release
 
 ARG TARGETPLATFORM
 

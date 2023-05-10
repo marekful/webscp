@@ -1,5 +1,5 @@
 ################## Frontend build ##################
-FROM docker.io/node:18 AS frontend-buid
+FROM docker.io/node:18@sha256:196c5cfdd2f7f41a42c418b4fc6c553f9ab3575cfdc228199de8a465be788155 AS frontend-buid
 
 WORKDIR /work
 
@@ -8,14 +8,14 @@ COPY ./frontend/package-lock.json .
 
 ENV NODE_OPTIONS=--openssl-legacy-provider
 
-RUN npm install
+RUN nice -n 5 npm install
 
 COPY  ./frontend /work/
 
-RUN npm run build
+RUN nice -n 5 npm run build
 
 ################## Backend build ##################
-FROM docker.io/golang:1.20.3-alpine AS backend-build
+FROM docker.io/golang:1.20.3-alpine@sha256:08e9c086194875334d606765bd60aa064abd3c215abfbcf5737619110d48d114 AS backend-build
 
 RUN apk add bash make git ncurses yarn npm
 
@@ -29,10 +29,10 @@ RUN go mod download
 COPY . /work/
 COPY --from=frontend-buid /work/dist/ /work/backend/frontend/dist/
 
-RUN cd backend && make build-backend
+RUN cd backend && nice -n 5 make build-backend
 
 ################## Run ##################
-FROM alpine:latest AS release
+FROM alpine:3.17@sha256:124c7d2707904eea7431fffe91522a01e5a861a624ee31d03372cc1d138a3126 AS release
 
 ARG TARGETPLATFORM
 

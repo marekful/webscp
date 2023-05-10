@@ -3,8 +3,7 @@ use rocket::tokio::task;
 use std::{
     fs,
     fs::File,
-    future::Future,
-    io::{Error},
+    io::Error,
     path::Path,
     time::{Duration, Instant},
 };
@@ -43,9 +42,9 @@ pub struct ProgressCounter {
 impl Clone for ProgressCounter {
     fn clone(&self) -> Self {
         Self {
-            items_total: self.items_total.clone(),
-            items_added: self.items_added.clone(),
-            files_added: self.files_added.clone(),
+            items_total: self.items_total,
+            items_added: self.items_added,
+            files_added: self.files_added,
         }
     }
 }
@@ -66,7 +65,7 @@ impl ArchiveWriter {
             }
         };
 
-        return if compress {
+        if compress {
             let enc = GzEncoder::new(file, Compression::fast());
             let writer = Builder::new(enc);
             Ok(Self {
@@ -97,59 +96,57 @@ impl ArchiveWriter {
                 },
                 last_update_sent_at: Instant::now(),
             })
-        };
+        }
     }
 
-    pub fn crate_archive<'a>(
+    pub async fn crate_archive<'a>(
         &'a mut self,
         items: Vec<ArchiveItem>,
         transfer: &'a Transfer,
-    ) -> impl Future<Output = Result<(), ArchiveError>> + '_ {
-        async move {
-            self.progress.items_total = items.len();
+    ) -> Result<(), ArchiveError> {
+        self.progress.items_total = items.len();
 
-            // loop through submitted items adding each to the archive
-            for item in items.iter() {
-                let src_ = decode(&item.source).unwrap().into_owned();
-                let dst_ = decode(&item.destination).unwrap().into_owned();
-                let src = String::from(src_.replacen("/files", &self.source_base_path, 1));
-                let dst = String::from(dst_.trim_start_matches("/"));
-                self.progress.items_added += 1;
+        // loop through submitted items adding each to the archive
+        for item in items.iter() {
+            let src_ = decode(&item.source).unwrap().into_owned();
+            let dst_ = decode(&item.destination).unwrap().into_owned();
+            let src = src_.replacen("/files", &self.source_base_path, 1);
+            let dst = String::from(dst_.trim_start_matches('/'));
+            self.progress.items_added += 1;
 
-                let res = match self.add_file_to_archive(src.clone(), dst, transfer) {
-                    Ok(_) => Ok::<(), Error>(()),
-                    Err(e) => {
-                        return Err(ArchiveError {
-                            code: 301,
-                            message: e.to_string(),
-                        });
-                    }
-                };
-
-                if res.is_err() {
+            let res = match self.add_file_to_archive(src.clone(), dst, transfer) {
+                Ok(_) => Ok::<(), Error>(()),
+                Err(e) => {
                     return Err(ArchiveError {
-                        code: 302,
-                        message: res.unwrap_err().to_string(),
+                        code: 301,
+                        message: e.to_string(),
                     });
                 }
+            };
 
-                task::yield_now().await;
-
-                // send progress update
-                let msg = &format!(
-                    "progress::{}::{}/{}/{}",
-                    self.get_job_type(),
-                    self.progress.items_added,
-                    self.progress.items_total,
-                    self.progress.files_added,
-                );
-                FilesApi::new()
-                    .send_upload_status_update_async(transfer, msg)
-                    .await;
+            if let Err(err) = res {
+                return Err(ArchiveError {
+                    code: 302,
+                    message: err.to_string(),
+                });
             }
 
-            Ok(())
+            task::yield_now().await;
+
+            // send progress update
+            let msg = &format!(
+                "progress::{}::{}/{}/{}",
+                self.get_job_type(),
+                self.progress.items_added,
+                self.progress.items_total,
+                self.progress.files_added,
+            );
+            FilesApi::new()
+                .send_upload_status_update_async(transfer, msg)
+                .await;
         }
+
+        Ok(())
     }
 
     fn remove_archive(&self) {
@@ -214,12 +211,11 @@ impl ArchiveWriter {
                 .append_path_with_name(src, path),
         };
 
-        if res.is_err() {
+        if let Err(err) = res {
             self.remove_archive();
             // include problem file path in error message
-            let orig_err = res.unwrap_err();
-            let err_msg = format!("{} {}", orig_err, src_copy);
-            Err(Error::new(orig_err.kind(), err_msg))
+            let err_msg = format!("{} {}", err, src_copy);
+            Err(Error::new(err.kind(), err_msg))
         } else {
             self.progress.files_added += 1;
 
