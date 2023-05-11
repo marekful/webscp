@@ -73,7 +73,7 @@ jobs:
           override: true
       - uses: LoliGothick/rustfmt-check@a86cbe9bddeb4dd029177643cf6d08270abbf9b7 # v0.3.2
         with:
-          token: ${{ secrets.RELASE_TOKEN_PAT }}
+          token: ${{ secrets.RELEASE_TOKEN_PAT }}
           flags: --all
           ##options: --manifest-path=Cargo.toml
           args: --config-path=agent/rustfmt.toml
