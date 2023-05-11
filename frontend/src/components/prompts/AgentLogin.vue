@@ -21,9 +21,9 @@
           class="input input--block"
           name="password"
           type="password"
+          ref="password"
           required="required"
           @keypress.prevent.enter="login"
-          autofocus
         />
       </p>
     </div>
@@ -67,6 +67,19 @@ export default {
       }
     }, 300);
   },
+  mounted() {
+    let focusInput = () => {
+      setTimeout(() => {
+        if (this.$refs.password && this.$refs.password.focus) {
+          this.$refs.password.focus();
+        } else {
+          focusInput();
+        }
+      }, 10);
+    };
+
+    focusInput();
+  },
   methods: {
     clearInterval() {
       clearInterval(this.intervalID);
@@ -86,7 +99,12 @@ export default {
           this.$store.commit("showHover", this.loginAgent.component);
           this.clearInterval();
         })
-        .catch(this.$showError);
+        .catch((err) => {
+          if (this.$refs.password) {
+            this.$refs.password.select();
+          }
+          this.$showError(err);
+        });
     },
     cancel() {
       let show = this.loginAgent.component;

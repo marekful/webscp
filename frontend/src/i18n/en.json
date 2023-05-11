@@ -195,6 +195,7 @@
       "connectionCreated": "Remote Agent Connection created",
       "connectionDeleted": "Remote Agent Connection deleted",
       "connections": "Connections",
+      "copied": "Copied",
       "generateAccessToken": "Generate Access Token",
       "host": "Host",
       "hostLabel": "Hostname, FQDN or IP address",
