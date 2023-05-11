@@ -1,9 +1,16 @@
 <template>
   <div class="custom-select" :tabindex="tabindex" @blur="open = false">
-    <div class="selected" :class="{ open: open }" @click="open = !open">
-      <div v-if="Array.isArray(selected)">
-        <div>{{ selected[0] }}</div>
-        <div v-if="selected[1] !== undefined">{{ selected[1] }}</div>
+    <div class="option selected" :class="{ open: open }" @click="open = !open">
+      <div v-if="selected instanceof Object">
+        <div :class="selected.title.class || 'title'">
+          {{ selected.title.text }}
+        </div>
+        <div
+          v-if="selected.body !== undefined"
+          :class="selected.body.class || 'body'"
+        >
+          {{ selected.body.text }}
+        </div>
       </div>
       <div v-else>
         {{ selected }}
@@ -13,12 +20,19 @@
       <div
         v-for="(option, i) of options"
         :key="i"
-        :class="'option-' + i + (i === selectedIndex ? ' selected' : '')"
+        :class="'option option-' + i + (i === selectedIndex ? ' selected' : '')"
         @click="click($event, option, i)"
       >
-        <div v-if="Array.isArray(option)">
-          <div>{{ option[0] }}</div>
-          <div v-if="option[1] !== undefined">{{ option[1] }}</div>
+        <div v-if="option instanceof Object">
+          <div :class="option.title.class || 'title'">
+            {{ option.title.text }}
+          </div>
+          <div
+            v-if="option.body !== undefined"
+            :class="option.body.class || 'body'"
+          >
+            {{ option.body.text }}
+          </div>
         </div>
         <div v-else>
           {{ option }}
@@ -33,11 +47,11 @@ export default {
   name: "custom-select",
   props: {
     options: {
-      type: Array,
+      type: Array[Object],
       required: true,
     },
     default: {
-      type: String,
+      type: Object,
       required: false,
       default: null,
     },

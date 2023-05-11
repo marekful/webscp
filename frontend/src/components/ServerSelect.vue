@@ -9,7 +9,7 @@
     </div>
     <custom-select
       :options="serverList"
-      :default="'Local'"
+      :default="{ title: { text: 'Local' } }"
       class="select"
       @input="changed($event)"
       :tabindex="selectedIndex"
@@ -68,7 +68,7 @@ export default {
     },
     async fillOptions() {
       let servers = (await agents.getAll()) || [];
-      this.serverList = [["Local"]];
+      this.serverList = [{ title: { text: "Local" } }];
 
       for (let index = 0; index < servers.length; index++) {
         let server = servers[index];
@@ -80,7 +80,15 @@ export default {
           port: server.port,
           index: index + 1,
         };
-        this.serverList.push([`WebSCP (${server.remote_user.name})`, label]);
+        const option = {
+          title: {
+            text: `WebScP (${server.remote_user.name})`,
+          },
+          body: {
+            text: label,
+          },
+        };
+        this.serverList.push(option);
       }
     },
   },
@@ -164,7 +172,7 @@ div.section-title {
   background-color: var(--distinct-background);
 }
 
-.server-select .custom-select .items > .selected {
+.server-select .custom-select .items .selected {
   color: var(--dark-blue);
   border: 1px solid var(--grey-blue);
   border-width: 1px 0;
@@ -175,6 +183,23 @@ div.section-title {
   color: var(--textPrimary);
 }
 
+.server-select .custom-select .option {
+  color: var(--card-title-color);
+}
+
+.server-select .custom-select .option .title {
+  font-weight: bold;
+  line-height: initial;
+  padding: 0.5em 0 0.5em 0;
+}
+
+.server-select .custom-select .option .body {
+  font-size: small;
+  line-height: initial;
+  padding: 0 0 0.5em 0;
+  color: var(--card-text-color);
+}
+
 .server-select .custom-select .items > div:first-child {
   margin-top: 0.5em;
 }
@@ -183,7 +208,7 @@ div.section-title {
   margin-bottom: 0.5em;
 }
 
-.server-select .custom-select .items > div:hover {
+.server-select .custom-select .items .option:hover {
   background-color: var(--distinct-hover);
   color: var(--dark-blue);
 }

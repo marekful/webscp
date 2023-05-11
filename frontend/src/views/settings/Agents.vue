@@ -19,9 +19,24 @@
                 </div>
               </div>
               <p>
-                <label>{{ $t("settings.agent.accessToken") }}</label>
+                <span>
+                  <label>
+                    {{ $t("settings.agent.accessToken") }}
+                    <i
+                      class="material-icons"
+                      ref="copyIcon"
+                      :data-id="index"
+                      @click="copy"
+                      >{{ copyIcon }}</i
+                    >
+                    <span v-if="tokensCopied[index] === true" class="copied">
+                      {{ $t("settings.agent.copied") }}
+                    </span>
+                  </label>
+                </span>
                 <textarea
                   readonly
+                  ref="token"
                   v-model="token.token"
                   @focus="$event.target.select()"
                 ></textarea>
@@ -124,6 +139,8 @@ export default {
       error: null,
       agents: [],
       tokens: [],
+      tokensCopied: [],
+      copyIcon: "copy_all",
     };
   },
   computed: {
@@ -167,9 +184,24 @@ export default {
   methods: {
     ...mapMutations(["setLoading"]),
     async token() {
-      await api
-        .getTemporaryAccessToken()
-        .then((token) => this.tokens.push(token));
+      await api.getTemporaryAccessToken().then((token) => {
+        this.tokens.push(token);
+        this.tokensCopied.push(false);
+      });
+    },
+    copy(event) {
+      const id = parseInt(event.target.dataset.id);
+      this.$refs.token[id].select();
+      this.$refs.token[id].setSelectionRange(0, 180);
+      navigator.clipboard.writeText(this.$refs.token[id].value);
+      this.tokensCopied.splice(id, 1, true);
+      this.copyIcon = "done";
+      this.$refs.copyIcon[id].classList.add("done");
+      setTimeout(() => {
+        this.copyIcon = "copy_all";
+        this.$refs.copyIcon[id].classList.remove("done");
+        this.tokensCopied.splice(id, 1, false);
+      }, 2500);
     },
   },
 };
@@ -226,6 +258,23 @@ td.status {
 .card .token p label {
   font-size: initial;
   margin: 1.25em 0 0.75em 0;
+}
+
+.card .token p label i {
+  vertical-align: bottom;
+  font-size: 115%;
+  margin-left: 0.25em;
+  cursor: pointer;
+}
+
+.card .token p label i.done {
+  color: var(--icon-blue);
+}
+
+.card .token p label .copied {
+  margin-left: 0.2em;
+  font-weight: initial;
+  color: var(--icon-blue);
 }
 
 .card .token .info {
