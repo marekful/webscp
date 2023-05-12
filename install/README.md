@@ -30,8 +30,14 @@ WebSCP is compatible with newer (64bit) MacOS (Intel, M1, M2) and Linux (Intel, 
 - Make sure the empty file named `database.db` and the file named `settings.json` are also in this directory 
 
 ### Download & Run WebSCP as a daemon
-- In the directory where `compose.yaml` is located, execute `docker compose up -d`
-- You may inspect logs to confirm normal startup with `docker compose logs --follow`
+- In the directory where `compose.yaml` is located, execute 
+```shell
+docker compose up -d
+```
+- You may inspect logs to confirm normal startup with
+```shell
+docker compose logs --follow
+```
 - The default user `admin` with password `admin` will be created when WebSCP runs for the first time
 
 ## Version Upgrade
