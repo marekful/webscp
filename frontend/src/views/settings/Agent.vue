@@ -7,7 +7,7 @@
           <h2 v-if="agent.id === 0">
             {{ $t("settings.agent.newConnection") }}
           </h2>
-          <h2 v-else>{{ $t("settings.agent.remoteAgent") }}</h2>
+          <h2 v-else>{{ $t("settings.agent.editConnection") }}</h2>
         </div>
 
         <div class="card-content">
@@ -24,6 +24,16 @@
             :title="$t('buttons.delete')"
           >
             {{ $t("buttons.delete") }}
+          </button>
+          <button
+            v-if="!isNew"
+            @click="save"
+            type="button"
+            class="button button--flat"
+            :aria-label="$t('buttons.save')"
+            :title="$t('buttons.save')"
+          >
+            {{ $t("buttons.save") }}
           </button>
           <input
             v-if="isNew"
@@ -96,6 +106,7 @@ export default {
           this.agent = {
             host: "",
             port: "",
+            branding: "",
             secret: "",
             remote_user: {
               name: "",
@@ -141,8 +152,13 @@ export default {
           const loc = await api.create(agent);
           this.$router.push({ path: loc });
           this.$showSuccess(this.$t("settings.agent.connectionCreated"));
+        } else {
+          await api.update(agent, ["branding"]);
+
+          this.$showSuccess(this.$t("settings.agent.connectionUpdated"));
         }
       } catch (e) {
+        console.log("err> ", e);
         this.$showError(e);
       }
     },
