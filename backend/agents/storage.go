@@ -2,6 +2,7 @@ package agents
 
 import (
 	"sync"
+	"time"
 
 	"github.com/marekful/webscp/errors"
 )
@@ -20,6 +21,7 @@ type Store interface {
 	Get(id interface{}) (agent *Agent, err error)
 	Gets() ([]*Agent, error)
 	Save(agent *Agent) error
+	Update(agent *Agent, fields ...string) error
 	Delete(id interface{}) error
 	LastUpdate(id uint) int64
 }
@@ -84,6 +86,24 @@ func (s *Storage) Save(agent *Agent) error {
 	}
 
 	return s.back.Save(agent)
+}
+
+// Update updates an agent in the database.
+func (s *Storage) Update(agent *Agent, fields ...string) error {
+	err := agent.Clean(fields...)
+	if err != nil {
+		return err
+	}
+
+	err = s.back.Update(agent, fields...)
+	if err != nil {
+		return err
+	}
+
+	s.mux.Lock()
+	s.updated[agent.ID] = time.Now().Unix()
+	s.mux.Unlock()
+	return nil
 }
 
 // Delete allows you to delete an agent by its name or username. The provided

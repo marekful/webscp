@@ -24,7 +24,7 @@ type AgentClient struct {
 	Agent *Agent
 }
 
-type GenerateAccessTokenResponse struct {
+type GetAccessTokenResponse struct {
 	Code       uint   `json:"code"`
 	Token      string `json:"token"`
 	ValidUntil int64  `json:"valid_until"`
@@ -44,10 +44,11 @@ type GetRemoteUserResponse struct {
 }
 
 type GetTokenUserResponse struct {
-	Code  int32  `json:"code"`
-	ID    uint   `json:"id"`
-	Name  string `json:"name"`
-	Error string `json:"error,omitempty"`
+	Code     int32  `json:"code"`
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Branding string `json:"branding"`
+	Error    string `json:"error,omitempty"`
 }
 
 type GetVersionResponse struct {
@@ -88,7 +89,7 @@ type CancelTransferRequest struct {
 	TransferID string `json:"transfer_id"`
 }
 
-func GetTemporaryAccessToken(token string, userID uint) (response *GenerateAccessTokenResponse, status int, err error) {
+func GetTemporaryAccessToken(token, branding string, userID uint) (response *GetAccessTokenResponse, status int, err error) {
 	agentAddress := os.Getenv("AGENT_ADDRESS")
 	requestURL := fmt.Sprintf("%s/api/users/%d/temporary-access-token", agentAddress, userID)
 
@@ -97,8 +98,11 @@ func GetTemporaryAccessToken(token string, userID uint) (response *GenerateAcces
 		return nil, nethttps.StatusInternalServerError, fmt.Errorf("error initializing agent API reqeuest: %v", err)
 	}
 
-	cookie := nethttps.Cookie{Name: "rc_auth", Value: token}
-	r.AddCookie(&cookie)
+	cookieAuth := nethttps.Cookie{Name: "rc_auth", Value: token}
+	r.AddCookie(&cookieAuth)
+
+	cookieBranding := nethttps.Cookie{Name: "rc_branding", Value: branding}
+	r.AddCookie(&cookieBranding)
 
 	client := &nethttps.Client{}
 	agentResponse, err := client.Do(r)
@@ -108,7 +112,7 @@ func GetTemporaryAccessToken(token string, userID uint) (response *GenerateAcces
 
 	defer agentResponse.Body.Close()
 
-	resp := &GenerateAccessTokenResponse{}
+	resp := &GetAccessTokenResponse{}
 	dErr := json.NewDecoder(agentResponse.Body).Decode(resp)
 	if dErr != nil {
 		return nil, nethttps.StatusInternalServerError, dErr
@@ -163,6 +167,7 @@ func (c *AgentClient) GetTokenUser(userID uint, user *TokenUser, accessToken, to
 
 	user.ID = resp.ID
 	user.Name = resp.Name
+	user.Branding = resp.Branding
 
 	return 0, nil
 }

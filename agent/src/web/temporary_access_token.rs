@@ -50,12 +50,18 @@ pub async fn get_temporary_access_token(
     // create arguments for the generate temporary access token command
     let key_id = Client::random_hex();
     let user_id = user.id.to_string();
+    let instance_name;
+    if let Some(branding_cookie) = cookies.get("rc_branding") {
+        instance_name = branding_cookie.value();
+    } else {
+        instance_name = "WebSCP";
+    }
     let args: Vec<&str> = vec![
         DEFAULTS.generate_key_pair_script_path,
         &key_id,
         &user_id,
         &user.username,
-        &user.scope,
+        instance_name,
     ];
 
     // execute command

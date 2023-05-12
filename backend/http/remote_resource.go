@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/marekful/webscp/agents"
-
 	"golang.org/x/sys/unix"
+
+	"github.com/marekful/webscp/agents"
 )
 
 var remoteResourceGetHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

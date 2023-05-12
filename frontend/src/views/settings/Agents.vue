@@ -23,6 +23,7 @@
                   <label>
                     {{ $t("settings.agent.accessToken") }}
                     <i
+                      v-if="canCopy"
                       class="material-icons"
                       ref="copyIcon"
                       :data-id="index"
@@ -72,6 +73,7 @@
           <table>
             <tr>
               <th></th>
+              <th>{{ $t("settings.agent.name") }}</th>
               <th>{{ $t("settings.agent.host") }}</th>
               <th>{{ $t("settings.agent.port") }}</th>
               <th>{{ $t("settings.agent.user") }}</th>
@@ -99,6 +101,7 @@
                   <i v-else class="material-icons">help_outline</i>
                 </div>
               </td>
+              <td>{{ agent.branding }}</td>
               <td>{{ agent.host }}</td>
               <td>{{ agent.port }}</td>
               <td>{{ agent.remote_user.name }}</td>
@@ -140,6 +143,7 @@ export default {
       agents: [],
       tokens: [],
       tokensCopied: [],
+      canCopy: false,
       copyIcon: "copy_all",
     };
   },
@@ -180,6 +184,8 @@ export default {
           this.agents.splice(idx, 1, a);
         });
     }
+
+    this.canCopy = navigator.clipboard && navigator.clipboard.writeText;
   },
   methods: {
     ...mapMutations(["setLoading"]),
