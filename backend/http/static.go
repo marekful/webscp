@@ -26,8 +26,9 @@ func handleWithStaticData(w http.ResponseWriter, r *http.Request, d *data, fSys 
 		return http.StatusInternalServerError, err
 	}
 
+	escaper := strings.NewReplacer(`'`, `\'`, `"`, `\"`)
 	data := map[string]interface{}{
-		"Name":                  d.settings.Branding.Name,
+		"Name":                  escaper.Replace(d.settings.Branding.Name),
 		"DisableExternal":       d.settings.Branding.DisableExternal,
 		"DisableUsedPercentage": d.settings.Branding.DisableUsedPercentage,
 		"Color":                 d.settings.Branding.Color,

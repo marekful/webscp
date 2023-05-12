@@ -8,8 +8,11 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/marekful/webscp/agents"
 	"github.com/marekful/webscp/errors"
@@ -254,8 +257,8 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 	}
 
 	req.Data.Secret = ""
-	// req.Data.RemoteUser.Password = ""
 	req.Data.UserID = d.user.ID
+	req.Data.Branding = user.Branding
 	req.Data.RemoteUser.ID = user.ID
 	req.Data.RemoteUser.Name = user.Name
 	req.Data.RemoteUser.Token = "x.0"
@@ -269,10 +272,43 @@ var agentPostHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *
 	return http.StatusCreated, nil
 })
 
+var agentPutHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	req, err := getAgent(w, r)
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
+
+	if req.Data.ID != d.agent.ID {
+		return http.StatusBadRequest, nil
+	}
+
+	if len(req.Which) == 0 || (len(req.Which) == 1 && req.Which[0] == ALL) {
+		return http.StatusForbidden, nil
+	}
+
+	for k, v := range req.Which {
+		v = cases.Title(language.English, cases.NoLower).String(v)
+		req.Which[k] = v
+
+	}
+
+	err = d.store.Agents.Update(req.Data, req.Which...)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+})
+
 var agentTemporaryAccessTokenGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	authCookie, _ := r.Cookie("auth")
+	escaper := strings.NewReplacer(`'`, `\'`, `"`, `\"`)
+	instanceName := escaper.Replace(d.settings.Branding.Name)
+	if instanceName == "" {
+		instanceName = "WebSCP"
+	}
 
-	accessTokenResponse, httpStatus, err := agents.GetTemporaryAccessToken(authCookie.Value, d.user.ID)
+	accessTokenResponse, httpStatus, err := agents.GetTemporaryAccessToken(authCookie.Value, instanceName, d.user.ID)
 	if err != nil {
 		if httpStatus == http.StatusUnauthorized {
 			httpStatus = http.StatusForbidden

@@ -156,7 +156,7 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 		return http.StatusBadRequest, nil
 	}
 
-	if len(req.Which) == 0 || (len(req.Which) == 1 && req.Which[0] == "all") {
+	if len(req.Which) == 0 || (len(req.Which) == 1 && req.Which[0] == ALL) {
 		if !d.user.Perm.Admin {
 			return http.StatusForbidden, nil
 		}

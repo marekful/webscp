@@ -1,6 +1,18 @@
 <template>
   <div class="agent-form">
     <p>
+      <label for="name">{{ $t("settings.agent.connectionName") }}</label>
+      <input
+        v-if="!isNew"
+        class="input input--block"
+        type="text"
+        v-model="agent.branding"
+        id="name"
+        name="name"
+        required="required"
+      />
+    </p>
+    <p>
       <label for="host">{{ $t("settings.agent.hostLabel") }}</label>
       <input
         v-if="isNew"

@@ -23,6 +23,17 @@ export async function create(agent) {
   }
 }
 
+export async function update(agent, which = ["all"]) {
+  await fetchURL(`/api/agents/${agent.id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      what: "agent",
+      which: which,
+      data: agent,
+    }),
+  });
+}
+
 export async function remoteUserLogin(agentID, name, password) {
   return fetchURL(`/api/remote/${agentID}/verify-user-credentials`, {
     method: "POST",

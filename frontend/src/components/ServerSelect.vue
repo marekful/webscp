@@ -75,6 +75,7 @@ export default {
         let label = `${server.host}:${server.port}`;
         this.servers[index + 1] = {
           id: server.id,
+          branding: server.branding,
           user: { id: this.user.id },
           host: server.host,
           port: server.port,
@@ -82,7 +83,7 @@ export default {
         };
         const option = {
           title: {
-            text: `WebScP (${server.remote_user.name})`,
+            text: `${server.branding} (${server.remote_user.name})`,
           },
           body: {
             text: label,

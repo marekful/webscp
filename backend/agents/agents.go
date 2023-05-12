@@ -11,6 +11,7 @@ type ViewMode string
 type Agent struct {
 	ID         uint       `storm:"id,increment" json:"id"`
 	UserID     uint       `json:"userID"`
+	Branding   string     `json:"branding"`
 	Host       string     `json:"host"`
 	Port       string     `json:"port"`
 	Secret     string     `json:"secret,omitempty"`
@@ -25,8 +26,9 @@ type RemoteUser struct {
 }
 
 type TokenUser struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Branding string `json:"branding"`
 }
 
 var checkableFields = []string{

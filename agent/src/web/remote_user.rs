@@ -39,6 +39,7 @@ pub struct GetTokenUserResponse {
     code: i32,
     id: Option<u32>,
     name: Option<String>,
+    branding: Option<String>,
     error: Option<String>,
 }
 
@@ -52,6 +53,7 @@ struct RemoteUser {
 struct TokenUser {
     id: u32,
     name: String,
+    branding: String,
 }
 
 #[post(
@@ -78,6 +80,7 @@ pub async fn get_token_user(
                 code: err.code,
                 id: None,
                 name: None,
+                branding: None,
                 error: Some(err.message),
             }),
         );
@@ -96,6 +99,7 @@ pub async fn get_token_user(
                 code: err.code,
                 id: None,
                 name: None,
+                branding: None,
                 error: Some(err.message),
             }),
         );
@@ -113,6 +117,7 @@ pub async fn get_token_user(
                 code: 625,
                 id: None,
                 name: None,
+                branding: None,
                 error: Some(err.to_string()),
             }),
         );
@@ -125,6 +130,7 @@ pub async fn get_token_user(
             code: 0,
             id: Some(token_user.id),
             name: Some(token_user.name),
+            branding: Some(token_user.branding),
             error: None,
         }),
     )
