@@ -22,7 +22,7 @@ The file manager comes with a configurable root directory and it can be used to 
 
 ## Features
 
-For File Browser features concering local operations, please refer to the original docs at [https://filebrowser.org/features](https://filebrowser.org/features).
+For File Browser features concering local operations, please refer to the original [documentation](https://filebrowser.org/features).
 
 * Seamleassly set up SSH key authentication based connectoins using a one time access token from the remote
 * Connections are only visible to the user who created them
@@ -35,13 +35,11 @@ For File Browser features concering local operations, please refer to the origin
 * Option to keep or replace existing files on the remote in case of conflict
 * Keep track of remote operations or cancel them through the UI
 
-## Compatibility
+## Compatibility & Installation
 
-WebSCP is compatible with newer (64bit) MacOS (Intel, M1, M2) and Linux (Intel, ARM) and it requires Docker ([Mac](https://docs.docker.com/desktop/install/mac-install/), [Linux](https://docs.docker.com/engine/install/)) to run.
+WebSCP is compatible with newer (64bit) MacOS (Intel, M1, M2) and Linux (Intel, ARM) and it requires Docker.
 
-## Installation
-
-Please read the [installation and version upgrade instructions](https://github.com/marekful/webscp/tree/main/install).
+Please read the [Installation and Version Upgrade Guide](https://github.com/marekful/webscp/tree/main/install) for details.
 
 <div align='right'>
   <a href="https://bestpractices.coreinfrastructure.org/projects/7344"><img src="https://bestpractices.coreinfrastructure.org/projects/7344/badge"></a>
