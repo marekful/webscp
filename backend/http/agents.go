@@ -282,7 +282,7 @@ var agentPutHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Re
 		return http.StatusBadRequest, nil
 	}
 
-	if len(req.Which) == 0 || (len(req.Which) == 1 && req.Which[0] == "all") {
+	if len(req.Which) == 0 || (len(req.Which) == 1 && req.Which[0] == ALL) {
 		return http.StatusForbidden, nil
 	}
 

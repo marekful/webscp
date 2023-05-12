@@ -10,6 +10,8 @@ import (
 	"github.com/marekful/webscp/storage"
 )
 
+const ALL = "all"
+
 type modifyRequest struct {
 	What  string   `json:"what"`  // Answer to: what data type?
 	Which []string `json:"which"` // Answer to: which fields?
