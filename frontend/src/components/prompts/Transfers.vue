@@ -368,6 +368,7 @@ export default {
   color: var(--dark-red);
   font-size: small;
   margin: 0.25em 0 0.75em 0;
+  line-break: anywhere;
 }
 
 .transfer .stats {
