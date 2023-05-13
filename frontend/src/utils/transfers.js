@@ -271,12 +271,14 @@ function handleMessage($store) {
           stats = getStats(extra);
         }
         if (data === "archived") {
+          cancelable = false;
           icon = "folder_zip";
           message = "archiving";
           messageTr = "archiving";
           stats = getArchiveStats(extra);
         }
         if (data === "compressed") {
+          cancelable = false;
           icon = "folder_zip";
           message = "compressing";
           messageTr = "compressing";
