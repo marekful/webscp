@@ -4,7 +4,7 @@ use std::{
     fs,
     fs::OpenOptions,
     io::{prelude::*, Error},
-    net::TcpStream,
+    net::{TcpStream, ToSocketAddrs},
     os::unix::fs::OpenOptionsExt,
     path::Path,
     process::exit,
@@ -17,6 +17,7 @@ use tokio::{
 };
 
 use std::process::Stdio;
+use std::time::Duration;
 
 use sha256::digest;
 
@@ -28,6 +29,7 @@ use crate::{
     },
     files_api::{FilesApi, Transfer},
 };
+use crate::files_api::RequestError;
 
 #[derive(Debug)]
 pub struct Client<'r> {
@@ -48,6 +50,17 @@ impl From<Error> for ClientError {
             code: 987,
             message: err.to_string(),
             http_code: Some(500),
+        }
+    }
+}
+
+impl From<RequestError> for ClientError {
+    fn from(err: RequestError) -> Self {
+        let http_code = err.http_code.unwrap_or(500).to_string().parse::<i32>().unwrap();
+        ClientError {
+            code: err.code,
+            message: err.message,
+            http_code: Some(http_code)
         }
     }
 }
@@ -347,8 +360,23 @@ impl Client<'_> {
     }
 
     fn create_session(&self, secret: Option<&str>) -> Option<Session> {
-        // create ssh connection
-        let tcp = match TcpStream::connect(self.host.to_owned() + ":" + &*self.port.to_string()) {
+        // setup tcp connection
+        let timeout = Duration::from_secs(10);
+        let addr_str = format!("{}:{}", self.host, self.port);
+        let mut addrs_iter = addr_str.to_socket_addrs().unwrap();
+        let socket_addr = match addrs_iter.next() {
+            Some(sa) => sa,
+            None => {
+                Self::print_error_and_exit(
+                    136,
+                    format!("503 Couldn't connect to {}:{}", self.host, self.port),
+                );
+                return None;
+            }
+        };
+
+        // create tcp connection
+        let tcp = match TcpStream::connect_timeout(&socket_addr, timeout) {
             Ok(tcp) => tcp,
             Err(e) => {
                 Self::print_error_and_exit(
@@ -358,6 +386,8 @@ impl Client<'_> {
                 return None;
             }
         };
+
+        // create ssh session over the tcp connection
         let mut sess = Session::new().unwrap();
         sess.set_tcp_stream(tcp);
         sess.handshake().unwrap();

@@ -255,7 +255,6 @@ impl FilesApi {
             transfer.agent_id, transfer.transfer_id
         );
 
-        /*let auth = Some(transfer.rc_auth.to_string());*/
         let _ = self
             .make_async_request("PATCH", &uri, None, None, None)
             .await;
@@ -267,7 +266,6 @@ impl FilesApi {
             transfer.agent_id, transfer.transfer_id
         );
 
-        /*let auth = Some(transfer.rc_auth.to_string());*/
         let _ = self.make_request("PATCH", &uri, None, None, None);
     }
 
@@ -277,24 +275,30 @@ impl FilesApi {
         token: &str,
         path: &str,
     ) -> Result<String, ClientError> {
+        // send the get-local-resource request
         let uri = format!("/api/agent/{user_id}/resources/{path}");
-
         let mut response = match self.make_request("GET", &uri, None, None, Some(token.to_string()))
         {
             Ok(r) => r,
             Err(e) => {
+                // code 110 denotes that the remote token was not accepted
+                if e.code == 110 {
+                    // return the (http 511) error that will cause the client
+                    // to trigger authentication for this remote
+                    return Err(ClientError::from(e));
+                }
+                // return any other error encountered during the http request
                 return Err(ClientError {
                     code: 187,
                     message: e.message,
-                    //message: format!("404 {uri}"),
                     http_code: Some(e.http_code.unwrap() as i32),
                 });
             }
         };
 
+        // attempt to read the response and return error if cannot (io error)
         let mut output = String::new();
         let result = response.read_to_string(&mut output);
-
         if let Err(err) = result {
             return Err(ClientError {
                 code: 188,
@@ -303,6 +307,7 @@ impl FilesApi {
             });
         }
 
+        // return error if the response is not 2xx
         if response.status() != StatusCode::OK {
             return Err(ClientError {
                 code: 189,
@@ -312,14 +317,8 @@ impl FilesApi {
             });
         }
 
-        match response.read_to_string(&mut output) {
-            Ok(_) => Ok(output),
-            Err(e) => Err(ClientError {
-                code: 190,
-                message: e.to_string(),
-                http_code: Some(500),
-            }),
-        }
+        // return the response on success
+        Ok(output)
     }
 
     pub fn local_before_copy(
@@ -328,11 +327,18 @@ impl FilesApi {
         token: String,
         items: String,
     ) -> Result<String, ClientError> {
+        // send the local-before-copy request to Files api
         let uri = format!("/api/agent/{user_id}?action=remote-copy");
-
         let mut response = match self.make_request("PATCH", &uri, Some(items), None, Some(token)) {
             Ok(r) => r,
             Err(e) => {
+                // code 110 denotes that the remote token was not accepted
+                if e.code == 110 {
+                    // return the (http 511) error that will cause the client
+                    // to trigger authentication for this remote
+                    return Err(ClientError::from(e));
+                }
+                // return any other error encountered during the http request
                 return Err(ClientError {
                     code: 191,
                     message: e.message,
@@ -341,9 +347,9 @@ impl FilesApi {
             }
         };
 
+        // attempt to read the response and return error if cannot (io error)
         let mut output = String::new();
         let result = response.read_to_string(&mut output);
-
         if let Err(err) = result {
             return Err(ClientError {
                 code: 192,
@@ -352,6 +358,7 @@ impl FilesApi {
             });
         }
 
+        // return error if the response is not 2xx
         if response.status() != StatusCode::OK {
             return Err(ClientError {
                 code: 193,
@@ -360,14 +367,8 @@ impl FilesApi {
             });
         }
 
-        match response.read_to_string(&mut output) {
-            Ok(_) => Ok(output),
-            Err(e) => Err(ClientError {
-                code: 194,
-                message: e.to_string(),
-                http_code: Some(500),
-            }),
-        }
+        // return the response on success
+        Ok(output)
     }
 
     pub fn get_local_user(&self, user_name: &str, password: &str) -> Result<String, ClientError> {
@@ -407,14 +408,7 @@ impl FilesApi {
             });
         }
 
-        match response.read_to_string(&mut output) {
-            Ok(_) => Ok(output),
-            Err(e) => Err(ClientError {
-                code: 199,
-                message: e.to_string(),
-                http_code: Some(500),
-            }),
-        }
+        Ok(output)
     }
 
     pub fn get_version(&self) -> String {
