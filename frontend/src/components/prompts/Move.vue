@@ -24,15 +24,13 @@
       >
         {{ $t("buttons.cancel") }}
       </button>
-      <button
-        class="button button--flat"
-        @click="move"
-        :disabled="$route.path === dest"
-        :aria-label="$t('buttons.move')"
-        :title="$t('buttons.move')"
-      >
-        {{ $t("buttons.move") }}
-      </button>
+      <stateful-button
+        :handler="move"
+        :disabled="$route.path === dest && modeLocal"
+        class-name="button button--flat"
+        label-tr="buttons.move"
+        title-tr="buttons.move"
+      ></stateful-button>
     </div>
   </div>
 </template>
@@ -41,19 +39,20 @@
 import { mapState } from "vuex";
 import FileList from "./FileList";
 import ServerSelect from "../ServerSelect";
+import StatefulButton from "@/components/StatefulButton.vue";
 import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import * as upload from "@/utils/upload";
 
 export default {
   name: "move",
-  components: { FileList, ServerSelect },
+  components: { FileList, ServerSelect, StatefulButton },
   data: function () {
     return {
       current: window.location.pathname,
       dest: null,
       agentId: null,
-      agentAddress: null,
+      modeLocal: true,
     };
   },
   computed: mapState(["req", "selected"]),
@@ -62,14 +61,22 @@ export default {
       let id = val.id;
       if (id === 0) {
         this.agentId = 0;
+        this.modeLocal = true;
       } else {
         this.agentId = id;
-        this.agentAddress = `${val.host}:${val.port}`;
+        this.agent = val;
+        this.modeLocal = false;
       }
     },
     move: async function (event) {
       event.preventDefault();
       let items = [];
+
+      if (!this.modeLocal) {
+        const err = new Error("Remote move is not yet implemented");
+        this.$showError(err);
+        return;
+      }
 
       for (let item of this.selected) {
         items.push({
@@ -104,8 +111,8 @@ export default {
         this.$store.commit("showHover", {
           prompt: "replace-rename",
           confirm: (event, option) => {
-            overwrite = option == "overwrite";
-            rename = option == "rename";
+            overwrite = option === "overwrite";
+            rename = option === "rename";
 
             event.preventDefault();
             this.$store.commit("closeHovers");

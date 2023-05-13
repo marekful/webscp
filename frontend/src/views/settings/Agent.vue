@@ -2,7 +2,7 @@
   <errors v-if="error" :errorCode="error.status" />
   <div class="row" v-else-if="!loading">
     <div class="column">
-      <form @submit="save" class="card">
+      <form ref="form" class="card">
         <div class="card-title">
           <h2 v-if="agent.id === 0">
             {{ $t("settings.agent.newConnection") }}
@@ -35,12 +35,13 @@
           >
             {{ $t("buttons.save") }}
           </button>
-          <input
+          <stateful-button
             v-if="isNew"
-            class="button button--flat"
-            type="submit"
-            :value="$t('buttons.connectAndSave')"
-          />
+            :handler="save"
+            class-name="button button--flat"
+            label-tr="buttons.connectAndSave"
+            title-tr="buttons.connectAndSave"
+          ></stateful-button>
         </div>
       </form>
     </div>
@@ -72,11 +73,13 @@
 import { mapState, mapMutations } from "vuex";
 import { agents as api } from "@/api";
 import AgentForm from "@/components/settings/AgentForm";
+import StatefulButton from "@/components/StatefulButton";
 import Errors from "@/views/Errors";
 
 export default {
   name: "agent",
   components: {
+    StatefulButton,
     AgentForm,
     Errors,
   },
@@ -158,7 +161,6 @@ export default {
           this.$showSuccess(this.$t("settings.agent.connectionUpdated"));
         }
       } catch (e) {
-        console.log("err> ", e);
         this.$showError(e);
       }
     },
