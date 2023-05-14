@@ -19,7 +19,7 @@ use tokio::{
 use std::{
     process::Stdio,
     sync::{Arc, Mutex},
-    , time::Duration,
+    time::Duration,
 };
 
 use sha256::digest;
