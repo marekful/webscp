@@ -245,7 +245,6 @@ function handleMessage($store) {
       case "archiving":
       case "compressing":
         icon = "folder_zip";
-        cancelable = false;
         break;
       case "starting upload":
         icon = "drive_folder_upload";
@@ -273,14 +272,12 @@ function handleMessage($store) {
           stats = getStats(extra);
         }
         if (data === "archived") {
-          cancelable = false;
           icon = "folder_zip";
           message = "archiving";
           messageTr = "archiving";
           stats = getArchiveStats(extra);
         }
         if (data === "compressed") {
-          cancelable = false;
           icon = "folder_zip";
           message = "compressing";
           messageTr = "compressing";
