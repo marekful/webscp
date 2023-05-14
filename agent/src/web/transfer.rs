@@ -2,15 +2,15 @@ use rocket::{
     http::{CookieJar, Status},
     State,
 };
-use tokio::process::Command;
 
-use crate::{constants::DEFAULTS, Files};
+use crate::{CancelTransferRequests, Files};
 
 #[delete("/agents/<agent_id>/transfers/<transfer_id>")]
 pub async fn cancel_transfer(
     agent_id: u32,
     transfer_id: &str,
     files: &State<Files>,
+    cancel_requests: &State<CancelTransferRequests>,
     cookies: &CookieJar<'_>,
 ) -> Status {
     // verify that the requester has a valid session in Files and owns the referred agent
@@ -21,26 +21,24 @@ pub async fn cancel_transfer(
         }
     };
 
-    // create argument list for cancel transfer script
-    let script_args: Vec<&str> = vec![DEFAULTS.cancel_transfer_script_path, transfer_id];
+    // get the shared state holding the list of cancel transfer request flags
+    let transfers = cancel_requests.transfers.lock().unwrap();
 
-    // setup and execute command
-    let mut cmd = Command::new("bash");
-    let child = cmd.args(script_args).spawn();
-    let result = child.unwrap().wait().await;
+    // check if the referred transfer is registered in the list
+    if let Some(cancel_request) = transfers.get(transfer_id) {
+        // lock the mutex and get the flag for r/w
+        let mut signal_cancel = cancel_request.lock().unwrap();
 
-    // respond with error on command error
-    if result.is_err() {
-        return Status::InternalServerError;
-    }
+        // set the flag
+        return if !*signal_cancel {
+            *signal_cancel = true;
 
-    // respond with not found on non-zero exit code
-    let result = result.unwrap();
-    let code = result.code().unwrap();
-    if code != 0 {
-        return Status::NotFound;
+            Status::Ok
+        } else {
+            Status::NotModified
+        };
     }
 
     // success response
-    Status::Ok
+    Status::NotFound
 }
