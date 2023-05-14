@@ -3,8 +3,10 @@ use rocket::tokio::task;
 use std::{
     fs,
     fs::File,
-    io::Error,
+    io::{Error, ErrorKind::Interrupted},
+    ops::Deref,
     path::Path,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 use tar::Builder;
@@ -31,6 +33,7 @@ pub struct ArchiveWriter {
     source_base_path: String,
     progress: ProgressCounter,
     last_update_sent_at: Instant,
+    cancel_requested: Arc<Mutex<bool>>,
 }
 
 pub struct ProgressCounter {
@@ -54,6 +57,7 @@ impl ArchiveWriter {
         archive_path: &str,
         compress: bool,
         source_base_path: &str,
+        cancel_requested: Arc<Mutex<bool>>,
     ) -> Result<Self, ArchiveError> {
         let file = match File::create(archive_path) {
             Ok(f) => f,
@@ -80,6 +84,7 @@ impl ArchiveWriter {
                     files_added: 0,
                 },
                 last_update_sent_at: Instant::now(),
+                cancel_requested,
             })
         } else {
             let writer = Builder::new(file);
@@ -95,6 +100,7 @@ impl ArchiveWriter {
                     files_added: 0,
                 },
                 last_update_sent_at: Instant::now(),
+                cancel_requested,
             })
         }
     }
@@ -117,6 +123,10 @@ impl ArchiveWriter {
             let res = match self.add_file_to_archive(src.clone(), dst, transfer) {
                 Ok(_) => Ok::<(), Error>(()),
                 Err(e) => {
+                    // abort archive operation on user request
+                    if e.kind() == Interrupted {
+                        break;
+                    }
                     return Err(ArchiveError {
                         code: 301,
                         message: e.to_string(),
@@ -193,6 +203,12 @@ impl ArchiveWriter {
         // skip non regular files
         if !src_meta.file_type().is_file() {
             return Ok(());
+        }
+
+        // check if the 'cancel requested' flag has been set and quit if so
+        let do_cancel = self.cancel_requested.lock().unwrap();
+        if *do_cancel.deref() {
+            return Err(Error::new(Interrupted, "Operation aborted by user request"));
         }
 
         // try adding the file

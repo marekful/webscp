@@ -4,7 +4,12 @@ use rocket::{
     tokio::{task, time},
     State,
 };
-use std::{fs, time::Duration};
+use std::{
+    collections::HashMap,
+    fs,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use urlencoding::encode;
 
 use crate::client::Client;
@@ -14,7 +19,7 @@ use crate::{
     command_runner::run_command_async,
     constants::{COMMAND_GET_REMOTE_RESOURCE, COMMAND_REMOTE_BEFORE_COPY, DEFAULTS},
     files_api::{FilesApi, Transfer},
-    Files,
+    CancelTransferRequests, Files,
 };
 
 #[derive(Deserialize, Debug, Clone)]
@@ -105,6 +110,7 @@ pub async fn copy(
     archive_name: &str,
     request: Json<CopyRequest>,
     files: &State<Files>,
+    cancel_requests_state: &State<CancelTransferRequests>,
     cookies: &CookieJar<'_>,
 ) -> (Status, Json<CopyResponse>) {
     // verify that the requester has a valid session in Files and owns the referred agent
@@ -168,10 +174,18 @@ pub async fn copy(
         rc_auth: auth_token.to_string(),
     };
 
+    // register a 'cancel requested' flag for this transfer
+    let mut cancel_requests = cancel_requests_state.transfers.lock().unwrap();
+    cancel_requests.insert(archive_name.to_string(), Arc::new(Mutex::new(false)));
+
     /*<alt:async execution of tar and scp> */
     // run remaining tasks asynchronously in a future
     let items_copy = request.items.to_vec();
-    let _future = task::spawn(finish_upload_in_background(transfer, items_copy));
+    let _future = task::spawn(finish_upload_in_background(
+        transfer,
+        items_copy,
+        cancel_requests.clone(),
+    ));
 
     /* The task has started execution at this point and
      * .await-ing it will be non-blocking. The task will
@@ -221,9 +235,13 @@ pub struct FutureError {
 async fn finish_upload_in_background(
     mut transfer: Transfer,
     req_items: Vec<ResourceItem>,
+    cancel_requests: HashMap<String, Arc<Mutex<bool>>>,
 ) -> Result<(), FutureError> {
     // allow some time for the upload state poll to initialize
     time::sleep(Duration::from_millis(50)).await;
+
+    // extract the 'cancel requested' flag
+    let cancel_requested = cancel_requests.get(&transfer.transfer_id).unwrap().clone();
 
     // send progress update
     let files_api = FilesApi::new();
@@ -250,19 +268,23 @@ async fn finish_upload_in_background(
         "{}{}.agent.tar.gz",
         DEFAULTS.temp_data_dir, transfer.transfer_id
     );
-    let mut archive_writer =
-        match ArchiveWriter::new(archive_path, transfer.compress, &transfer.local_path) {
-            Ok(w) => w,
-            Err(e) => {
-                files_api
-                    .send_upload_status_update_async(&transfer, &e.message)
-                    .await;
-                return Err(FutureError {
-                    code: e.code,
-                    message: e.message,
-                });
-            }
-        };
+    let mut archive_writer = match ArchiveWriter::new(
+        archive_path,
+        transfer.compress,
+        &transfer.local_path,
+        cancel_requested,
+    ) {
+        Ok(w) => w,
+        Err(e) => {
+            files_api
+                .send_upload_status_update_async(&transfer, &e.message)
+                .await;
+            return Err(FutureError {
+                code: e.code,
+                message: e.message,
+            });
+        }
+    };
     task::yield_now().await;
 
     if let Err(e) = archive_writer.crate_archive(items, &transfer).await {
@@ -283,6 +305,17 @@ async fn finish_upload_in_background(
 
     task::yield_now().await;
 
+    // do not proceed to starting the upload if the 'cancel requested' flag is set
+    if *cancel_requests
+        .get(&transfer.transfer_id)
+        .unwrap()
+        .clone()
+        .lock()
+        .unwrap()
+    {
+        return Ok(());
+    }
+
     transfer.size = fs::metadata(archive_path).unwrap().len();
 
     files_api
@@ -290,8 +323,10 @@ async fn finish_upload_in_background(
         .await;
 
     // execute file upload
-    match Client::remote_do_copy_async(&files_api, &transfer).await {
+    let cancel_requested = cancel_requests.get(&transfer.transfer_id).unwrap();
+    match Client::remote_do_copy_async(&files_api, &transfer, cancel_requested).await {
         Ok(_) => {
+            // send transfer status update indicating normal completion
             files_api
                 .send_upload_status_update_async(&transfer, "complete")
                 .await;
@@ -299,18 +334,29 @@ async fn finish_upload_in_background(
         }
         Err(e) => {
             let error = e.message;
-            let err_msg = if e.code == 346 {
-                format!("signal::interrupt::{}", error)
-            } else {
-                error.clone()
+            // decide what message to send as transfer status update
+            let err_msg = match e.code {
+                // interrupted (SIGUSR1)
+                346 => Some(format!("signal::interrupt::{}", error)),
+                // aborted by user request - not an error
+                997 => None,
+                // all other errors
+                _ => Some(error.clone()),
             };
-            files_api
-                .send_upload_status_update_async(&transfer, &err_msg)
-                .await;
-            Err(FutureError {
-                code: e.code,
-                message: error,
-            })
+
+            // send transfer status update about the error
+            match err_msg {
+                None => Ok(()),
+                Some(message) => {
+                    files_api
+                        .send_upload_status_update_async(&transfer, &message)
+                        .await;
+                    Err(FutureError {
+                        code: e.code,
+                        message: error,
+                    })
+                }
+            }
         }
     }
 }

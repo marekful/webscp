@@ -16,7 +16,11 @@ use tokio::{
     process::Command,
 };
 
-use std::{process::Stdio, time::Duration};
+use std::{
+    process::Stdio,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use sha256::digest;
 
@@ -83,16 +87,6 @@ impl Client<'_> {
             "{} {} {}",
             DEFAULTS.with_contenv, DEFAULTS.cli_executable_path, command
         )
-    }
-
-    fn print_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
-        eprint!("{message}");
-        exit(code);
-    }
-
-    fn println_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
-        eprintln!("{message}");
-        exit(code);
     }
 
     pub fn random_hex() -> String {
@@ -208,6 +202,7 @@ impl Client<'_> {
     pub async fn remote_do_copy_async(
         files_api: &FilesApi,
         transfer: &Transfer,
+        cancel_requested: &Arc<Mutex<bool>>,
     ) -> Result<(), ClientError> {
         let archive_name = &transfer.transfer_id;
         let local_path = format!(
@@ -286,6 +281,13 @@ impl Client<'_> {
 
         // read lines from script output as they are written to its stdout
         while let Some(line) = reader.next_line().await? {
+            // quit reading lines if the 'cancel requested' flag is set
+            let cancel_requested = *cancel_requested.lock().unwrap();
+            if cancel_requested {
+                break;
+            }
+
+            // send upload status update with the reported progress
             let message = format!("progress::{}", line);
             files_api
                 .send_upload_status_update_async(transfer, &message)
@@ -295,6 +297,21 @@ impl Client<'_> {
         // remove local copy of archive
         let rm_args: Vec<&str> = vec!["-f", &local_path];
         let _rm_result = run_command_async(83, false, true, "rm", rm_args).await;
+
+        // do not proceed to extracting the archive if the 'cancel requested' flag is set
+        let cancel_requested = *cancel_requested.lock().unwrap();
+        if cancel_requested {
+            // TODO: remove remote copy of archive
+
+            // kill the scp process handling this upload
+            Client::kill_scp(archive_name).await;
+
+            return Err(ClientError {
+                code: 997,
+                message: "Operation aborted by user request".to_string(),
+                http_code: None,
+            });
+        }
 
         // abort process on any errors from command execution (including usr1 signal)
         match upload_result.await.unwrap() {
@@ -326,7 +343,17 @@ impl Client<'_> {
         }
     }
 
-    pub fn remote_extract_archive(
+    async fn kill_scp(transfer_id: &str) {
+        // create argument list for cancel transfer script
+        let kill_cmd_args: Vec<&str> = vec![DEFAULTS.cancel_transfer_script_path, transfer_id];
+
+        // setup and execute command
+        let mut kill_cmd = Command::new("bash");
+        let child = kill_cmd.args(kill_cmd_args).spawn();
+        let _result = child.unwrap().wait().await;
+    }
+
+    fn remote_extract_archive(
         &self,
         archive_name: &str,
         remote_path: &str,
@@ -513,6 +540,16 @@ impl Client<'_> {
         result.read_to_string(&mut key).unwrap();
 
         0
+    }
+
+    fn print_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
+        eprint!("{message}");
+        exit(code);
+    }
+
+    fn println_error_and_exit<T: Into<String> + Display>(code: i32, message: T) {
+        eprintln!("{message}");
+        exit(code);
     }
 
     fn create_key_file_from_access_token(key_id: String, secret: String) {
