@@ -33,7 +33,7 @@ export async function fetchURL(url, opts, auth = true) {
     const error = new Error(await res.text());
     error.status = res.status;
 
-    if (auth && res.status == 401) {
+    if (auth && res.status === 401) {
       logout();
     }
 

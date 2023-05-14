@@ -1,6 +1,6 @@
 [package]
 name = "webscp-agent"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Marcell Fülöp <marekful@domainloop.net>"]
 repository = "https://github.com/marekful/webscp/agent"
 edition = "2021"

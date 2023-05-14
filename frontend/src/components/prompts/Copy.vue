@@ -16,7 +16,7 @@
     </div>
 
     <div class="card-action">
-      <span v-if="showOptions" class="options">
+      <span v-if="!modeLocal" class="options">
         <input
           type="checkbox"
           name="compress"
@@ -36,15 +36,12 @@
       >
         {{ $t("buttons.cancel") }}
       </button>
-      <button
-        class="button button--flat"
-        ref="submit"
-        @click="copy"
-        :aria-label="$t('buttons.copy')"
-        :title="$t('buttons.copy')"
-      >
-        {{ $t("buttons.copy") }}
-      </button>
+      <stateful-button
+        :handler="copy"
+        class-name="button button--flat"
+        label-tr="buttons.copy"
+        title-tr="buttons.copy"
+      ></stateful-button>
     </div>
   </div>
 </template>
@@ -53,6 +50,7 @@
 import { mapState } from "vuex";
 import FileList from "./FileList";
 import ServerSelect from "../ServerSelect";
+import StatefulButton from "@/components/StatefulButton.vue";
 import { files as api } from "@/api";
 import { remote_files as remote_api } from "@/api";
 import buttons from "@/utils/buttons";
@@ -61,7 +59,7 @@ import * as upload from "@/utils/upload";
 
 export default {
   name: "copy",
-  components: { FileList, ServerSelect },
+  components: { FileList, ServerSelect, StatefulButton },
   data: function () {
     return {
       current: window.location.pathname,
@@ -69,7 +67,7 @@ export default {
       agentId: null,
       agent: null,
       compress: false,
-      showOptions: false,
+      modeLocal: true,
     };
   },
   computed: mapState(["req", "selected", "transfers"]),
@@ -78,26 +76,28 @@ export default {
       let id = val.id;
       if (id === 0) {
         this.agentId = 0;
-        this.showOptions = false;
+        this.modeLocal = true;
       } else {
         this.agentId = id;
         this.agent = val;
-        this.showOptions = true;
+        this.modeLocal = false;
       }
     },
     setCompress() {
       this.compress = !this.compress;
     },
     disableControls() {
-      this.$refs.submit.setAttribute("disabled", "disabled");
       this.$refs.cancel.setAttribute("disabled", "disabled");
-      this.$refs.compress.setAttribute("disabled", "disabled");
+      if (this.$refs.compress) {
+        this.$refs.compress.setAttribute("disabled", "disabled");
+      }
     },
     enableControls() {
-      if (!this.$refs.submit) return;
-      this.$refs.submit.removeAttribute("disabled");
+      if (!this.$refs.cancel) return;
       this.$refs.cancel.removeAttribute("disabled");
-      this.$refs.compress.removeAttribute("disabled");
+      if (this.$refs.compress) {
+        this.$refs.compress.removeAttribute("disabled");
+      }
     },
     copy: function (event) {
       event.preventDefault();
@@ -145,7 +145,7 @@ export default {
 
       if (this.$route.path === this.dest) {
         this.$store.commit("closeHovers");
-        action(false, true);
+        await action(false, true);
 
         return;
       }
@@ -159,20 +159,20 @@ export default {
       if (conflict) {
         this.$store.commit("showHover", {
           prompt: "replace-rename",
-          confirm: (event, option) => {
-            overwrite = option == "overwrite";
-            rename = option == "rename";
+          confirm: async (event, option) => {
+            overwrite = option === "overwrite";
+            rename = option === "rename";
 
             event.preventDefault();
             this.$store.commit("closeHovers");
-            action(overwrite, rename);
+            await action(overwrite, rename);
           },
         });
 
         return;
       }
 
-      action(overwrite, rename);
+      await action(overwrite, rename);
     },
     remoteCopy: async function (agentId, items, compress) {
       let action = async (overwrite, keep) => {
@@ -219,20 +219,20 @@ export default {
       if (conflict) {
         this.$store.commit("showHover", {
           prompt: "remote-replace",
-          confirm: (event, option) => {
-            overwrite = option == "overwrite";
-            keep = option == "keep";
+          confirm: async (event, option) => {
+            overwrite = option === "overwrite";
+            keep = option === "keep";
 
             event.preventDefault();
             this.$store.commit("closeHovers");
-            action(overwrite, keep);
+            await action(overwrite, keep);
           },
         });
 
         return;
       }
 
-      action(overwrite, keep);
+      await action(overwrite, keep);
     },
   },
 };
