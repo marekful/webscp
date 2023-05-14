@@ -16,8 +16,7 @@ use tokio::{
     process::Command,
 };
 
-use std::process::Stdio;
-use std::time::Duration;
+use std::{process::Stdio, time::Duration};
 
 use sha256::digest;
 
@@ -27,9 +26,8 @@ use crate::{
         COMMAND_GET_LOCAL_RESOURCE, COMMAND_GET_LOCAL_USER, COMMAND_GET_LOCAL_VERSION,
         COMMAND_LOCAL_BEFORE_COPY, DEFAULTS,
     },
-    files_api::{FilesApi, Transfer},
+    files_api::{FilesApi, RequestError, Transfer},
 };
-use crate::files_api::RequestError;
 
 #[derive(Debug)]
 pub struct Client<'r> {
@@ -56,11 +54,16 @@ impl From<Error> for ClientError {
 
 impl From<RequestError> for ClientError {
     fn from(err: RequestError) -> Self {
-        let http_code = err.http_code.unwrap_or(500).to_string().parse::<i32>().unwrap();
+        let http_code = err
+            .http_code
+            .unwrap_or(500)
+            .to_string()
+            .parse::<i32>()
+            .unwrap();
         ClientError {
             code: err.code,
             message: err.message,
-            http_code: Some(http_code)
+            http_code: Some(http_code),
         }
     }
 }

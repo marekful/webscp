@@ -343,7 +343,7 @@ impl FilesApi {
                     code: 191,
                     message: e.message,
                     http_code: Some(500),
-                })
+                });
             }
         };
 
