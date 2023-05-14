@@ -216,6 +216,8 @@ function handleMessage($store) {
   return function (event) {
     if (!event.isTrusted) return;
 
+    const transfers = $store.state.transfers;
+
     let icon,
       data,
       message,
@@ -271,12 +273,14 @@ function handleMessage($store) {
           stats = getStats(extra);
         }
         if (data === "archived") {
+          cancelable = false;
           icon = "folder_zip";
           message = "archiving";
           messageTr = "archiving";
           stats = getArchiveStats(extra);
         }
         if (data === "compressed") {
+          cancelable = false;
           icon = "folder_zip";
           message = "compressing";
           messageTr = "compressing";
@@ -297,6 +301,13 @@ function handleMessage($store) {
         errorMessage = i18n.te(`transfer.${messageTr}`)
           ? i18n.t(`transfer.${messageTr}`)
           : message;
+
+        for (let tr of transfers) {
+          if (event.target.transferID === tr.transferID) {
+            tr.sseClient && tr.sseClient.close();
+            break;
+          }
+        }
 
         update($store, {
           transferID: event.target.transferID,

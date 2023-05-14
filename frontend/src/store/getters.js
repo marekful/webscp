@@ -22,7 +22,7 @@ const getters = {
     return total;
   },
   progress: (state) => {
-    if (state.upload.progress.length == 0) {
+    if (state.upload.progress.length === 0) {
       return 0;
     }
 

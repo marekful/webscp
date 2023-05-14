@@ -1,9 +1,8 @@
 <template>
   <div class="agent-form">
-    <p>
+    <p v-if="!isNew">
       <label for="name">{{ $t("settings.agent.connectionName") }}</label>
       <input
-        v-if="!isNew"
         class="input input--block"
         type="text"
         v-model="agent.branding"
