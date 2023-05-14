@@ -308,7 +308,7 @@ impl Client<'_> {
 
             return Err(ClientError {
                 code: 997,
-                message: format!("Operation aborted by user request"),
+                message: "Operation aborted by user request".to_string(),
                 http_code: None,
             });
         }
