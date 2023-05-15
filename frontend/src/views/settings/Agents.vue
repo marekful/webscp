@@ -86,7 +86,7 @@
               <th></th>
             </tr>
 
-            <tr v-for="agent in agents" :key="agent.id">
+            <tr v-for="(agent, index) in agents" :key="agent.id">
               <td class="status">
                 <div :class="'status-' + (agent.status || 'loading')">
                   <i v-if="agent.status === 'online'" class="material-icons">
@@ -106,14 +106,30 @@
               <td>{{ agent.port }}</td>
               <td>{{ agent.remote_user.name }}</td>
               <td v-if="!agent.error" class="version">
-                <span v-if="typeof agent.version === 'object'">
-                  {{ agent.version.files }} ({{ agent.version.agent }})
+                <span
+                  v-if="typeof agent.version === 'object'"
+                  @click="expandVersion(agent, index)"
+                >
+                  {{ agent.version.files }}
+                  <span v-if="agent.expandVersion === true">
+                    ({{ agent.version.agent }})
+                  </span>
                 </span>
               </td>
               <td v-else class="version" :colspan="agent.error ? '2' : ''">
                 <div class="error">{{ agent.error }}</div>
               </td>
-              <td v-if="!agent.error">{{ agent.latency }}</td>
+              <td v-if="!agent.error">
+                <span
+                  v-if="typeof agent.latency === 'object'"
+                  @click="expandLatency(agent, index)"
+                >
+                  {{ agent.latency.connect }}
+                  <span v-if="agent.expandLatency === true">
+                    ({{ agent.latency.exec }})
+                  </span>
+                </span>
+              </td>
               <td class="small">
                 <router-link :to="'/settings/agents/' + agent.id"
                   ><i class="material-icons">mode_edit</i></router-link
@@ -177,6 +193,8 @@ export default {
           a.latency = v.latency;
           a.version = v.version;
           a.status = "online";
+          a.expandVersion = false;
+          a.expandLatency = false;
           if (v.error) {
             a.error = v.error;
             a.status = "error";
@@ -194,6 +212,14 @@ export default {
         this.tokens.push(token);
         this.tokensCopied.push(false);
       });
+    },
+    expandVersion(agent, index) {
+      agent.expandVersion = !agent.expandVersion;
+      this.agents.splice(index, 1, agent);
+    },
+    expandLatency(agent, index) {
+      agent.expandLatency = !agent.expandLatency;
+      this.agents.splice(index, 1, agent);
     },
     copy(event) {
       const id = parseInt(event.target.dataset.id);

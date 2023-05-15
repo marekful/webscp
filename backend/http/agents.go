@@ -297,6 +297,7 @@ var agentPutHandler = injectAgentWithUser(func(w http.ResponseWriter, r *http.Re
 		return http.StatusInternalServerError, err
 	}
 
+	w.Header().Set("Location", "/settings/agents")
 	return http.StatusOK, nil
 })
 

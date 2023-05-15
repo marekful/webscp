@@ -18,13 +18,19 @@ use crate::{
 pub struct VersionResponse {
     version: Option<Version>,
     error: Option<String>,
-    latency: Option<String>,
+    latency: Option<Latency>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Version {
     files: String,
     agent: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Latency {
+    connect: String,
+    exec: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -71,7 +77,7 @@ pub async fn version(
     let ping_args: Vec<&str> = vec![&agent.host, &agent.port];
 
     // execute 'ping' command
-    let ping = match run_command_async(91, true, false, COMMAND_PING, ping_args).await {
+    let ping_str = match run_command_async(91, true, false, COMMAND_PING, ping_args).await {
         Ok(ping) => ping,
         Err(err) => {
             return Json(VersionResponse {
@@ -97,8 +103,23 @@ pub async fn version(
     }
     let version: Version = deserialized_result.unwrap();
 
+    // parse ping json result
+    let deserialized_result = serde_json::from_str(&ping_str);
+    if deserialized_result.is_err() {
+        return Json(VersionResponse {
+            version: None,
+            latency: None,
+            error: Some(format!(
+                "parse error: {} -- {}",
+                deserialized_result.unwrap_err(),
+                version_str
+            )),
+        });
+    }
+    let latency: Latency = deserialized_result.unwrap();
+
     Json(VersionResponse {
-        latency: Some(ping.trim().to_string()),
+        latency: Some(latency),
         version: Some(version),
         error: None,
     })
