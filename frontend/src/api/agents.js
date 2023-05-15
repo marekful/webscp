@@ -24,7 +24,7 @@ export async function create(agent) {
 }
 
 export async function update(agent, which = ["all"]) {
-  await fetchURL(`/api/agents/${agent.id}`, {
+  const res = await fetchURL(`/api/agents/${agent.id}`, {
     method: "PUT",
     body: JSON.stringify({
       what: "agent",
@@ -32,6 +32,10 @@ export async function update(agent, which = ["all"]) {
       data: agent,
     }),
   });
+
+  if (res.status === 200) {
+    return res.headers.get("Location");
+  }
 }
 
 export async function remoteUserLogin(agentID, name, password) {
