@@ -2,7 +2,7 @@
   <errors v-if="error" :errorCode="error.status" />
   <div class="row" v-else-if="!loading">
     <div class="column">
-      <form ref="form" class="card">
+      <form ref="form" @keypress.prevent.enter="submit" class="card">
         <div class="card-title">
           <h2 v-if="agent.id === 0">
             {{ $t("settings.agent.newConnection") }}
@@ -27,6 +27,7 @@
           </button>
           <button
             v-if="!isNew"
+            ref="submit"
             @click="save"
             type="button"
             class="button button--flat"
@@ -37,6 +38,7 @@
           </button>
           <stateful-button
             v-if="isNew"
+            ref="submit"
             :handler="save"
             class-name="button button--flat"
             label-tr="buttons.connectAndSave"
@@ -143,6 +145,11 @@ export default {
           : this.$showError(e);
       }
     },
+    submit(event) {
+      const submit = this.$refs.submit;
+      submit && submit.$el && submit.$el.click(event);
+      submit && submit.click && submit.click(event);
+    },
     async save(event) {
       event.preventDefault();
       let agent = {
@@ -151,15 +158,12 @@ export default {
       };
 
       try {
-        if (this.isNew) {
-          const loc = await api.create(agent);
-          this.$router.push({ path: loc });
-          this.$showSuccess(this.$t("settings.agent.connectionCreated"));
-        } else {
-          await api.update(agent, ["branding"]);
-
-          this.$showSuccess(this.$t("settings.agent.connectionUpdated"));
-        }
+        const params = this.isNew ? null : ["branding"];
+        const method = this.isNew ? "create" : "update";
+        const message = this.isNew ? "Created" : "Updated";
+        const loc = await api[method](agent, params);
+        this.$showSuccess(this.$t(`settings.agent.connection${message}`));
+        await this.$router.push({ path: loc });
       } catch (e) {
         this.$showError(e);
       }
