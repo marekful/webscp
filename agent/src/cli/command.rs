@@ -130,7 +130,12 @@ pub fn command_get_remote_version(client: Client, _: Option<Vec<String>>) {
 }
 
 pub fn command_ping(client: Client, _: Option<Vec<String>>) {
-    client.ping();
+    let (connect, exec) = client.ping();
+
+    println!(
+        "{{\"connect\": \"{}ms\", \"exec\": \"{}ms\"}}",
+        connect, exec
+    );
 }
 
 pub fn command_get_local_version(client: Client, _: Option<Vec<String>>) {

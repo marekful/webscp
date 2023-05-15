@@ -174,7 +174,7 @@ impl Client<'_> {
         0
     }
 
-    pub fn ping(&self) -> i32 {
+    pub fn ping(&self) -> (String, String) {
         // start duration measure
         let start = Instant::now();
         let sess = self.create_session(None).unwrap();
@@ -187,16 +187,13 @@ impl Client<'_> {
 
         let result = ch.exit_status().unwrap();
         if result != 0 {
-            return result;
+            return ("?".to_string(), "?".to_string());
         }
 
-        println!(
-            "{:.2}ms / {:.2}ms",
-            dur_sess.as_millis(),
-            dur_exec.as_millis()
-        );
-
-        0
+        (
+            format!("{:.2}", dur_sess.as_millis()),
+            format!("{:.2}", dur_exec.as_millis()),
+        )
     }
 
     pub async fn remote_do_copy_async(
