@@ -393,7 +393,16 @@ impl Client<'_> {
         // setup tcp connection
         let timeout = Duration::from_secs(10);
         let addr_str = format!("{}:{}", self.host, self.port);
-        let mut addrs_iter = addr_str.to_socket_addrs().unwrap();
+        let mut addrs_iter = match addr_str.to_socket_addrs() {
+            Ok(a) => a,
+            Err(e) => {
+                Self::print_error_and_exit(
+                    127,
+                    format!("404 Couldn't connect to {}:{}: {}", self.host, self.port, e),
+                );
+                return None;
+            }
+        };
         let socket_addr = match addrs_iter.next() {
             Some(sa) => sa,
             None => {
