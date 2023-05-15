@@ -52,7 +52,7 @@ type GetTokenUserResponse struct {
 }
 
 type GetVersionResponse struct {
-	Latency string  `json:"latency"`
+	Latency Latency `json:"latency"`
 	Version Version `json:"version"`
 	Error   string  `json:"error"`
 }
@@ -60,6 +60,11 @@ type GetVersionResponse struct {
 type Version struct {
 	Agent string `json:"agent"`
 	Files string `json:"files"`
+}
+
+type Latency struct {
+	Connect string `json:"connect"`
+	Exec    string `json:"exec"`
 }
 
 type GetResourceResponse struct {
@@ -378,6 +383,10 @@ func (c *AgentClient) GetVersion(token string) GetVersionResponse {
 		Agent: "unknown",
 		Files: "unknown",
 	}
+	returnLatency := Latency{
+		Connect: "?",
+		Exec:    "?",
+	}
 	returnError := ""
 
 	r, err := nethttps.NewRequest("GET", requestURL, nethttps.NoBody)
@@ -406,11 +415,12 @@ func (c *AgentClient) GetVersion(token string) GetVersionResponse {
 		returnError = resp.Error
 	} else {
 		returnVersion = resp.Version
+		returnLatency = resp.Latency
 	}
 
 	return GetVersionResponse{
 		Version: returnVersion,
 		Error:   returnError,
-		Latency: resp.Latency,
+		Latency: returnLatency,
 	}
 }
