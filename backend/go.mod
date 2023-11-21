@@ -41,7 +41,7 @@ require (
 	github.com/dsoprea/go-utility/v2 v2.0.0-20200717064901-2fccff4aa15e // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
