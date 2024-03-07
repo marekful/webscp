@@ -24,11 +24,11 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	go.etcd.io/bbolt v1.3.7
-	golang.org/x/crypto v0.8.0
+	golang.org/x/crypto v0.19.0
 	golang.org/x/image v0.7.0
 	golang.org/x/oauth2 v0.7.0
-	golang.org/x/sys v0.7.0
-	golang.org/x/text v0.9.0
+	golang.org/x/sys v0.17.0
+	golang.org/x/text v0.14.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -41,7 +41,7 @@ require (
 	github.com/dsoprea/go-utility/v2 v2.0.0-20200717064901-2fccff4aa15e // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -62,7 +62,7 @@ require (
 	github.com/ulikunitz/xz v0.5.9 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
