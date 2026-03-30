@@ -1,6 +1,6 @@
 module github.com/marekful/webscp
 
-go 1.20
+go 1.25.0
 
 require (
 	github.com/asdine/storm/v3 v3.2.1
@@ -25,10 +25,10 @@ require (
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	go.etcd.io/bbolt v1.3.7
 	golang.org/x/crypto v0.8.0
-	golang.org/x/image v0.7.0
+	golang.org/x/image v0.38.0
 	golang.org/x/oauth2 v0.7.0
 	golang.org/x/sys v0.7.0
-	golang.org/x/text v0.9.0
+	golang.org/x/text v0.35.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
 )
