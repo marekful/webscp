@@ -1,6 +1,6 @@
 module github.com/marekful/webscp
 
-go 1.20
+go 1.24
 
 require (
 	github.com/asdine/storm/v3 v3.2.1
@@ -48,7 +48,7 @@ require (
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/klauspost/compress v1.11.4 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
